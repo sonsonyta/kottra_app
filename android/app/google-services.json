@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "421403764828",
+    "project_id": "kottra-pos-d7e02",
+    "storage_bucket": "kottra-pos-d7e02.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:421403764828:android:72bbe3a9944edea4509e99",
+        "android_client_info": {
+          "package_name": "com.kottra.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "421403764828-83pg1hh8ionr6feq17aoagutl1rdv14l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGiLV2mtpb_L8vhjkAoGxdr5ZeJjp7HeQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "421403764828-83pg1hh8ionr6feq17aoagutl1rdv14l.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "421403764828-682u8s8d40l9s5mguqf9l6tk03f4m2km.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kottra.kottraPosMobile"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:421403764828:android:4e70e7e9373cc1a9509e99",
+        "android_client_info": {
+          "package_name": "com.kottra.kottra_pos_mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "421403764828-83pg1hh8ionr6feq17aoagutl1rdv14l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGiLV2mtpb_L8vhjkAoGxdr5ZeJjp7HeQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "421403764828-83pg1hh8ionr6feq17aoagutl1rdv14l.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "421403764828-682u8s8d40l9s5mguqf9l6tk03f4m2km.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kottra.kottraPosMobile"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
