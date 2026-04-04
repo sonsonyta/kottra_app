@@ -19,6 +19,14 @@ class LoginViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
+  void clearErrorMessage() {
+    if (_errorMessage == null) {
+      return;
+    }
+    _errorMessage = null;
+    notifyListeners();
+  }
+
   Future<bool> loginWithEmailPassword() async {
     return _runAuthAction(() async {
       final String email = emailController.text.trim();
