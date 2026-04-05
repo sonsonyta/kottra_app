@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:kottra_app/firebase_options.dart';
 import 'package:kottra_app/router/app_router.dart';
@@ -9,6 +12,12 @@ const BorderRadius _inputBorderRadius = BorderRadius.all(Radius.circular(18));
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  if (kDebugMode) {
+    await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+    FirebaseFunctions.instance.useFunctionsEmulator('localhost', 5001);
+  }
+
   runApp(const MyApp());
 }
 
