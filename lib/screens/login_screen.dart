@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/viewmodels/login_view_model.dart';
 
-const Color _loginBlue = Color(0xFF2E86DE);
-const Color _loginBlueDark = Color(0xFF1E5FB8);
-const Color _loginText = Color(0xFF34558B);
-const Color _loginMutedText = Color(0xFF7E92B4);
 const Color _loginFieldFill = Color(0xFFFDFEFF);
 const Color _loginFieldBorder = Color(0xFFDCE7F7);
 const BorderRadius _loginFieldRadius = BorderRadius.all(Radius.circular(20));
@@ -67,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FE),
+      backgroundColor: kBackground,
       body: ListenableBuilder(
         listenable: _viewModel,
         builder: (context, child) {
@@ -76,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFFEAF2FF), Color(0xFFF8FAFF)],
+                colors: [kInfoLight, Color(0xFFF8FAFF)],
               ),
             ),
             child: SafeArea(
@@ -224,9 +221,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                             : _viewModel.loginWithEmailPassword,
                                       ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: _loginBlue,
+                                  backgroundColor: kPrimary,
                                   foregroundColor: Colors.white,
-                                  disabledBackgroundColor: _loginBlue
+                                  disabledBackgroundColor: kPrimary
                                       .withValues(alpha: 0.65),
                                   elevation: 0,
                                   minimumSize: const Size.fromHeight(54),
@@ -266,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                               style: OutlinedButton.styleFrom(
                                 backgroundColor: Colors.white,
-                                foregroundColor: _loginText,
+                                foregroundColor: kTextPrimary,
                                 minimumSize: const Size.fromHeight(54),
                                 side: const BorderSide(
                                   color: _loginFieldBorder,
@@ -312,13 +309,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Text(
                                   "Don't have an account? ",
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: _loginMutedText,
+                                    color: kTextSecondary,
                                   ),
                                 ),
                                 Text(
                                   'Sign up',
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: _loginBlue,
+                                    color: kPrimary,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
@@ -326,7 +323,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const Icon(
                                   Icons.chevron_right,
                                   size: 18,
-                                  color: _loginBlue,
+                                  color: kPrimary,
                                 ),
                               ],
                             ),
@@ -367,7 +364,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Text(
             'OR',
             style: theme.textTheme.labelLarge?.copyWith(
-              color: _loginMutedText,
+              color: kTextSecondary,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.1,
             ),
@@ -433,7 +430,7 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: const BorderRadius.all(Radius.circular(20)),
         gradient: isSelected
             ? const LinearGradient(
-                colors: [_loginBlue, _loginBlueDark],
+                colors: [kPrimary, kPrimaryDark],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
@@ -460,7 +457,7 @@ class _LoginScreenState extends State<LoginScreen> {
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,
               style: theme.textTheme.titleSmall!.copyWith(
-                color: isSelected ? Colors.white : _loginText,
+                color: isSelected ? Colors.white : kTextPrimary,
                 fontWeight: FontWeight.w800,
               ),
               child: Row(
@@ -473,7 +470,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Icon(
                       icon,
                       size: 18,
-                      color: isSelected ? Colors.white : _loginMutedText,
+                      color: isSelected ? Colors.white : kTextSecondary,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -518,7 +515,7 @@ class _LoginScreenState extends State<LoginScreen> {
               _obscurePassword
                   ? Icons.visibility_outlined
                   : Icons.visibility_off_outlined,
-              color: _loginMutedText,
+              color: kTextSecondary,
             ),
           ),
         ),
@@ -569,12 +566,12 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: const TextStyle(
-            color: _loginMutedText,
+            color: kTextSecondary,
             fontWeight: FontWeight.w500,
           ),
           filled: true,
           fillColor: _loginFieldFill,
-          prefixIcon: Icon(prefixIcon, color: _loginBlue),
+          prefixIcon: Icon(prefixIcon, color: kPrimary),
           suffixIcon: suffix,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 18,
@@ -586,7 +583,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           focusedBorder: const OutlineInputBorder(
             borderRadius: _loginFieldRadius,
-            borderSide: BorderSide(color: _loginBlue, width: 1.5),
+            borderSide: BorderSide(color: kPrimary, width: 1.5),
           ),
           disabledBorder: OutlineInputBorder(
             borderRadius: _loginFieldRadius,

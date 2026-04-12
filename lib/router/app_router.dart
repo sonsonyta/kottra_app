@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kottra_app/screens/login_screen.dart';
-import 'package:kottra_app/screens/home_screen.dart';
+import 'package:kottra_app/screens/main_screen.dart';
 
 class _GoRouterRefreshStream extends ChangeNotifier {
   _GoRouterRefreshStream(Stream<dynamic> stream) {
@@ -21,7 +21,7 @@ class _GoRouterRefreshStream extends ChangeNotifier {
 }
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: '/home',
+  initialLocation: '/main',
   refreshListenable: _GoRouterRefreshStream(
     FirebaseAuth.instance.authStateChanges(),
   ),
@@ -34,13 +34,13 @@ final GoRouter appRouter = GoRouter(
     }
 
     if (isLoggedIn && isOnLoginPage) {
-      return '/home';
+      return '/main';
     }
 
     return null;
   },
   routes: [
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-    GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+    GoRoute(path: '/main', builder: (context, state) => const MainScreen()),
   ],
 );

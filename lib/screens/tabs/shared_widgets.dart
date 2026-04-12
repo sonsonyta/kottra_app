@@ -1,0 +1,242 @@
+import 'package:flutter/material.dart';
+import 'package:kottra_app/models/attendance_record.dart';
+import 'package:kottra_app/screens/tabs/tab_colors.dart';
+import 'package:kottra_app/screens/tabs/tab_helpers.dart';
+
+// ── Avatar ────────────────────────────────────────────────────────────────────
+
+class TabAvatar extends StatelessWidget {
+  const TabAvatar({
+    super.key,
+    required this.initials,
+    this.size = 44,
+    this.imageUrl,
+    this.useGradient = false,
+  });
+
+  final String initials;
+  final double size;
+  final String? imageUrl;
+  final bool useGradient;
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl != null) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: const BoxDecoration(shape: BoxShape.circle),
+        clipBehavior: Clip.antiAlias,
+        child: Image.network(
+          imageUrl!,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => _initialsWidget(),
+        ),
+      );
+    }
+    return _initialsWidget();
+  }
+
+  Widget _initialsWidget() => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: useGradient
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [kPrimary, kPrimaryDark],
+                )
+              : null,
+          color: useGradient ? null : Colors.white.withValues(alpha: 0.2),
+          border: useGradient
+              ? null
+              : Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          initials,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: size * 0.36,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      );
+}
+
+// ── Section Header ────────────────────────────────────────────────────────────
+
+class SectionHeader extends StatelessWidget {
+  const SectionHeader({super.key, required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 17,
+        fontWeight: FontWeight.w800,
+        color: kTextPrimary,
+      ),
+    );
+  }
+}
+
+// ── Attendance List Item ──────────────────────────────────────────────────────
+
+class AttendanceListItem extends StatelessWidget {
+  const AttendanceListItem({super.key, required this.record});
+
+  final AttendanceRecord record;
+
+  @override
+  Widget build(BuildContext context) {
+    final cfg = _statusConfig(record.status);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: kSurface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A2E86DE),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: cfg.background,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '${record.date.day}',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: cfg.color,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fmtDateShort(record.date),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: kTextPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  record.checkIn != null && record.checkOut != null
+                      ? '${fmtTime(record.checkIn)} – ${fmtTime(record.checkOut)}'
+                      : record.status == AttendanceStatus.absent
+                          ? 'No attendance recorded'
+                          : record.status == AttendanceStatus.leave
+                              ? record.note ?? 'On leave'
+                              : record.status == AttendanceStatus.holiday
+                                  ? 'Public holiday'
+                                  : '--:-- – --:--',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: kTextSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: cfg.background,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  cfg.label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: cfg.color,
+                  ),
+                ),
+              ),
+              if (record.duration != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  fmtDuration(record.duration!),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: kTextSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static StatusConfig _statusConfig(AttendanceStatus status) {
+    return switch (status) {
+      AttendanceStatus.present => const StatusConfig(
+          label: 'Present',
+          color: kSuccess,
+          background: kSuccessLight,
+        ),
+      AttendanceStatus.late => const StatusConfig(
+          label: 'Late',
+          color: kWarning,
+          background: kWarningLight,
+        ),
+      AttendanceStatus.absent => const StatusConfig(
+          label: 'Absent',
+          color: kError,
+          background: kErrorLight,
+        ),
+      AttendanceStatus.leave => const StatusConfig(
+          label: 'Leave',
+          color: kPrimary,
+          background: kInfoLight,
+        ),
+      AttendanceStatus.holiday => const StatusConfig(
+          label: 'Holiday',
+          color: Color(0xFF8E44AD),
+          background: Color(0xFFF5EEF8),
+        ),
+    };
+  }
+}
+
+class StatusConfig {
+  const StatusConfig({
+    required this.label,
+    required this.color,
+    required this.background,
+  });
+
+  final String label;
+  final Color color;
+  final Color background;
+}
