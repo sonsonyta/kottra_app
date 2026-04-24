@@ -7,7 +7,7 @@ import 'package:kottra_app/screens/tabs/home_tab.dart';
 import 'package:kottra_app/screens/tabs/payroll_tab.dart';
 import 'package:kottra_app/screens/tabs/profile_tab.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
-import 'package:kottra_app/viewmodels/home_view_model.dart';
+import 'package:kottra_app/viewmodels/main_view_model.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -17,14 +17,14 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  late final HomeViewModel _viewModel;
+  late final MainViewModel _viewModel;
   Timer? _clockTimer;
   DateTime _now = DateTime.now();
 
   @override
   void initState() {
     super.initState();
-    _viewModel = HomeViewModel();
+    _viewModel = MainViewModel();
     _startClock();
   }
 
@@ -43,11 +43,12 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     return ListenableBuilder(
       listenable: _viewModel,
       builder: (context, _) {
         return Scaffold(
-          backgroundColor: kBackground,
+          backgroundColor: c.background,
           body: IndexedStack(
             index: _viewModel.currentTabIndex,
             children: [
@@ -85,14 +86,15 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     return Container(
-      decoration: const BoxDecoration(
-        color: kSurface,
+      decoration: BoxDecoration(
+        color: c.surface,
         boxShadow: [
           BoxShadow(
-            color: Color(0x1A2E86DE),
+            color: c.shadow,
             blurRadius: 24,
-            offset: Offset(0, -6),
+            offset: const Offset(0, -6),
           ),
         ],
       ),
@@ -161,7 +163,10 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     final isActive = index == currentIndex;
+    final activeColor = c.primary;
+    final inactiveColor = c.textSecondary;
     return Expanded(
       child: InkWell(
         onTap: () => onTap(index),
@@ -173,7 +178,7 @@ class _NavItem extends StatelessWidget {
               child: Icon(
                 isActive ? activeIcon : icon,
                 key: ValueKey(isActive),
-                color: isActive ? kPrimary : kTextSecondary,
+                color: isActive ? activeColor : inactiveColor,
                 size: 24,
               ),
             ),
@@ -183,7 +188,7 @@ class _NavItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive ? kPrimary : kTextSecondary,
+                color: isActive ? activeColor : inactiveColor,
               ),
               child: Text(label),
             ),

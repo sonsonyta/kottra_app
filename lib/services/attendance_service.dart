@@ -78,7 +78,9 @@ class AttendanceService {
         'status': status.value,
       });
     } else {
-      await _col(storeId).add({
+      final ref = _col(storeId).doc();
+      await ref.set({
+        'id': ref.id,
         'storeId': storeId,
         'employeeId': employeeId,
         'employeeName': employeeName,

@@ -30,40 +30,43 @@ class TabAvatar extends StatelessWidget {
         child: Image.network(
           imageUrl!,
           fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _initialsWidget(),
+          errorBuilder: (_, _, _) => _initialsWidget(context),
         ),
       );
     }
-    return _initialsWidget();
+    return _initialsWidget(context);
   }
 
-  Widget _initialsWidget() => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: useGradient
-              ? const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [kPrimary, kPrimaryDark],
-                )
-              : null,
-          color: useGradient ? null : Colors.white.withValues(alpha: 0.2),
-          border: useGradient
-              ? null
-              : Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
+  Widget _initialsWidget(BuildContext context) {
+    final c = appColors(context);
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: useGradient
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [c.primary, c.primaryDark],
+              )
+            : null,
+        color: useGradient ? null : Colors.white.withValues(alpha: 0.2),
+        border: useGradient
+            ? null
+            : Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initials,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: size * 0.36,
+          fontWeight: FontWeight.w800,
         ),
-        alignment: Alignment.center,
-        child: Text(
-          initials,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: size * 0.36,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      );
+      ),
+    );
+  }
 }
 
 // ── Section Header ────────────────────────────────────────────────────────────
@@ -75,12 +78,13 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 17,
         fontWeight: FontWeight.w800,
-        color: kTextPrimary,
+        color: c.textPrimary,
       ),
     );
   }
@@ -95,18 +99,19 @@ class AttendanceListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cfg = _statusConfig(record.status);
+    final c = appColors(context);
+    final cfg = _statusConfig(record.status, c);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kSurface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x0A2E86DE),
+            color: c.shadowSubtle,
             blurRadius: 12,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -136,10 +141,10 @@ class AttendanceListItem extends StatelessWidget {
               children: [
                 Text(
                   fmtDateShort(record.date),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: kTextPrimary,
+                    color: c.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -153,9 +158,9 @@ class AttendanceListItem extends StatelessWidget {
                               : record.status == AttendanceStatus.holiday
                                   ? 'Public holiday'
                                   : '--:-- – --:--',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: kTextSecondary,
+                    color: c.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -184,9 +189,9 @@ class AttendanceListItem extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   fmtDuration(record.duration!),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: kTextSecondary,
+                    color: c.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -198,32 +203,32 @@ class AttendanceListItem extends StatelessWidget {
     );
   }
 
-  static StatusConfig _statusConfig(AttendanceStatus status) {
+  StatusConfig _statusConfig(AttendanceStatus status, AppColors c) {
     return switch (status) {
-      AttendanceStatus.present => const StatusConfig(
+      AttendanceStatus.present => StatusConfig(
           label: 'Present',
-          color: kSuccess,
-          background: kSuccessLight,
+          color: c.success,
+          background: c.successLight,
         ),
-      AttendanceStatus.late => const StatusConfig(
+      AttendanceStatus.late => StatusConfig(
           label: 'Late',
-          color: kWarning,
-          background: kWarningLight,
+          color: c.warning,
+          background: c.warningLight,
         ),
-      AttendanceStatus.absent => const StatusConfig(
+      AttendanceStatus.absent => StatusConfig(
           label: 'Absent',
-          color: kError,
-          background: kErrorLight,
+          color: c.error,
+          background: c.errorLight,
         ),
-      AttendanceStatus.leave => const StatusConfig(
+      AttendanceStatus.leave => StatusConfig(
           label: 'Leave',
-          color: kPrimary,
-          background: kInfoLight,
+          color: c.primary,
+          background: c.infoLight,
         ),
-      AttendanceStatus.holiday => const StatusConfig(
+      AttendanceStatus.holiday => StatusConfig(
           label: 'Holiday',
-          color: Color(0xFF8E44AD),
-          background: Color(0xFFF5EEF8),
+          color: c.holiday,
+          background: c.holidayLight,
         ),
     };
   }

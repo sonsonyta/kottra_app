@@ -4,14 +4,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:kottra_app/models/attendance_record.dart';
 import 'package:kottra_app/models/hr_employee.dart';
-import 'package:kottra_app/models/payroll_record.dart';
+import 'package:kottra_app/models/hr_payslip.dart';
 import 'package:kottra_app/services/attendance_service.dart';
 import 'package:kottra_app/services/auth_service.dart';
 import 'package:kottra_app/services/employee_service.dart';
+import 'package:kottra_app/services/payslip_service.dart';
 
 export 'package:kottra_app/models/attendance_record.dart';
 export 'package:kottra_app/models/hr_employee.dart';
-export 'package:kottra_app/models/payroll_record.dart';
+export 'package:kottra_app/models/hr_payslip.dart';
 
 /// Parses a UID of the form `hr_employee:<storeId>:<employeeId>` into its parts.
 /// Returns null if the format doesn't match.
@@ -21,32 +22,38 @@ export 'package:kottra_app/models/payroll_record.dart';
   return (storeId: parts[1], employeeId: parts[2]);
 }
 
-class HomeViewModel extends ChangeNotifier {
-  HomeViewModel({
+class MainViewModel extends ChangeNotifier {
+  MainViewModel({
     AuthServiceBase? authService,
     FirebaseAuth? firebaseAuth,
     AttendanceService? attendanceService,
     EmployeeService? employeeService,
+    PayslipService? payslipService,
   })  : _authService = authService ?? AuthService(),
         _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
         _attendanceService = attendanceService ?? AttendanceService(),
-        _employeeService = employeeService ?? EmployeeService() {
+        _employeeService = employeeService ?? EmployeeService(),
+        _payslipService = payslipService ?? PayslipService() {
     _subscribeToAttendance();
     _subscribeToEmployee();
+    _subscribeToPayslips();
   }
 
   final AuthServiceBase _authService;
   final FirebaseAuth _firebaseAuth;
   final AttendanceService _attendanceService;
   final EmployeeService _employeeService;
+  final PayslipService _payslipService;
 
   StreamSubscription<AttendanceRecord?>? _todaySub;
   StreamSubscription<List<AttendanceRecord>>? _historySub;
   StreamSubscription<HREmployee?>? _employeeSub;
+  StreamSubscription<List<HRPayslip>>? _payslipSub;
 
   AttendanceRecord? _todayRecord;
   List<AttendanceRecord> _history = [];
   HREmployee? _employee;
+  List<HRPayslip> _payslips = [];
 
   bool _isActionLoading = false;
 
@@ -103,6 +110,19 @@ class HomeViewModel extends ChangeNotifier {
         .streamHistory(identity.storeId, identity.employeeId)
         .listen((records) {
           _history = records;
+          notifyListeners();
+        });
+  }
+
+  void _subscribeToPayslips() {
+    final identity = _identity;
+    if (identity == null) return;
+
+    _payslipSub?.cancel();
+    _payslipSub = _payslipService
+        .streamEmployeePayslips(identity.employeeId)
+        .listen((payslips) {
+          _payslips = payslips;
           notifyListeners();
         });
   }
@@ -187,38 +207,9 @@ class HomeViewModel extends ChangeNotifier {
   EmployeeStatus get employeeStatus => _employee?.status ?? EmployeeStatus.active;
   String? get profileImageUrl => _employee?.profileImageThumbnail ?? _employee?.profileImage;
 
-  // ── Payroll (mock) ────────────────────────────────────────────────────────────
+  // ── Payroll ──────────────────────────────────────────────────────────────────
 
-  List<PayrollRecord> get payrollRecords => const [
-        PayrollRecord(
-          month: 'March 2026',
-          baseSalary: 5000,
-          deductions: 450,
-          netPay: 4550,
-          status: 'paid',
-        ),
-        PayrollRecord(
-          month: 'February 2026',
-          baseSalary: 5000,
-          deductions: 420,
-          netPay: 4580,
-          status: 'paid',
-        ),
-        PayrollRecord(
-          month: 'January 2026',
-          baseSalary: 5000,
-          deductions: 480,
-          netPay: 4520,
-          status: 'paid',
-        ),
-        PayrollRecord(
-          month: 'December 2025',
-          baseSalary: 5000,
-          deductions: 400,
-          netPay: 4600,
-          status: 'paid',
-        ),
-      ];
+  List<HRPayslip> get payslips => _payslips;
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -229,6 +220,7 @@ class HomeViewModel extends ChangeNotifier {
     _todaySub?.cancel();
     _historySub?.cancel();
     _employeeSub?.cancel();
+    _payslipSub?.cancel();
     super.dispose();
   }
 }

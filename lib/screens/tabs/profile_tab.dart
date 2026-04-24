@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
-import 'package:kottra_app/viewmodels/home_view_model.dart';
+import 'package:kottra_app/theme/theme_controller.dart';
+import 'package:kottra_app/viewmodels/main_view_model.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key, required this.viewModel, required this.onLogout});
 
-  final HomeViewModel viewModel;
+  final MainViewModel viewModel;
   final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        _buildHeader(),
+        _buildHeader(context),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
           sliver: SliverList(
@@ -47,6 +48,8 @@ class ProfileTab extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
+              const _AppearanceSection(),
+              const SizedBox(height: 16),
               _ProfileSection(
                 items: [
                   _ProfileMenuItem(
@@ -57,9 +60,9 @@ class ProfileTab extends StatelessWidget {
                   _ProfileMenuItem(
                     icon: Icons.lock_outline_rounded,
                     label: 'Change Password',
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.chevron_right_rounded,
-                      color: kTextSecondary,
+                      color: appColors(context).textSecondary,
                       size: 20,
                     ),
                   ),
@@ -74,10 +77,11 @@ class ProfileTab extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final c = appColors(context);
     return SliverAppBar(
       pinned: true,
-      backgroundColor: kPrimary,
+      backgroundColor: c.primary,
       elevation: 0,
       title: const Text(
         'Profile',
@@ -88,11 +92,11 @@ class ProfileTab extends StatelessWidget {
         ),
       ),
       flexibleSpace: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [kPrimaryDark, kPrimary],
+            colors: [c.primaryDark, c.primary],
           ),
         ),
       ),
@@ -103,20 +107,21 @@ class ProfileTab extends StatelessWidget {
 class _ProfileInfoCard extends StatelessWidget {
   const _ProfileInfoCard({required this.viewModel});
 
-  final HomeViewModel viewModel;
+  final MainViewModel viewModel;
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: kSurface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x1A2E86DE),
+            color: c.shadow,
             blurRadius: 24,
-            offset: Offset(0, 8),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -135,19 +140,19 @@ class _ProfileInfoCard extends StatelessWidget {
               children: [
                 Text(
                   viewModel.userName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: kTextPrimary,
+                    color: c.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 if (viewModel.userEmail.isNotEmpty)
                   Text(
                     viewModel.userEmail,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: kTextSecondary,
+                      color: c.textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -156,8 +161,8 @@ class _ProfileInfoCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: viewModel.employeeStatus == EmployeeStatus.active
-                        ? kSuccessLight
-                        : kWarningLight,
+                        ? c.successLight
+                        : c.warningLight,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
@@ -166,8 +171,8 @@ class _ProfileInfoCard extends StatelessWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: viewModel.employeeStatus == EmployeeStatus.active
-                          ? kSuccess
-                          : kWarning,
+                          ? c.success
+                          : c.warning,
                     ),
                   ),
                 ),
@@ -187,15 +192,16 @@ class _ProfileSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     return Container(
       decoration: BoxDecoration(
-        color: kSurface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x0A2E86DE),
+            color: c.shadowSubtle,
             blurRadius: 12,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -226,33 +232,199 @@ class _ProfileMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          Icon(icon, color: kPrimary, size: 20),
+          Icon(icon, color: c.primary, size: 20),
           const SizedBox(width: 14),
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: kTextPrimary,
+                color: c.textPrimary,
               ),
             ),
           ),
           if (value != null)
             Text(
               value!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: kTextSecondary,
+                color: c.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ?trailing,
         ],
+      ),
+    );
+  }
+}
+
+class _AppearanceSection extends StatelessWidget {
+  const _AppearanceSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = appColors(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: c.shadowSubtle,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.dark_mode_outlined, color: c.primary, size: 20),
+              const SizedBox(width: 14),
+              Text(
+                'Appearance',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: c.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListenableBuilder(
+            listenable: ThemeController.instance,
+            builder: (context, _) {
+              final selected = ThemeController.instance.mode;
+              return _ThemeModeSelector(
+                selected: selected,
+                onChanged: ThemeController.instance.setMode,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeModeSelector extends StatelessWidget {
+  const _ThemeModeSelector({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final ThemeMode selected;
+  final ValueChanged<ThemeMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = appColors(context);
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: c.surfaceMuted,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _ThemeModeOption(
+              icon: Icons.brightness_auto_outlined,
+              label: 'Auto',
+              isSelected: selected == ThemeMode.system,
+              onTap: () => onChanged(ThemeMode.system),
+            ),
+          ),
+          Expanded(
+            child: _ThemeModeOption(
+              icon: Icons.light_mode_outlined,
+              label: 'Light',
+              isSelected: selected == ThemeMode.light,
+              onTap: () => onChanged(ThemeMode.light),
+            ),
+          ),
+          Expanded(
+            child: _ThemeModeOption(
+              icon: Icons.dark_mode_outlined,
+              label: 'Dark',
+              isSelected: selected == ThemeMode.dark,
+              onTap: () => onChanged(ThemeMode.dark),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeModeOption extends StatelessWidget {
+  const _ThemeModeOption({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = appColors(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? c.surface : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: c.shadowSubtle,
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected ? c.primary : c.textSecondary,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? c.textPrimary : c.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -265,6 +437,7 @@ class _LogoutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
@@ -272,8 +445,8 @@ class _LogoutButton extends StatelessWidget {
         icon: const Icon(Icons.logout_rounded, size: 18),
         label: const Text('Logout'),
         style: OutlinedButton.styleFrom(
-          foregroundColor: kError,
-          side: const BorderSide(color: kError),
+          foregroundColor: c.error,
+          side: BorderSide(color: c.error),
           minimumSize: const Size.fromHeight(52),
           shape: const StadiumBorder(),
           textStyle: const TextStyle(

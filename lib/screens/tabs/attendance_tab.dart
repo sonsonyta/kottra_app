@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
-import 'package:kottra_app/viewmodels/home_view_model.dart';
+import 'package:kottra_app/viewmodels/main_view_model.dart';
 
 class AttendanceTab extends StatelessWidget {
   const AttendanceTab({super.key, required this.viewModel});
 
-  final HomeViewModel viewModel;
+  final MainViewModel viewModel;
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     final records = viewModel.attendanceRecords;
     final presentCount =
         records.where((r) => r.status == AttendanceStatus.present).length;
@@ -20,7 +21,7 @@ class AttendanceTab extends StatelessWidget {
 
     return CustomScrollView(
       slivers: [
-        _buildHeader(),
+        _buildHeader(context),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
           sliver: SliverList(
@@ -31,8 +32,8 @@ class AttendanceTab extends StatelessWidget {
                     child: _SummaryCard(
                       value: '$presentCount',
                       label: 'Present',
-                      color: kSuccess,
-                      background: kSuccessLight,
+                      color: c.success,
+                      background: c.successLight,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -40,8 +41,8 @@ class AttendanceTab extends StatelessWidget {
                     child: _SummaryCard(
                       value: '$lateCount',
                       label: 'Late',
-                      color: kWarning,
-                      background: kWarningLight,
+                      color: c.warning,
+                      background: c.warningLight,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -49,8 +50,8 @@ class AttendanceTab extends StatelessWidget {
                     child: _SummaryCard(
                       value: '$absentCount',
                       label: 'Absent',
-                      color: kError,
-                      background: kErrorLight,
+                      color: c.error,
+                      background: c.errorLight,
                     ),
                   ),
                 ],
@@ -71,10 +72,11 @@ class AttendanceTab extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final c = appColors(context);
     return SliverAppBar(
       pinned: true,
-      backgroundColor: kPrimary,
+      backgroundColor: c.primary,
       elevation: 0,
       title: const Text(
         'Attendance',
@@ -85,11 +87,11 @@ class AttendanceTab extends StatelessWidget {
         ),
       ),
       flexibleSpace: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [kPrimaryDark, kPrimary],
+            colors: [c.primaryDark, c.primary],
           ),
         ),
       ),
@@ -112,6 +114,7 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
@@ -132,10 +135,10 @@ class _SummaryCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: kTextSecondary,
+              color: c.textSecondary,
             ),
           ),
         ],

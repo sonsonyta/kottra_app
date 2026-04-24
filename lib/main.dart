@@ -6,13 +6,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:kottra_app/firebase_options.dart';
 import 'package:kottra_app/router/app_router.dart';
-import 'package:kottra_app/screens/tabs/tab_colors.dart';
-
-const BorderRadius _inputBorderRadius = BorderRadius.all(Radius.circular(18));
+import 'package:kottra_app/theme/app_theme.dart';
+import 'package:kottra_app/theme/theme_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await ThemeController.instance.load();
 
   if (kDebugMode) {
     await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
@@ -28,45 +28,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: kPrimary,
-      primary: kPrimary,
-      surface: kSurface,
-      error: kError,
-    );
-
-    return MaterialApp.router(
-      title: 'Kottra App',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: colorScheme,
-        scaffoldBackgroundColor: kBackground,
-        inputDecorationTheme: InputDecorationTheme(
-          labelStyle: TextStyle(color: colorScheme.primary),
-          floatingLabelStyle: TextStyle(color: colorScheme.primary),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: _inputBorderRadius,
-            borderSide: BorderSide(
-              color: colorScheme.primary.withValues(alpha: 0.45),
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: _inputBorderRadius,
-            borderSide: BorderSide(color: colorScheme.primary, width: 2),
-          ),
-          border: OutlineInputBorder(
-            borderRadius: _inputBorderRadius,
-            borderSide: BorderSide(
-              color: colorScheme.primary.withValues(alpha: 0.45),
-            ),
-          ),
-        ),
-        textSelectionTheme: const TextSelectionThemeData(
-          cursorColor: kPrimary,
-          selectionHandleColor: kPrimary,
-        ),
-      ),
-      routerConfig: appRouter,
+    return ListenableBuilder(
+      listenable: ThemeController.instance,
+      builder: (context, _) {
+        return MaterialApp.router(
+          title: 'Kottra App',
+          debugShowCheckedModeBanner: false,
+          theme: buildLightTheme(),
+          darkTheme: buildDarkTheme(),
+          themeMode: ThemeController.instance.mode,
+          routerConfig: appRouter,
+        );
+      },
     );
   }
 }

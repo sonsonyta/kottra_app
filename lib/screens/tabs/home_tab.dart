@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/screens/tabs/tab_helpers.dart';
-import 'package:kottra_app/viewmodels/home_view_model.dart';
+import 'package:kottra_app/viewmodels/main_view_model.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key, required this.viewModel, required this.now});
 
-  final HomeViewModel viewModel;
+  final MainViewModel viewModel;
   final DateTime now;
 
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        _buildAppBar(),
+        _buildAppBar(context),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
           sliver: SliverList(
@@ -43,19 +43,20 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildAppBar() {
+  Widget _buildAppBar(BuildContext context) {
+    final c = appColors(context);
     return SliverAppBar(
       expandedHeight: 160,
       pinned: true,
       elevation: 0,
-      backgroundColor: kPrimary,
+      backgroundColor: c.primary,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [kPrimaryDark, kPrimary],
+              colors: [c.primaryDark, c.primary],
             ),
           ),
           child: SafeArea(
@@ -113,10 +114,11 @@ class HomeTab extends StatelessWidget {
 class _CheckInCard extends StatelessWidget {
   const _CheckInCard({required this.viewModel});
 
-  final HomeViewModel viewModel;
+  final MainViewModel viewModel;
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     final isCheckedIn = viewModel.isCheckedIn;
     final checkInTime = viewModel.checkInTime;
     final checkOutTime = viewModel.checkOutTime;
@@ -131,13 +133,13 @@ class _CheckInCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: kSurface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x1A2E86DE),
+            color: c.shadow,
             blurRadius: 24,
-            offset: Offset(0, 8),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -148,7 +150,7 @@ class _CheckInCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: isCheckedIn ? kSuccessLight : kInfoLight,
+                  color: isCheckedIn ? c.successLight : c.infoLight,
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
@@ -159,7 +161,7 @@ class _CheckInCard extends StatelessWidget {
                       height: 8,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isCheckedIn ? kSuccess : kTextSecondary,
+                        color: isCheckedIn ? c.success : c.textSecondary,
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -168,7 +170,7 @@ class _CheckInCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: isCheckedIn ? kSuccess : kTextSecondary,
+                        color: isCheckedIn ? c.success : c.textSecondary,
                       ),
                     ),
                   ],
@@ -178,10 +180,10 @@ class _CheckInCard extends StatelessWidget {
               if (elapsed != null)
                 Text(
                   fmtDuration(elapsed),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: kTextPrimary,
+                    color: c.textPrimary,
                   ),
                 ),
             ],
@@ -193,21 +195,21 @@ class _CheckInCard extends StatelessWidget {
                 child: _TimeDisplay(
                   label: 'Check In',
                   time: fmtTime(checkInTime),
-                  iconColor: kSuccess,
+                  iconColor: c.success,
                   icon: Icons.login_rounded,
                 ),
               ),
               Container(
                 width: 1,
                 height: 40,
-                color: const Color(0xFFE8EFF8),
+                color: c.divider,
                 margin: const EdgeInsets.symmetric(horizontal: 16),
               ),
               Expanded(
                 child: _TimeDisplay(
                   label: 'Check Out',
                   time: fmtTime(checkOutTime),
-                  iconColor: kError,
+                  iconColor: c.error,
                   icon: Icons.logout_rounded,
                 ),
               ),
@@ -221,12 +223,13 @@ class _CheckInCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(999),
                 gradient: LinearGradient(
                   colors: isCheckedIn
-                      ? [const Color(0xFFE74C3C), const Color(0xFFC0392B)]
-                      : [kPrimary, kPrimaryDark],
+                      ? [c.error, const Color(0xFFC0392B)]
+                      : [c.primary, c.primaryDark],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: (isCheckedIn ? kError : kPrimary).withValues(alpha: 0.35),
+                    color: (isCheckedIn ? c.error : c.primary)
+                        .withValues(alpha: 0.35),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),
@@ -287,25 +290,26 @@ class _TimeDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     return Column(
       children: [
         Icon(icon, color: iconColor, size: 22),
         const SizedBox(height: 6),
         Text(
           time,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: kTextPrimary,
+            color: c.textPrimary,
             letterSpacing: 0.5,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: kTextSecondary,
+            color: c.textSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -317,10 +321,11 @@ class _TimeDisplay extends StatelessWidget {
 class _TodayStatsRow extends StatelessWidget {
   const _TodayStatsRow({required this.viewModel});
 
-  final HomeViewModel viewModel;
+  final MainViewModel viewModel;
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     final records = viewModel.attendanceRecords;
     final presentCount =
         records.where((r) => r.status == AttendanceStatus.present).length;
@@ -335,8 +340,8 @@ class _TodayStatsRow extends StatelessWidget {
           child: _StatChip(
             value: '$presentCount',
             label: 'Present',
-            color: kSuccess,
-            background: kSuccessLight,
+            color: c.success,
+            background: c.successLight,
             icon: Icons.check_circle_outline_rounded,
           ),
         ),
@@ -345,8 +350,8 @@ class _TodayStatsRow extends StatelessWidget {
           child: _StatChip(
             value: '$lateCount',
             label: 'Late',
-            color: kWarning,
-            background: kWarningLight,
+            color: c.warning,
+            background: c.warningLight,
             icon: Icons.access_time_rounded,
           ),
         ),
@@ -355,8 +360,8 @@ class _TodayStatsRow extends StatelessWidget {
           child: _StatChip(
             value: '$absentCount',
             label: 'Absent',
-            color: kError,
-            background: kErrorLight,
+            color: c.error,
+            background: c.errorLight,
             icon: Icons.cancel_outlined,
           ),
         ),
@@ -382,6 +387,7 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       decoration: BoxDecoration(
@@ -403,10 +409,10 @@ class _StatChip extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: kTextSecondary,
+              color: c.textSecondary,
             ),
           ),
         ],
@@ -423,10 +429,11 @@ class _ViewAllButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = appColors(context);
     return TextButton(
       onPressed: onTap,
       style: TextButton.styleFrom(
-        foregroundColor: kPrimary,
+        foregroundColor: c.primary,
         padding: EdgeInsets.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
@@ -435,14 +442,14 @@ class _ViewAllButton extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: kPrimary,
+              color: c.primary,
             ),
           ),
           const SizedBox(width: 4),
-          const Icon(Icons.arrow_forward_rounded, size: 16, color: kPrimary),
+          Icon(Icons.arrow_forward_rounded, size: 16, color: c.primary),
         ],
       ),
     );

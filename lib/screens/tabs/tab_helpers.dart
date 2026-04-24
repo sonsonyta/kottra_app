@@ -37,3 +37,12 @@ String greeting() {
   if (h < 17) return 'Good afternoon';
   return 'Good evening';
 }
+
+String fmtMoney(double amount, String currency) {
+  final isUsd = currency == 'USD';
+  final symbol = isUsd ? '\$' : '៛';
+  final value = isUsd
+      ? amount.toStringAsFixed(2)
+      : amount.toStringAsFixed(0);
+  return '$symbol$value';
+}

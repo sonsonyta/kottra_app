@@ -3,8 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/viewmodels/login_view_model.dart';
 
-const Color _loginFieldFill = Color(0xFFFDFEFF);
-const Color _loginFieldBorder = Color(0xFFDCE7F7);
 const BorderRadius _loginFieldRadius = BorderRadius.all(Radius.circular(20));
 const BorderRadius _loginButtonRadius = BorderRadius.all(Radius.circular(999));
 
@@ -56,24 +54,26 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted || !isSuccess) {
       return;
     }
-    context.go('/home');
+    context.go('/main');
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final c = appColors(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: kBackground,
+      backgroundColor: c.background,
       body: ListenableBuilder(
         listenable: _viewModel,
         builder: (context, child) {
           return Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [kInfoLight, Color(0xFFF8FAFF)],
+                colors: [c.infoLight, c.background],
               ),
             ),
             child: SafeArea(
@@ -88,13 +88,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.fromLTRB(22, 0, 22, 28),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-
-                          boxShadow: const [
+                          color: c.surfaceMuted,
+                          boxShadow: [
                             BoxShadow(
-                              color: Color(0x160B3E91),
+                              color: c.shadow,
                               blurRadius: 32,
-                              offset: Offset(0, 18),
+                              offset: const Offset(0, 18),
                             ),
                           ],
                         ),
@@ -102,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             const SizedBox(height: 4),
-                            _buildLoginMethodToggle(theme),
+                            _buildLoginMethodToggle(theme, c),
                             const SizedBox(height: 18),
                             ClipRect(
                               child: AnimatedSize(
@@ -195,20 +194,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                     );
                                   },
                                   child: _showTokenLogin
-                                      ? _buildTokenLoginFields()
-                                      : _buildEmailLoginFields(),
+                                      ? _buildTokenLoginFields(c)
+                                      : _buildEmailLoginFields(c),
                                 ),
                               ),
                             ),
                             const SizedBox(height: 20),
                             DecoratedBox(
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 borderRadius: _loginButtonRadius,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Color(0x332E86DE),
+                                    color: c.shadowStrong,
                                     blurRadius: 18,
-                                    offset: Offset(0, 10),
+                                    offset: const Offset(0, 10),
                                   ),
                                 ],
                               ),
@@ -221,10 +220,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                             : _viewModel.loginWithEmailPassword,
                                       ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: kPrimary,
+                                  backgroundColor: c.primary,
                                   foregroundColor: Colors.white,
-                                  disabledBackgroundColor: kPrimary
-                                      .withValues(alpha: 0.65),
+                                  disabledBackgroundColor:
+                                      c.primary.withValues(alpha: 0.65),
                                   elevation: 0,
                                   minimumSize: const Size.fromHeight(54),
                                   shape: const RoundedRectangleBorder(
@@ -253,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const SizedBox(height: 18),
-                            _buildDivider(theme),
+                            _buildDivider(theme, c),
                             const SizedBox(height: 18),
                             OutlinedButton(
                               onPressed: _viewModel.isLoading
@@ -262,12 +261,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                       _viewModel.loginWithGoogle,
                                     ),
                               style: OutlinedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: kTextPrimary,
+                                backgroundColor: isDark ? c.surface : Colors.white,
+                                foregroundColor: c.textPrimary,
                                 minimumSize: const Size.fromHeight(54),
-                                side: const BorderSide(
-                                  color: _loginFieldBorder,
-                                ),
+                                side: BorderSide(color: c.fieldBorder),
                                 shape: const RoundedRectangleBorder(
                                   borderRadius: _loginFieldRadius,
                                 ),
@@ -309,21 +306,21 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Text(
                                   "Don't have an account? ",
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: kTextSecondary,
+                                    color: c.textSecondary,
                                   ),
                                 ),
                                 Text(
                                   'Sign up',
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: kPrimary,
+                                    color: c.primary,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
                                 const SizedBox(width: 4),
-                                const Icon(
+                                Icon(
                                   Icons.chevron_right,
                                   size: 18,
-                                  color: kPrimary,
+                                  color: c.primary,
                                 ),
                               ],
                             ),
@@ -355,38 +352,38 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildDivider(ThemeData theme) {
+  Widget _buildDivider(ThemeData theme, AppColors c) {
     return Row(
       children: [
-        Expanded(child: Container(height: 1, color: _loginFieldBorder)),
+        Expanded(child: Container(height: 1, color: c.fieldBorder)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             'OR',
             style: theme.textTheme.labelLarge?.copyWith(
-              color: kTextSecondary,
+              color: c.textSecondary,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.1,
             ),
           ),
         ),
-        Expanded(child: Container(height: 1, color: _loginFieldBorder)),
+        Expanded(child: Container(height: 1, color: c.fieldBorder)),
       ],
     );
   }
 
-  Widget _buildLoginMethodToggle(ThemeData theme) {
+  Widget _buildLoginMethodToggle(ThemeData theme, AppColors c) {
     return Container(
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
+        color: c.surface.withValues(alpha: 0.9),
         borderRadius: const BorderRadius.all(Radius.circular(24)),
-        border: Border.all(color: _loginFieldBorder),
-        boxShadow: const [
+        border: Border.all(color: c.fieldBorder),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x120B3E91),
+            color: c.shadow,
             blurRadius: 16,
-            offset: Offset(0, 8),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -399,6 +396,7 @@ class _LoginScreenState extends State<LoginScreen> {
               isSelected: !_showTokenLogin,
               onTap: () => _toggleLoginMethod(false),
               theme: theme,
+              c: c,
             ),
           ),
           const SizedBox(width: 8),
@@ -409,6 +407,7 @@ class _LoginScreenState extends State<LoginScreen> {
               isSelected: _showTokenLogin,
               onTap: () => _toggleLoginMethod(true),
               theme: theme,
+              c: c,
             ),
           ),
         ],
@@ -422,6 +421,7 @@ class _LoginScreenState extends State<LoginScreen> {
     required bool isSelected,
     required VoidCallback onTap,
     required ThemeData theme,
+    required AppColors c,
   }) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 260),
@@ -429,19 +429,19 @@ class _LoginScreenState extends State<LoginScreen> {
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.all(Radius.circular(20)),
         gradient: isSelected
-            ? const LinearGradient(
-                colors: [kPrimary, kPrimaryDark],
+            ? LinearGradient(
+                colors: [c.primary, c.primaryDark],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
             : null,
         color: isSelected ? null : Colors.transparent,
         boxShadow: isSelected
-            ? const [
+            ? [
                 BoxShadow(
-                  color: Color(0x2B2E86DE),
+                  color: c.shadowStrong,
                   blurRadius: 18,
-                  offset: Offset(0, 8),
+                  offset: const Offset(0, 8),
                 ),
               ]
             : null,
@@ -457,7 +457,7 @@ class _LoginScreenState extends State<LoginScreen> {
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,
               style: theme.textTheme.titleSmall!.copyWith(
-                color: isSelected ? Colors.white : kTextPrimary,
+                color: isSelected ? Colors.white : c.textPrimary,
                 fontWeight: FontWeight.w800,
               ),
               child: Row(
@@ -470,7 +470,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Icon(
                       icon,
                       size: 18,
-                      color: isSelected ? Colors.white : kTextSecondary,
+                      color: isSelected ? Colors.white : c.textSecondary,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -484,12 +484,13 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildEmailLoginFields() {
+  Widget _buildEmailLoginFields(AppColors c) {
     return Column(
       key: const ValueKey('email-login'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildField(
+          c: c,
           controller: _viewModel.emailController,
           hintText: 'Email',
           enabled: !_viewModel.isLoading,
@@ -498,6 +499,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 14),
         _buildField(
+          c: c,
           controller: _viewModel.passwordController,
           hintText: 'Password',
           enabled: !_viewModel.isLoading,
@@ -515,7 +517,7 @@ class _LoginScreenState extends State<LoginScreen> {
               _obscurePassword
                   ? Icons.visibility_outlined
                   : Icons.visibility_off_outlined,
-              color: kTextSecondary,
+              color: c.textSecondary,
             ),
           ),
         ),
@@ -523,12 +525,13 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildTokenLoginFields() {
+  Widget _buildTokenLoginFields(AppColors c) {
     return Column(
       key: const ValueKey('token-login'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildField(
+          c: c,
           controller: _viewModel.tokenController,
           hintText: 'Employee login token',
           enabled: !_viewModel.isLoading,
@@ -539,6 +542,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildField({
+    required AppColors c,
     required TextEditingController controller,
     required String hintText,
     required bool enabled,
@@ -550,11 +554,11 @@ class _LoginScreenState extends State<LoginScreen> {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: _loginFieldRadius,
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x120B3E91),
+            color: c.shadow,
             blurRadius: 16,
-            offset: Offset(0, 8),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -563,32 +567,33 @@ class _LoginScreenState extends State<LoginScreen> {
         enabled: enabled,
         keyboardType: keyboardType,
         obscureText: obscureText,
+        style: TextStyle(color: c.textPrimary),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: const TextStyle(
-            color: kTextSecondary,
+          hintStyle: TextStyle(
+            color: c.textSecondary,
             fontWeight: FontWeight.w500,
           ),
           filled: true,
-          fillColor: _loginFieldFill,
-          prefixIcon: Icon(prefixIcon, color: kPrimary),
+          fillColor: c.fieldFill,
+          prefixIcon: Icon(prefixIcon, color: c.primary),
           suffixIcon: suffix,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 18,
             vertical: 18,
           ),
-          enabledBorder: const OutlineInputBorder(
+          enabledBorder: OutlineInputBorder(
             borderRadius: _loginFieldRadius,
-            borderSide: BorderSide(color: _loginFieldBorder),
+            borderSide: BorderSide(color: c.fieldBorder),
           ),
-          focusedBorder: const OutlineInputBorder(
+          focusedBorder: OutlineInputBorder(
             borderRadius: _loginFieldRadius,
-            borderSide: BorderSide(color: kPrimary, width: 1.5),
+            borderSide: BorderSide(color: c.primary, width: 1.5),
           ),
           disabledBorder: OutlineInputBorder(
             borderRadius: _loginFieldRadius,
             borderSide: BorderSide(
-              color: _loginFieldBorder.withValues(alpha: 0.7),
+              color: c.fieldBorder.withValues(alpha: 0.7),
             ),
           ),
         ),
