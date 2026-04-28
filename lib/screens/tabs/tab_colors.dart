@@ -186,5 +186,9 @@ class AppColors extends ThemeExtension<AppColors> {
 }
 
 /// Convenience accessor for the active [AppColors].
-AppColors appColors(BuildContext context) =>
-    Theme.of(context).extension<AppColors>()!;
+AppColors appColors(BuildContext context) {
+  final theme = Theme.of(context);
+  final ext = theme.extension<AppColors>();
+  if (ext != null) return ext;
+  return theme.brightness == Brightness.dark ? AppColors.dark : AppColors.light;
+}

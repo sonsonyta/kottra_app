@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
-import 'package:kottra_app/viewmodels/main_view_model.dart';
+import 'package:kottra_app/viewmodels/attendance_view_model.dart';
 
 class AttendanceTab extends StatelessWidget {
-  const AttendanceTab({super.key, required this.viewModel});
+  const AttendanceTab({super.key, required this.attendanceViewModel});
 
-  final MainViewModel viewModel;
+  final AttendanceViewModel attendanceViewModel;
 
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
-    final records = viewModel.attendanceRecords;
+    final records = attendanceViewModel.attendanceRecords;
     final presentCount =
         records.where((r) => r.status == AttendanceStatus.present).length;
     final lateCount =

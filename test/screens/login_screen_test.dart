@@ -49,7 +49,7 @@ GoRouter _createRouter({required LoginViewModel viewModel}) {
         },
       ),
       GoRoute(
-        path: '/home',
+        path: '/main',
         builder: (BuildContext context, GoRouterState state) {
           return const Scaffold(body: Text('Home Page'));
         },
@@ -67,10 +67,11 @@ void main() {
     final GoRouter router = _createRouter(viewModel: viewModel);
 
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).at(0), 'user@example.com');
     await tester.enterText(find.byType(TextField).at(1), 'password123');
-    await tester.tap(find.text('Login with Email'));
+    await tester.tap(find.text('Login'));
     await tester.pumpAndSettle();
 
     expect(authService.emailPasswordLoginCalls, 1);
@@ -91,10 +92,11 @@ void main() {
     final GoRouter router = _createRouter(viewModel: viewModel);
 
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).at(0), 'user@example.com');
     await tester.enterText(find.byType(TextField).at(1), 'wrong-password');
-    await tester.tap(find.text('Login with Email'));
+    await tester.tap(find.text('Login'));
     await tester.pumpAndSettle();
 
     expect(find.text('Invalid credentials'), findsOneWidget);

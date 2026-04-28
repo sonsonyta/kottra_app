@@ -2,63 +2,40 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:kottra_app/models/attendance_record.dart';
 import 'package:kottra_app/models/hr_employee.dart';
 import 'package:kottra_app/models/hr_payslip.dart';
-import 'package:kottra_app/services/attendance_service.dart';
 import 'package:kottra_app/services/auth_service.dart';
 import 'package:kottra_app/services/employee_service.dart';
 import 'package:kottra_app/services/payslip_service.dart';
+import 'package:kottra_app/viewmodels/employee_identity.dart';
 
-export 'package:kottra_app/models/attendance_record.dart';
 export 'package:kottra_app/models/hr_employee.dart';
 export 'package:kottra_app/models/hr_payslip.dart';
-
-/// Parses a UID of the form `hr_employee:<storeId>:<employeeId>` into its parts.
-/// Returns null if the format doesn't match.
-({String storeId, String employeeId})? parseEmployeeUid(String uid) {
-  final parts = uid.split(':');
-  if (parts.length != 3 || parts[0] != 'hr_employee') return null;
-  return (storeId: parts[1], employeeId: parts[2]);
-}
 
 class MainViewModel extends ChangeNotifier {
   MainViewModel({
     AuthServiceBase? authService,
     FirebaseAuth? firebaseAuth,
-    AttendanceService? attendanceService,
     EmployeeService? employeeService,
     PayslipService? payslipService,
   })  : _authService = authService ?? AuthService(),
         _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-        _attendanceService = attendanceService ?? AttendanceService(),
         _employeeService = employeeService ?? EmployeeService(),
         _payslipService = payslipService ?? PayslipService() {
-    _subscribeToAttendance();
     _subscribeToEmployee();
     _subscribeToPayslips();
   }
 
   final AuthServiceBase _authService;
   final FirebaseAuth _firebaseAuth;
-  final AttendanceService _attendanceService;
   final EmployeeService _employeeService;
   final PayslipService _payslipService;
 
-  StreamSubscription<AttendanceRecord?>? _todaySub;
-  StreamSubscription<List<AttendanceRecord>>? _historySub;
   StreamSubscription<HREmployee?>? _employeeSub;
   StreamSubscription<List<HRPayslip>>? _payslipSub;
 
-  AttendanceRecord? _todayRecord;
-  List<AttendanceRecord> _history = [];
   HREmployee? _employee;
   List<HRPayslip> _payslips = [];
-
-  bool _isActionLoading = false;
-
-  /// True while a check-in or check-out write is in progress.
-  bool get isActionLoading => _isActionLoading;
 
   // ── Navigation ──────────────────────────────────────────────────────────────
 
@@ -93,27 +70,6 @@ class MainViewModel extends ChangeNotifier {
         });
   }
 
-  void _subscribeToAttendance() {
-    final identity = _identity;
-    if (identity == null) return;
-
-    _todaySub?.cancel();
-    _todaySub = _attendanceService
-        .streamTodayRecord(identity.storeId, identity.employeeId)
-        .listen((record) {
-          _todayRecord = record;
-          notifyListeners();
-        });
-
-    _historySub?.cancel();
-    _historySub = _attendanceService
-        .streamHistory(identity.storeId, identity.employeeId)
-        .listen((records) {
-          _history = records;
-          notifyListeners();
-        });
-  }
-
   void _subscribeToPayslips() {
     final identity = _identity;
     if (identity == null) return;
@@ -126,51 +82,6 @@ class MainViewModel extends ChangeNotifier {
           notifyListeners();
         });
   }
-
-  // ── Attendance state ─────────────────────────────────────────────────────────
-
-  bool get isCheckedIn =>
-      _todayRecord?.checkIn != null && _todayRecord?.checkOut == null;
-
-  DateTime? get checkInTime => _todayRecord?.checkIn;
-  DateTime? get checkOutTime => _todayRecord?.checkOut;
-
-  Future<void> checkIn() async {
-    final identity = _identity;
-    if (identity == null) return;
-    _isActionLoading = true;
-    notifyListeners();
-    try {
-      await _attendanceService.checkIn(
-        storeId: identity.storeId,
-        employeeId: identity.employeeId,
-        employeeName: userName,
-      );
-    } finally {
-      _isActionLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> checkOut() async {
-    final record = _todayRecord;
-    final identity = _identity;
-    if (identity == null || record == null || record.checkIn == null) return;
-    _isActionLoading = true;
-    notifyListeners();
-    try {
-      await _attendanceService.checkOut(
-        storeId: identity.storeId,
-        recordId: record.id,
-        checkInTime: record.checkIn!,
-      );
-    } finally {
-      _isActionLoading = false;
-      notifyListeners();
-    }
-  }
-
-  List<AttendanceRecord> get attendanceRecords => _history;
 
   // ── User info ────────────────────────────────────────────────────────────────
 
@@ -217,8 +128,6 @@ class MainViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
-    _todaySub?.cancel();
-    _historySub?.cancel();
     _employeeSub?.cancel();
     _payslipSub?.cancel();
     super.dispose();

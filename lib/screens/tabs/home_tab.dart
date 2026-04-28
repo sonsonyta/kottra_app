@@ -1,13 +1,21 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/screens/tabs/tab_helpers.dart';
+import 'package:kottra_app/viewmodels/attendance_view_model.dart';
 import 'package:kottra_app/viewmodels/main_view_model.dart';
 
 class HomeTab extends StatelessWidget {
-  const HomeTab({super.key, required this.viewModel, required this.now});
+  const HomeTab({
+    super.key,
+    required this.viewModel,
+    required this.attendanceViewModel,
+    required this.now,
+  });
 
   final MainViewModel viewModel;
+  final AttendanceViewModel attendanceViewModel;
   final DateTime now;
 
   @override
@@ -19,13 +27,16 @@ class HomeTab extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              _CheckInCard(viewModel: viewModel),
+              _CheckInCard(
+                viewModel: viewModel,
+                attendanceViewModel: attendanceViewModel,
+              ),
               const SizedBox(height: 20),
-              _TodayStatsRow(viewModel: viewModel),
+              _TodayStatsRow(attendanceViewModel: attendanceViewModel),
               const SizedBox(height: 24),
               const SectionHeader(title: 'Recent Attendance'),
               const SizedBox(height: 12),
-              ...viewModel.attendanceRecords.take(4).map(
+              ...attendanceViewModel.attendanceRecords.take(4).map(
                     (r) => Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: AttendanceListItem(record: r),
@@ -112,16 +123,45 @@ class HomeTab extends StatelessWidget {
 }
 
 class _CheckInCard extends StatelessWidget {
-  const _CheckInCard({required this.viewModel});
+  const _CheckInCard({required this.viewModel, required this.attendanceViewModel});
 
   final MainViewModel viewModel;
+  final AttendanceViewModel attendanceViewModel;
+
+  String _formatCheckInError(Object error) {
+    if (error is FirebaseFunctionsException) {
+      return error.message ?? 'Check-in failed.';
+    }
+    return error.toString().replaceFirst('Exception: ', '');
+  }
+
+  Future<void> _handleCheckIn(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final result = await attendanceViewModel.checkIn();
+      if (result == null) return;
+      final String message;
+      if (result.alreadyCheckedIn) {
+        message = 'You\'re already checked in today.';
+      } else if (result.success) {
+        message = 'Checked in — ${result.status.value}';
+      } else {
+        message = 'Check-in failed. Please try again.';
+      }
+      messenger.showSnackBar(SnackBar(content: Text(message)));
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(_formatCheckInError(error))),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
-    final isCheckedIn = viewModel.isCheckedIn;
-    final checkInTime = viewModel.checkInTime;
-    final checkOutTime = viewModel.checkOutTime;
+    final isCheckedIn = attendanceViewModel.isCheckedIn;
+    final checkInTime = attendanceViewModel.checkInTime;
+    final checkOutTime = attendanceViewModel.checkOutTime;
 
     Duration? elapsed;
     if (isCheckedIn && checkInTime != null) {
@@ -235,13 +275,13 @@ class _CheckInCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: ElevatedButton.icon(
-                onPressed: viewModel.isActionLoading
+                child: ElevatedButton.icon(
+                onPressed: attendanceViewModel.isActionLoading
                     ? null
                     : isCheckedIn
-                        ? viewModel.checkOut
-                        : viewModel.checkIn,
-                icon: viewModel.isActionLoading
+                        ? attendanceViewModel.checkOut
+                        : () => _handleCheckIn(context),
+                icon: attendanceViewModel.isActionLoading
                     ? const SizedBox(
                         width: 18,
                         height: 18,
@@ -319,14 +359,14 @@ class _TimeDisplay extends StatelessWidget {
 }
 
 class _TodayStatsRow extends StatelessWidget {
-  const _TodayStatsRow({required this.viewModel});
+  const _TodayStatsRow({required this.attendanceViewModel});
 
-  final MainViewModel viewModel;
+  final AttendanceViewModel attendanceViewModel;
 
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
-    final records = viewModel.attendanceRecords;
+    final records = attendanceViewModel.attendanceRecords;
     final presentCount =
         records.where((r) => r.status == AttendanceStatus.present).length;
     final lateCount =

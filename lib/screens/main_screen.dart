@@ -7,6 +7,7 @@ import 'package:kottra_app/screens/tabs/home_tab.dart';
 import 'package:kottra_app/screens/tabs/payroll_tab.dart';
 import 'package:kottra_app/screens/tabs/profile_tab.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
+import 'package:kottra_app/viewmodels/attendance_view_model.dart';
 import 'package:kottra_app/viewmodels/main_view_model.dart';
 
 class MainScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late final MainViewModel _viewModel;
+  late final AttendanceViewModel _attendanceViewModel;
   Timer? _clockTimer;
   DateTime _now = DateTime.now();
 
@@ -25,7 +27,9 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _viewModel = MainViewModel();
+    _attendanceViewModel = AttendanceViewModel();
     _startClock();
+
   }
 
   void _startClock() {
@@ -38,6 +42,7 @@ class _MainScreenState extends State<MainScreen> {
   void dispose() {
     _clockTimer?.cancel();
     _viewModel.dispose();
+    _attendanceViewModel.dispose();
     super.dispose();
   }
 
@@ -45,15 +50,19 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final c = appColors(context);
     return ListenableBuilder(
-      listenable: _viewModel,
+      listenable: Listenable.merge([_viewModel, _attendanceViewModel]),
       builder: (context, _) {
         return Scaffold(
           backgroundColor: c.background,
           body: IndexedStack(
             index: _viewModel.currentTabIndex,
             children: [
-              HomeTab(viewModel: _viewModel, now: _now),
-              AttendanceTab(viewModel: _viewModel),
+              HomeTab(
+                viewModel: _viewModel,
+                attendanceViewModel: _attendanceViewModel,
+                now: _now,
+              ),
+              AttendanceTab(attendanceViewModel: _attendanceViewModel),
               PayrollTab(viewModel: _viewModel),
               ProfileTab(viewModel: _viewModel, onLogout: _handleLogout),
             ],

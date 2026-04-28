@@ -1,14 +1,73 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:kottra_app/models/attendance_record.dart';
 
-class AttendanceService {
-  AttendanceService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+class CheckInResult {
+  const CheckInResult({
+    required this.success,
+    required this.alreadyCheckedIn,
+    required this.attendanceId,
+    required this.status,
+  });
 
-  final FirebaseFirestore _firestore;
+  final bool success;
+  final bool alreadyCheckedIn;
+  final String attendanceId;
+  final AttendanceStatus status;
+
+  factory CheckInResult.fromMap(Map<Object?, Object?> map) => CheckInResult(
+    success: map['success'] as bool? ?? false,
+    alreadyCheckedIn: map['alreadyCheckedIn'] as bool? ?? false,
+    attendanceId: map['attendanceId'] as String? ?? '',
+    status: AttendanceStatus.fromString(map['status'] as String? ?? ''),
+  );
+}
+
+class CheckOutResult {
+  const CheckOutResult({
+    required this.success,
+    required this.alreadyCheckedOut,
+    required this.attendanceId,
+  });
+
+  final bool success;
+  final bool alreadyCheckedOut;
+  final String attendanceId;
+
+  factory CheckOutResult.fromMap(Map<Object?, Object?> map) => CheckOutResult(
+    success: map['success'] as bool? ?? false,
+    alreadyCheckedOut: map['alreadyCheckedOut'] as bool? ?? false,
+    attendanceId: map['attendanceId'] as String? ?? '',
+  );
+}
+
+/// Invokes a Cloud Function and returns its raw `data` payload.
+typedef HttpsCallableInvoker =
+    Future<Object?> Function(String name, Map<String, dynamic> params);
+
+class AttendanceService {
+  AttendanceService({
+    FirebaseFirestore? firestore,
+    FirebaseFunctions? functions,
+    HttpsCallableInvoker? callable,
+  }) : _firestore = firestore,
+       _callable =
+           callable ??
+           ((name, params) async {
+             final fn = (functions ?? FirebaseFunctions.instance).httpsCallable(
+               name,
+             );
+             final result = await fn.call(params);
+             return result.data;
+           });
+
+  final FirebaseFirestore? _firestore;
+  final HttpsCallableInvoker _callable;
 
   CollectionReference<Map<String, dynamic>> _col(String storeId) =>
-      _firestore.collection('stores/$storeId/hr_attendance');
+      (_firestore ?? FirebaseFirestore.instance).collection(
+        'stores/$storeId/hr_attendance',
+      );
 
   // ── Streams ──────────────────────────────────────────────────────────────────
 
@@ -18,7 +77,6 @@ class AttendanceService {
     String employeeId,
   ) {
     final midnight = _midnight(DateTime.now());
-
     return _col(storeId)
         .where('employeeId', isEqualTo: employeeId)
         .where('date', isEqualTo: Timestamp.fromDate(midnight))
@@ -51,66 +109,54 @@ class AttendanceService {
 
   // ── Mutations ─────────────────────────────────────────────────────────────────
 
-  /// Creates or updates today's record with the check-in timestamp.
-  Future<void> checkIn({
+  /// Records a check-in via the `employeeCheckIn` Cloud Function.
+  Future<CheckInResult> checkIn({
     required String storeId,
     required String employeeId,
-    required String employeeName,
+    double? latitude,
+    double? longitude,
   }) async {
-    final now = DateTime.now();
-    final midnight = _midnight(now);
+    final data = await _callable('employeeCheckIn', <String, dynamic>{
+      'storeId': storeId,
+      'employeeId': employeeId,
+      'latitude': ?latitude,
+      'longitude': ?longitude,
+    });
 
-    final status = now.hour * 60 + now.minute > 9 * 60
-        ? AttendanceStatus.late
-        : AttendanceStatus.present;
-
-    final existing = await _col(storeId)
-        .where('employeeId', isEqualTo: employeeId)
-        .where('date', isEqualTo: Timestamp.fromDate(midnight))
-        .limit(1)
-        .get();
-
-    if (existing.docs.isNotEmpty) {
-      await existing.docs.first.reference.update({
-        'checkIn': Timestamp.fromDate(now),
-        'checkOut': FieldValue.delete(),
-        'workingHours': FieldValue.delete(),
-        'status': status.value,
-      });
-    } else {
-      final ref = _col(storeId).doc();
-      await ref.set({
-        'id': ref.id,
-        'storeId': storeId,
-        'employeeId': employeeId,
-        'employeeName': employeeName,
-        'date': Timestamp.fromDate(midnight),
-        'checkIn': Timestamp.fromDate(now),
-        'checkOut': null,
-        'status': status.value,
-      });
+    if (data is! Map) {
+      throw const FormatException(
+        'employeeCheckIn returned an invalid payload.',
+      );
     }
+    return CheckInResult.fromMap(data.cast<Object?, Object?>());
   }
 
-  /// Updates today's record with the check-out timestamp and calculated hours.
-  Future<void> checkOut({
+  /// Records a check-out via the `employeeCheckOut` Cloud Function.
+  Future<CheckOutResult> checkOut({
     required String storeId,
-    required String recordId,
-    required DateTime checkInTime,
+    required String attendanceId,
+    required String employeeId,
+    double? latitude,
+    double? longitude,
   }) async {
-    final now = DateTime.now();
-    final workingHours = double.parse(
-      (now.difference(checkInTime).inMinutes / 60).toStringAsFixed(2),
-    );
-
-    await _col(storeId).doc(recordId).update({
-      'checkOut': Timestamp.fromDate(now),
-      'workingHours': workingHours,
+    final data =  await _callable('employeeCheckOut', <String, dynamic>{
+      'storeId': storeId,
+      'attendanceId': attendanceId,
+      'employeeId': employeeId,
+      'latitude': ?latitude,
+      'longitude': ?longitude,
     });
+
+    if (data is! Map) {
+      throw const FormatException(
+        'employeeCheckIn returned an invalid payload.',
+      );
+    }
+
+    return CheckOutResult.fromMap(data.cast<Object?, Object?>());
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
-  static DateTime _midnight(DateTime dt) =>
-      DateTime(dt.year, dt.month, dt.day);
+  static DateTime _midnight(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
 }

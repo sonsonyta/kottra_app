@@ -103,6 +103,7 @@ class HREmployee {
     this.fieldOfStudy,
     this.skills,
     this.notes,
+    this.allowCheckinRemote,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -181,6 +182,9 @@ class HREmployee {
   final String? skills;
   final String? notes;
 
+  // Attendance
+  final bool? allowCheckinRemote;
+
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -253,6 +257,7 @@ class HREmployee {
       fieldOfStudy: map['fieldOfStudy'] as String?,
       skills: map['skills'] as String?,
       notes: map['notes'] as String?,
+      allowCheckinRemote: map['allowCheckinRemote'] as bool?,
       createdAt: toDateTime(map['createdAt']),
       updatedAt: toDateTime(map['updatedAt']),
     );
@@ -317,6 +322,7 @@ class HREmployee {
         if (fieldOfStudy != null) 'fieldOfStudy': fieldOfStudy,
         if (skills != null) 'skills': skills,
         if (notes != null) 'notes': notes,
+        if (allowCheckinRemote != null) 'allowCheckinRemote': allowCheckinRemote,
         'createdAt': Timestamp.fromDate(createdAt),
         'updatedAt': Timestamp.fromDate(updatedAt),
       };
