@@ -156,6 +156,27 @@ class _CheckInCard extends StatelessWidget {
     }
   }
 
+  Future<void> _handleCheckOut(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final result = await attendanceViewModel.checkOut();
+      if (result == null) return;
+      final String message;
+      if (result.alreadyCheckedOut) {
+        message = 'You\'re already checked out today.';
+      } else if (result.success) {
+        message = 'Checked out successful';
+      } else {
+        message = 'Check-out failed. Please try again.';
+      }
+      messenger.showSnackBar(SnackBar(content: Text(message)));
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(_formatCheckInError(error))),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
@@ -279,7 +300,7 @@ class _CheckInCard extends StatelessWidget {
                 onPressed: attendanceViewModel.isActionLoading
                     ? null
                     : isCheckedIn
-                        ? attendanceViewModel.checkOut
+                        ? () => _handleCheckOut(context)
                         : () => _handleCheckIn(context),
                 icon: attendanceViewModel.isActionLoading
                     ? const SizedBox(

@@ -41,6 +41,11 @@ class FakeAttendanceService implements AttendanceService {
     attendanceId: 'att-1',
     status: AttendanceStatus.present,
   );
+  CheckOutResult checkOutResult = const CheckOutResult(
+    success: true,
+    alreadyCheckedOut: false,
+    attendanceId: 'att-1',
+  );
 
   @override
   Future<CheckInResult> checkIn({
@@ -73,6 +78,8 @@ class FakeAttendanceService implements AttendanceService {
     lastAttendanceId = attendanceId;
     lastLatitude = latitude;
     lastLongitude = longitude;
+
+    return checkOutResult;
   }
 
   @override

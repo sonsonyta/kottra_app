@@ -108,26 +108,31 @@ class AttendanceViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> checkOut() async {
+  Future<CheckOutResult?> checkOut() async {
     final identity = _identity;
-    if (identity == null) return;
+    if (identity == null) return null;
 
     final attendanceId = _todayRecord?.id ?? _optimisticAttendanceId;
-    if (attendanceId == null) return;
+    if (attendanceId == null) return null;
 
     _isActionLoading = true;
     notifyListeners();
     try {
       final coords = await _locationService.getCurrentCoords();
-      await _attendanceService.checkOut(
+      final result  = await _attendanceService.checkOut(
         storeId: identity.storeId,
         attendanceId: attendanceId,
         employeeId: identity.employeeId,
         latitude: coords?.latitude,
         longitude: coords?.longitude,
       );
-      _optimisticAttendanceId = null;
-      _optimisticCheckInAt = null;
+
+      if (result.success && !result.alreadyCheckedOut) {
+        _optimisticAttendanceId = result.attendanceId;
+        _optimisticCheckInAt = DateTime.now();
+        notifyListeners();
+      }
+      return result;
     } finally {
       _isActionLoading = false;
       notifyListeners();

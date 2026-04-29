@@ -158,5 +158,5 @@ class AttendanceService {
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
-  static DateTime _midnight(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
+  static DateTime _midnight(DateTime dt) => DateTime.utc(dt.year, dt.month, dt.day);
 }
