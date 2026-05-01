@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/theme/theme_controller.dart';
@@ -23,6 +24,18 @@ class ProfileTab extends StatelessWidget {
               const SizedBox(height: 20),
               _ProfileSection(
                 items: [
+                  _ProfileMenuItem(
+                    icon: Icons.calendar_today_outlined,
+                    label: 'My Leaves',
+                    onTap: () {
+                      context.push('/leaves', extra: viewModel);
+                    },
+                    trailing: Icon(
+                      Icons.chevron_right_rounded,
+                      color: appColors(context).textSecondary,
+                      size: 20,
+                    ),
+                  ),
                   _ProfileMenuItem(
                     icon: Icons.badge_outlined,
                     label: 'Employee ID',
@@ -223,43 +236,48 @@ class _ProfileMenuItem extends StatelessWidget {
     required this.label,
     this.value,
     this.trailing,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
   final String? value;
   final Widget? trailing;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Icon(icon, color: c.primary, size: 20),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: c.textPrimary,
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, color: c.primary, size: 20),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: c.textPrimary,
+                ),
               ),
             ),
-          ),
-          if (value != null)
-            Text(
-              value!,
-              style: TextStyle(
-                fontSize: 13,
-                color: c.textSecondary,
-                fontWeight: FontWeight.w500,
+            if (value != null)
+              Text(
+                value!,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: c.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ?trailing,
-        ],
+            ?trailing,
+          ],
+        ),
       ),
     );
   }

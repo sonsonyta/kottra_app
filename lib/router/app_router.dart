@@ -5,6 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kottra_app/screens/login_screen.dart';
 import 'package:kottra_app/screens/main_screen.dart';
+import 'package:kottra_app/screens/leave/leave_list_screen.dart';
+import 'package:kottra_app/screens/leave/request_leave_screen.dart';
+import 'package:kottra_app/viewmodels/leave_view_model.dart';
+import 'package:kottra_app/viewmodels/main_view_model.dart';
 
 class _GoRouterRefreshStream extends ChangeNotifier {
   _GoRouterRefreshStream(Stream<dynamic> stream) {
@@ -42,5 +46,19 @@ final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(path: '/main', builder: (context, state) => const MainScreen()),
+    GoRoute(
+      path: '/leaves',
+      builder: (context, state) {
+        final mainViewModel = state.extra as MainViewModel;
+        return LeaveListScreen(mainViewModel: mainViewModel);
+      },
+    ),
+    GoRoute(
+      path: '/leaves/request',
+      builder: (context, state) {
+        final viewModel = state.extra as LeaveViewModel;
+        return RequestLeaveScreen(viewModel: viewModel);
+      },
+    ),
   ],
 );

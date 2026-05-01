@@ -1,5 +1,6 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/screens/tabs/tab_helpers.dart';
@@ -33,6 +34,8 @@ class HomeTab extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               _TodayStatsRow(attendanceViewModel: attendanceViewModel),
+              const SizedBox(height: 20),
+              _QuickActionsRow(viewModel: viewModel),
               const SizedBox(height: 24),
               const SectionHeader(title: 'Recent Attendance'),
               const SizedBox(height: 12),
@@ -513,6 +516,101 @@ class _ViewAllButton extends StatelessWidget {
           Icon(Icons.arrow_forward_rounded, size: 16, color: c.primary),
         ],
       ),
+    );
+  }
+}
+
+class _QuickActionsRow extends StatelessWidget {
+  const _QuickActionsRow({required this.viewModel});
+
+  final MainViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = appColors(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title: 'Quick Actions'),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () => context.push('/leaves', extra: viewModel),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: c.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: c.divider),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: c.infoLight,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.calendar_month_outlined, color: c.primary, size: 24),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Request Leave',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: c.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: InkWell(
+                onTap: () => viewModel.setTabIndex(2), // Payroll tab
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: c.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: c.divider),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: c.successLight,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.receipt_long_outlined, color: c.success, size: 24),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'My Payslips',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: c.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

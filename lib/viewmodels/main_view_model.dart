@@ -111,6 +111,8 @@ class MainViewModel extends ChangeNotifier {
 
   // ── Employee profile ─────────────────────────────────────────────────────────
 
+  String get storeId => _identity?.storeId ?? '';
+  String get employeeId => _identity?.employeeId ?? '';
   String get employeeCode => _employee?.employeeCode ?? _identity?.employeeId ?? '—';
   String get position => _employee?.position ?? '—';
   String? get department => _employee?.department;
