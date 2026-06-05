@@ -8,6 +8,10 @@
 	<string>Kottra uses your location to verify on-site check-ins.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Kottra uses your location to verify on-site check-ins, even when the app is in the background.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Kottra requires camera access so you can take a profile picture or scan documents.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Kottra requires photo library access so you can upload a profile picture or documents.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

@@ -1,3 +1,25 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+enum LeaveType {
+  paidLeave('Paid Leave'),
+  unpaidLeave('Unpaid Leave'),
+  sickLeave('Sick Leave'),
+  annualLeave('Annual Leave'),
+  other('Other');
+
+  const LeaveType(this.value);
+
+  final String value;
+
+  static LeaveType? fromString(String? value) {
+    if (value == null) return null;
+    for (final s in LeaveType.values) {
+      if (s.value == value) return s;
+    }
+    return null;
+  }
+}
+
 enum AttendanceStatus {
   present('Present'),
   absent('Absent'),
@@ -28,9 +50,14 @@ class AttendanceRecord {
     this.checkIn,
     this.checkOut,
     required this.status,
-    this.note,
+    this.leaveType,
+    this.lateCheckInNote,
+    this.earlyCheckOutNote,
+    this.leaveNote,
+    this.absentNote,
     this.workingHours,
     this.overtimeHours,
+    this.location,
   });
 
   final String id;
@@ -38,15 +65,19 @@ class AttendanceRecord {
   final String employeeId;
   final String employeeName;
 
-  /// Midnight timestamp — used for querying by day.
-  final DateTime date;
+  final String date;
   final DateTime? checkIn;
   final DateTime? checkOut;
 
   final AttendanceStatus status;
-  final String? note;
+  final LeaveType? leaveType;
+  final String? lateCheckInNote;
+  final String? earlyCheckOutNote;
+  final String? leaveNote;
+  final String? absentNote;
   final double? workingHours;
   final double? overtimeHours;
+  final GeoPoint? location;
 
   Duration? get duration {
     if (checkIn == null || checkOut == null) return null;
@@ -68,13 +99,18 @@ class AttendanceRecord {
       storeId: map['storeId'] as String,
       employeeId: map['employeeId'] as String,
       employeeName: map['employeeName'] as String,
-      date: toDateTime(map['date']),
+      date: map['date'] as String,
       checkIn: map['checkIn'] != null ? toDateTime(map['checkIn']) : null,
       checkOut: map['checkOut'] != null ? toDateTime(map['checkOut']) : null,
       status: AttendanceStatus.fromString(map['status'] as String),
-      note: map['note'] as String?,
+      leaveType: LeaveType.fromString(map['leaveType'] as String?),
+      lateCheckInNote: map['lateCheckInNote'] as String?,
+      earlyCheckOutNote: map['earlyCheckOutNote'] as String?,
+      leaveNote: map['leaveNote'] as String?,
+      absentNote: map['absentNote'] as String?,
       workingHours: (map['workingHours'] as num?)?.toDouble(),
       overtimeHours: (map['overtimeHours'] as num?)?.toDouble(),
+      location: map['location'] is GeoPoint ? map['location'] as GeoPoint : null,
     );
   }
 
@@ -86,8 +122,13 @@ class AttendanceRecord {
         'checkIn': checkIn,
         'checkOut': checkOut,
         'status': status.value,
-        if (note != null) 'note': note,
+        if (leaveType != null) 'leaveType': leaveType!.value,
+        if (lateCheckInNote != null) 'lateCheckInNote': lateCheckInNote,
+        if (earlyCheckOutNote != null) 'earlyCheckOutNote': earlyCheckOutNote,
+        if (leaveNote != null) 'leaveNote': leaveNote,
+        if (absentNote != null) 'absentNote': absentNote,
         if (workingHours != null) 'workingHours': workingHours,
         if (overtimeHours != null) 'overtimeHours': overtimeHours,
+        if (location != null) 'location': location,
       };
 }

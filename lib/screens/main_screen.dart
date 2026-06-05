@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kottra_app/screens/tabs/attendance_tab.dart';
 import 'package:kottra_app/screens/tabs/home_tab.dart';
 import 'package:kottra_app/screens/tabs/payroll_tab.dart';
+import 'package:kottra_app/config/feature_flags.dart';
 import 'package:kottra_app/screens/tabs/profile_tab.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/viewmodels/attendance_view_model.dart';
@@ -63,7 +64,7 @@ class _MainScreenState extends State<MainScreen> {
                 now: _now,
               ),
               AttendanceTab(attendanceViewModel: _attendanceViewModel),
-              PayrollTab(viewModel: _viewModel),
+              if (FeatureFlags.enablePayroll) PayrollTab(viewModel: _viewModel),
               ProfileTab(viewModel: _viewModel, onLogout: _handleLogout),
             ],
           ),
@@ -129,19 +130,20 @@ class _BottomNav extends StatelessWidget {
                 currentIndex: currentIndex,
                 onTap: onTap,
               ),
-              _NavItem(
-                icon: Icons.payments_outlined,
-                activeIcon: Icons.payments_rounded,
-                label: 'Payroll',
-                index: 2,
-                currentIndex: currentIndex,
-                onTap: onTap,
-              ),
+              if (FeatureFlags.enablePayroll)
+                _NavItem(
+                  icon: Icons.payments_outlined,
+                  activeIcon: Icons.payments_rounded,
+                  label: 'Payroll',
+                  index: 2,
+                  currentIndex: currentIndex,
+                  onTap: onTap,
+                ),
               _NavItem(
                 icon: Icons.person_outline_rounded,
                 activeIcon: Icons.person_rounded,
                 label: 'Profile',
-                index: 3,
+                index: FeatureFlags.enablePayroll ? 3 : 2,
                 currentIndex: currentIndex,
                 onTap: onTap,
               ),

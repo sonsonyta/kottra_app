@@ -18,6 +18,8 @@ class AttendanceTab extends StatelessWidget {
         records.where((r) => r.status == AttendanceStatus.late).length;
     final absentCount =
         records.where((r) => r.status == AttendanceStatus.absent).length;
+    final leaveCount =
+        records.where((r) => r.status == AttendanceStatus.leave).length;
 
     return CustomScrollView(
       slivers: [
@@ -52,6 +54,15 @@ class AttendanceTab extends StatelessWidget {
                       label: 'Absent',
                       color: c.error,
                       background: c.errorLight,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _SummaryCard(
+                      value: '$leaveCount',
+                      label: 'Leave',
+                      color: c.primary,
+                      background: c.infoLight,
                     ),
                   ),
                 ],

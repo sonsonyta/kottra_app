@@ -251,43 +251,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                               ),
                             ),
-                            const SizedBox(height: 18),
-                            _buildDivider(theme, c),
-                            const SizedBox(height: 18),
-                            OutlinedButton(
-                              onPressed: _viewModel.isLoading
-                                  ? null
-                                  : () => _handleLogin(
-                                      _viewModel.loginWithGoogle,
-                                    ),
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: isDark ? c.surface : Colors.white,
-                                foregroundColor: c.textPrimary,
-                                minimumSize: const Size.fromHeight(54),
-                                side: BorderSide(color: c.fieldBorder),
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: _loginFieldRadius,
-                                ),
-                                textStyle: theme.textTheme.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.w700),
-                              ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'G',
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF4285F4),
-                                    ),
-                                  ),
-                                  SizedBox(width: 14),
-                                  Text('Continue with Google'),
-                                ],
-                              ),
-                            ),
+
                             if (_viewModel.errorMessage != null) ...[
                               const SizedBox(height: 18),
                               Text(
@@ -299,31 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ],
-                            const SizedBox(height: 18),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Don't have an account? ",
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: c.textSecondary,
-                                  ),
-                                ),
-                                Text(
-                                  'Sign up',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: c.primary,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.chevron_right,
-                                  size: 18,
-                                  color: c.primary,
-                                ),
-                              ],
-                            ),
+
                           ],
                         ),
                       ),
@@ -349,26 +289,6 @@ class _LoginScreenState extends State<LoginScreen> {
         width: double.infinity,
         fit: BoxFit.fitWidth,
       ),
-    );
-  }
-
-  Widget _buildDivider(ThemeData theme, AppColors c) {
-    return Row(
-      children: [
-        Expanded(child: Container(height: 1, color: c.fieldBorder)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            'OR',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: c.textSecondary,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.1,
-            ),
-          ),
-        ),
-        Expanded(child: Container(height: 1, color: c.fieldBorder)),
-      ],
     );
   }
 

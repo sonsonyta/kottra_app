@@ -55,7 +55,7 @@ class AuthService implements AuthServiceBase {
   @override
   Future<void> signInWithEmployeeToken(String loginToken) async {
     final HttpsCallable callable = _firebaseFunctions.httpsCallable(
-      'consumeEmployeeLoginToken',
+      'consumeEmployeeLoginToken',options: HttpsCallableOptions(limitedUseAppCheckToken: true)
     );
     final HttpsCallableResult<dynamic> result = await callable.call(
       <String, dynamic>{'token': loginToken},

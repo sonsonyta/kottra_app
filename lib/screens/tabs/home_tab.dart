@@ -1,6 +1,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kottra_app/config/feature_flags.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/screens/tabs/tab_helpers.dart';
@@ -35,8 +36,10 @@ class HomeTab extends StatelessWidget {
               const SizedBox(height: 20),
               _TodayStatsRow(attendanceViewModel: attendanceViewModel),
               const SizedBox(height: 20),
-              _QuickActionsRow(viewModel: viewModel),
-              const SizedBox(height: 24),
+              if (FeatureFlags.enableLeaveRequest || FeatureFlags.enablePayroll) ...[
+                _QuickActionsRow(viewModel: viewModel),
+                const SizedBox(height: 24),
+              ],
               const SectionHeader(title: 'Recent Attendance'),
               const SizedBox(height: 12),
               ...attendanceViewModel.attendanceRecords.take(4).map(
@@ -114,7 +117,11 @@ class HomeTab extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  TabAvatar(initials: viewModel.userInitials, size: 52),
+                  TabAvatar(
+                    initials: viewModel.userInitials,
+                    imageUrl: viewModel.profileImageUrl,
+                    size: 52,
+                  ),
                 ],
               ),
             ),
@@ -138,10 +145,58 @@ class _CheckInCard extends StatelessWidget {
     return error.toString().replaceFirst('Exception: ', '');
   }
 
+  Future<String?> _promptForNote(BuildContext context, String action) async {
+    final c = appColors(context);
+    final textController = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(action, style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Add a note if you are ${action == "Check In" ? "checking in late" : "checking out early"}.', style: TextStyle(color: c.textSecondary, fontSize: 14)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: textController,
+                decoration: InputDecoration(
+                  hintText: 'Note (Optional)',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: c.surface,
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(), // returns null, meaning cancel
+              child: Text('Cancel', style: TextStyle(color: c.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(textController.text.trim()),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: c.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Confirm'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _handleCheckIn(BuildContext context) async {
+    final note = await _promptForNote(context, 'Check In');
+    if (note == null) return; // User cancelled
+
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final result = await attendanceViewModel.checkIn();
+      final result = await attendanceViewModel.checkIn(lateCheckInNote: note.isEmpty ? null : note);
       if (result == null) return;
       final String message;
       if (result.alreadyCheckedIn) {
@@ -160,9 +215,12 @@ class _CheckInCard extends StatelessWidget {
   }
 
   Future<void> _handleCheckOut(BuildContext context) async {
+    final note = await _promptForNote(context, 'Check Out');
+    if (note == null) return; // User cancelled
+
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final result = await attendanceViewModel.checkOut();
+      final result = await attendanceViewModel.checkOut(earlyCheckOutNote: note.isEmpty ? null : note);
       if (result == null) return;
       final String message;
       if (result.alreadyCheckedOut) {
@@ -214,7 +272,9 @@ class _CheckInCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: isCheckedIn ? c.successLight : c.infoLight,
+                  color: attendanceViewModel.isOnLeave
+                      ? c.warningLight
+                      : (isCheckedIn ? c.successLight : c.infoLight),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
@@ -225,16 +285,22 @@ class _CheckInCard extends StatelessWidget {
                       height: 8,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isCheckedIn ? c.success : c.textSecondary,
+                        color: attendanceViewModel.isOnLeave
+                            ? c.warning
+                            : (isCheckedIn ? c.success : c.textSecondary),
                       ),
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      isCheckedIn ? 'Checked In' : 'Not Checked In',
+                      attendanceViewModel.isOnLeave
+                          ? 'On Leave'
+                          : (isCheckedIn ? 'Checked In' : 'Not Checked In'),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: isCheckedIn ? c.success : c.textSecondary,
+                        color: attendanceViewModel.isOnLeave
+                            ? c.warning
+                            : (isCheckedIn ? c.success : c.textSecondary),
                       ),
                     ),
                   ],
@@ -280,59 +346,77 @@ class _CheckInCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: DecoratedBox(
+          if (attendanceViewModel.isOnLeave)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              alignment: Alignment.center,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(999),
-                gradient: LinearGradient(
-                  colors: isCheckedIn
-                      ? [c.error, const Color(0xFFC0392B)]
-                      : [c.primary, c.primaryDark],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: (isCheckedIn ? c.error : c.primary)
-                        .withValues(alpha: 0.35),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+                color: c.infoLight,
+                borderRadius: BorderRadius.circular(16),
               ),
-                child: ElevatedButton.icon(
-                onPressed: attendanceViewModel.isActionLoading
-                    ? null
-                    : isCheckedIn
-                        ? () => _handleCheckOut(context)
-                        : () => _handleCheckIn(context),
-                icon: attendanceViewModel.isActionLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              child: Text(
+                'You are on leave today${attendanceViewModel.todayRecord?.leaveType != null ? ' (${attendanceViewModel.todayRecord!.leaveType!.value})' : ''}.',
+                style: TextStyle(
+                  color: c.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  gradient: LinearGradient(
+                    colors: isCheckedIn
+                        ? [c.error, const Color(0xFFC0392B)]
+                        : [c.primary, c.primaryDark],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isCheckedIn ? c.error : c.primary)
+                          .withValues(alpha: 0.35),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                  child: ElevatedButton.icon(
+                  onPressed: attendanceViewModel.isActionLoading
+                      ? null
+                      : isCheckedIn
+                          ? () => _handleCheckOut(context)
+                          : () => _handleCheckIn(context),
+                  icon: attendanceViewModel.isActionLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Icon(
+                          isCheckedIn ? Icons.logout_rounded : Icons.login_rounded,
+                          size: 20,
                         ),
-                      )
-                    : Icon(
-                        isCheckedIn ? Icons.logout_rounded : Icons.login_rounded,
-                        size: 20,
-                      ),
-                label: Text(isCheckedIn ? 'Check Out' : 'Check In'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: Colors.white,
-                  shadowColor: Colors.transparent,
-                  minimumSize: const Size.fromHeight(52),
-                  shape: const StadiumBorder(),
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
+                  label: Text(isCheckedIn ? 'Check Out' : 'Check In'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    shadowColor: Colors.transparent,
+                    minimumSize: const Size.fromHeight(52),
+                    shape: const StadiumBorder(),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -397,6 +481,8 @@ class _TodayStatsRow extends StatelessWidget {
         records.where((r) => r.status == AttendanceStatus.late).length;
     final absentCount =
         records.where((r) => r.status == AttendanceStatus.absent).length;
+    final leaveCount =
+        records.where((r) => r.status == AttendanceStatus.leave).length;
 
     return Row(
       children: [
@@ -427,6 +513,16 @@ class _TodayStatsRow extends StatelessWidget {
             color: c.error,
             background: c.errorLight,
             icon: Icons.cancel_outlined,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _StatChip(
+            value: '$leaveCount',
+            label: 'Leave',
+            color: c.primary,
+            background: c.infoLight,
+            icon: Icons.calendar_today_rounded,
           ),
         ),
       ],
@@ -535,9 +631,10 @@ class _QuickActionsRow extends StatelessWidget {
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(
-              child: InkWell(
-                onTap: () => context.push('/leaves', extra: viewModel),
+            if (FeatureFlags.enableLeaveRequest)
+              Expanded(
+                child: InkWell(
+                  onTap: () => context.push('/leaves', extra: viewModel),
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
@@ -571,43 +668,45 @@ class _QuickActionsRow extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: InkWell(
-                onTap: () => viewModel.setTabIndex(2), // Payroll tab
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: c.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: c.divider),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: c.successLight,
-                          shape: BoxShape.circle,
+            if (FeatureFlags.enablePayroll) ...[
+              if (FeatureFlags.enableLeaveRequest) const SizedBox(width: 12),
+              Expanded(
+                child: InkWell(
+                  onTap: () => viewModel.setTabIndex(2), // Payroll tab
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: c.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: c.divider),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: c.successLight,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.receipt_long_outlined, color: c.success, size: 24),
                         ),
-                        child: Icon(Icons.receipt_long_outlined, color: c.success, size: 24),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'My Payslips',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: c.textPrimary,
+                        const SizedBox(height: 8),
+                        Text(
+                          'My Payslips',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: c.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ],

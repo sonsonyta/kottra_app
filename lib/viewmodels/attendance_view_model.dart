@@ -68,6 +68,9 @@ class AttendanceViewModel extends ChangeNotifier {
     });
   }
 
+  bool get isOnLeave => _todayRecord?.status == AttendanceStatus.leave;
+  AttendanceRecord? get todayRecord => _todayRecord;
+
   bool get isCheckedIn {
     final record = _todayRecord;
     if (record?.checkIn != null) {
@@ -81,7 +84,12 @@ class AttendanceViewModel extends ChangeNotifier {
 
   List<AttendanceRecord> get attendanceRecords => _history;
 
-  Future<CheckInResult?> checkIn() async {
+  Future<CheckInResult?> checkIn({
+    String? lateCheckInNote,
+    String? earlyCheckOutNote,
+    String? leaveNote,
+    String? absentNote,
+  }) async {
     final identity = _identity;
     if (identity == null) return null;
 
@@ -94,6 +102,10 @@ class AttendanceViewModel extends ChangeNotifier {
         employeeId: identity.employeeId,
         latitude: coords?.latitude,
         longitude: coords?.longitude,
+        lateCheckInNote: lateCheckInNote,
+        earlyCheckOutNote: earlyCheckOutNote,
+        leaveNote: leaveNote,
+        absentNote: absentNote,
       );
 
       if (result.success && !result.alreadyCheckedIn) {
@@ -108,7 +120,12 @@ class AttendanceViewModel extends ChangeNotifier {
     }
   }
 
-  Future<CheckOutResult?> checkOut() async {
+  Future<CheckOutResult?> checkOut({
+    String? lateCheckInNote,
+    String? earlyCheckOutNote,
+    String? leaveNote,
+    String? absentNote,
+  }) async {
     final identity = _identity;
     if (identity == null) return null;
 
@@ -125,6 +142,10 @@ class AttendanceViewModel extends ChangeNotifier {
         employeeId: identity.employeeId,
         latitude: coords?.latitude,
         longitude: coords?.longitude,
+        lateCheckInNote: lateCheckInNote,
+        earlyCheckOutNote: earlyCheckOutNote,
+        leaveNote: leaveNote,
+        absentNote: absentNote,
       );
 
       if (result.success && !result.alreadyCheckedOut) {

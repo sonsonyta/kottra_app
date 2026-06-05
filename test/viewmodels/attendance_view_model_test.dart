@@ -53,6 +53,10 @@ class FakeAttendanceService implements AttendanceService {
     required String employeeId,
     double? latitude,
     double? longitude,
+    String? lateCheckInNote,
+    String? earlyCheckOutNote,
+    String? leaveNote,
+    String? absentNote,
   }) async {
     checkInCalls++;
     lastStoreId = storeId;
@@ -71,6 +75,10 @@ class FakeAttendanceService implements AttendanceService {
     required String employeeId,
     double? latitude,
     double? longitude,
+    String? lateCheckInNote,
+    String? earlyCheckOutNote,
+    String? leaveNote,
+    String? absentNote,
   }) async {
     checkOutCalls++;
     lastStoreId = storeId;

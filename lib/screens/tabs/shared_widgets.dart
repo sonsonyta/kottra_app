@@ -126,7 +126,7 @@ class AttendanceListItem extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Text(
-              '${record.date.day}',
+              '${DateTime.tryParse(record.date)?.day ?? ''}',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
@@ -140,7 +140,7 @@ class AttendanceListItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  fmtDateShort(record.date),
+                  fmtDateShort(DateTime.tryParse(record.date) ?? DateTime.now()),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -154,7 +154,7 @@ class AttendanceListItem extends StatelessWidget {
                       : record.status == AttendanceStatus.absent
                           ? 'No attendance recorded'
                           : record.status == AttendanceStatus.leave
-                              ? record.note ?? 'On leave'
+                              ? record.leaveNote ?? 'On leave'
                               : record.status == AttendanceStatus.holiday
                                   ? 'Public holiday'
                                   : '--:-- – --:--',

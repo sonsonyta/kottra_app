@@ -55,7 +55,7 @@ class AttendanceService {
            callable ??
            ((name, params) async {
              final fn = (functions ?? FirebaseFunctions.instance).httpsCallable(
-               name,
+               name,options: HttpsCallableOptions(limitedUseAppCheckToken: true)
              );
              final result = await fn.call(params);
              return result.data;
@@ -77,9 +77,10 @@ class AttendanceService {
     String employeeId,
   ) {
     final midnight = _midnight(DateTime.now());
+    final dateString = "${midnight.year}-${midnight.month.toString().padLeft(2, '0')}-${midnight.day.toString().padLeft(2, '0')}";
     return _col(storeId)
         .where('employeeId', isEqualTo: employeeId)
-        .where('date', isEqualTo: Timestamp.fromDate(midnight))
+        .where('date', isEqualTo: dateString)
         .limit(1)
         .snapshots()
         .map((snap) {
@@ -115,12 +116,20 @@ class AttendanceService {
     required String employeeId,
     double? latitude,
     double? longitude,
+    String? lateCheckInNote,
+    String? earlyCheckOutNote,
+    String? leaveNote,
+    String? absentNote,
   }) async {
     final data = await _callable('employeeCheckIn', <String, dynamic>{
       'storeId': storeId,
       'employeeId': employeeId,
       'latitude': ?latitude,
       'longitude': ?longitude,
+      if (lateCheckInNote != null && lateCheckInNote.isNotEmpty) 'lateCheckInNote': lateCheckInNote,
+      if (earlyCheckOutNote != null && earlyCheckOutNote.isNotEmpty) 'earlyCheckOutNote': earlyCheckOutNote,
+      if (leaveNote != null && leaveNote.isNotEmpty) 'leaveNote': leaveNote,
+      if (absentNote != null && absentNote.isNotEmpty) 'absentNote': absentNote,
     });
 
     if (data is! Map) {
@@ -138,6 +147,10 @@ class AttendanceService {
     required String employeeId,
     double? latitude,
     double? longitude,
+    String? lateCheckInNote,
+    String? earlyCheckOutNote,
+    String? leaveNote,
+    String? absentNote,
   }) async {
     final data =  await _callable('employeeCheckOut', <String, dynamic>{
       'storeId': storeId,
@@ -145,6 +158,10 @@ class AttendanceService {
       'employeeId': employeeId,
       'latitude': ?latitude,
       'longitude': ?longitude,
+      if (lateCheckInNote != null && lateCheckInNote.isNotEmpty) 'lateCheckInNote': lateCheckInNote,
+      if (earlyCheckOutNote != null && earlyCheckOutNote.isNotEmpty) 'earlyCheckOutNote': earlyCheckOutNote,
+      if (leaveNote != null && leaveNote.isNotEmpty) 'leaveNote': leaveNote,
+      if (absentNote != null && absentNote.isNotEmpty) 'absentNote': absentNote,
     });
 
     if (data is! Map) {

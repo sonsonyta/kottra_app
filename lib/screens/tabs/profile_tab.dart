@@ -24,18 +24,7 @@ class ProfileTab extends StatelessWidget {
               const SizedBox(height: 20),
               _ProfileSection(
                 items: [
-                  _ProfileMenuItem(
-                    icon: Icons.calendar_today_outlined,
-                    label: 'My Leaves',
-                    onTap: () {
-                      context.push('/leaves', extra: viewModel);
-                    },
-                    trailing: Icon(
-                      Icons.chevron_right_rounded,
-                      color: appColors(context).textSecondary,
-                      size: 20,
-                    ),
-                  ),
+
                   _ProfileMenuItem(
                     icon: Icons.badge_outlined,
                     label: 'Employee ID',
@@ -52,35 +41,10 @@ class ProfileTab extends StatelessWidget {
                       label: 'Department',
                       value: viewModel.department!,
                     ),
-                  if (viewModel.workLocation != null)
-                    _ProfileMenuItem(
-                      icon: Icons.location_on_outlined,
-                      label: 'Office',
-                      value: viewModel.workLocation!,
-                    ),
                 ],
               ),
               const SizedBox(height: 16),
               const _AppearanceSection(),
-              const SizedBox(height: 16),
-              _ProfileSection(
-                items: [
-                  _ProfileMenuItem(
-                    icon: Icons.notifications_outlined,
-                    label: 'Notifications',
-                    value: 'Enabled',
-                  ),
-                  _ProfileMenuItem(
-                    icon: Icons.lock_outline_rounded,
-                    label: 'Change Password',
-                    trailing: Icon(
-                      Icons.chevron_right_rounded,
-                      color: appColors(context).textSecondary,
-                      size: 20,
-                    ),
-                  ),
-                ],
-              ),
               const SizedBox(height: 24),
               _LogoutButton(onLogout: onLogout),
             ]),
