@@ -65,7 +65,7 @@ class AttendanceRecord {
   final String employeeId;
   final String employeeName;
 
-  final String date;
+  final Timestamp date;
   final DateTime? checkIn;
   final DateTime? checkOut;
 
@@ -99,7 +99,11 @@ class AttendanceRecord {
       storeId: map['storeId'] as String,
       employeeId: map['employeeId'] as String,
       employeeName: map['employeeName'] as String,
-      date: map['date'] as String,
+      date: map['date'] is Timestamp
+          ? map['date'] as Timestamp
+          : (map['date'] is String
+              ? Timestamp.fromDate(DateTime.tryParse(map['date'] as String) ?? DateTime.now())
+              : Timestamp.now()),
       checkIn: map['checkIn'] != null ? toDateTime(map['checkIn']) : null,
       checkOut: map['checkOut'] != null ? toDateTime(map['checkOut']) : null,
       status: AttendanceStatus.fromString(map['status'] as String),

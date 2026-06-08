@@ -1,0 +1,416 @@
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/material.dart';
+
+import '../../../l10n/app_localizations.dart';
+import '../../../viewmodels/attendance_view_model.dart';
+import '../../../viewmodels/main_view_model.dart';
+import '../tab_colors.dart';
+import '../tab_helpers.dart';
+
+class CheckInCard extends StatelessWidget {
+  const CheckInCard({super.key, required this.viewModel, required this.attendanceViewModel});
+
+  final MainViewModel viewModel;
+  final AttendanceViewModel attendanceViewModel;
+
+  String _formatCheckInError(Object error) {
+    if (error is FirebaseFunctionsException) {
+      return error.message ?? 'Check-in failed.';
+    }
+    return error.toString().replaceFirst('Exception: ', '');
+  }
+
+  Future<String?> _promptForNote(BuildContext context, String action) async {
+    final c = appColors(context);
+    final textController = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(action, style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(action == AppLocalizations.of(context)!.checkIn ? AppLocalizations.of(context)!.addNoteCheckInLate : AppLocalizations.of(context)!.addNoteCheckOutEarly, style: TextStyle(color: c.textSecondary, fontSize: 14)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: textController,
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(context)!.noteRequired,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: c.surface,
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(), // returns null, meaning cancel
+              child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: c.textSecondary)),
+            ),
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: textController,
+              builder: (context, value, child) {
+                final isEnabled = value.text.trim().isNotEmpty;
+                return ElevatedButton(
+                  onPressed: isEnabled ? () => Navigator.of(context).pop(value.text.trim()) : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: c.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text(AppLocalizations.of(context)!.confirm),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  bool _isLateCheckIn() {
+    final startStr = viewModel.startWorkingTime;
+    if (startStr == null || startStr.isEmpty) return false;
+    final parts = startStr.split(':');
+    if (parts.length != 2) return false;
+    final startHour = int.tryParse(parts[0]) ?? 0;
+    final startMin = int.tryParse(parts[1]) ?? 0;
+    final grace = viewModel.lateTime ?? 0;
+
+    final now = DateTime.now();
+    final limitTime = DateTime(now.year, now.month, now.day, startHour, startMin).add(Duration(minutes: grace));
+
+    return now.isAfter(limitTime);
+  }
+
+  bool _isEarlyCheckOut() {
+    final startStr = viewModel.startWorkingTime;
+    final endStr = viewModel.endWorkingTime;
+
+    if (endStr == null || endStr.isEmpty || startStr == null || startStr.isEmpty) return false;
+
+    final startParts = startStr.split(':');
+    final endParts = endStr.split(':');
+
+    if (startParts.length != 2 || endParts.length != 2) return false;
+
+    final startHour = int.tryParse(startParts[0]) ?? 0;
+    final endHour = int.tryParse(endParts[0]) ?? 0;
+    final endMin = int.tryParse(endParts[1]) ?? 0;
+
+    final now = DateTime.now();
+    DateTime endTime = DateTime(now.year, now.month, now.day, endHour, endMin);
+
+    // Cross-day schedule detection
+    if (endHour < startHour) {
+      if (now.hour >= startHour) {
+        // If checking out before midnight (e.g., 23:00), the shift ends tomorrow.
+        endTime = endTime.add(const Duration(days: 1));
+      }
+    }
+
+    return now.isBefore(endTime);
+  }
+
+  Future<void> _handleCheckIn(BuildContext context) async {
+    String? note;
+    if (_isLateCheckIn()) {
+      note = await _promptForNote(context, AppLocalizations.of(context)!.checkIn);
+      if (note == null) return; // User cancelled
+      if (!context.mounted) return;
+    }
+
+    final localizations = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final result = await attendanceViewModel.checkIn(lateCheckInNote: note?.isEmpty ?? true ? null : note);
+      if (result == null) return;
+      final String message;
+      if (result.alreadyCheckedIn) {
+        message = localizations.alreadyCheckedIn;
+      } else if (result.success) {
+        message = localizations.checkInSuccess(result.status.value);
+      } else {
+        message = localizations.checkInFailed;
+      }
+      messenger.showSnackBar(SnackBar(content: Text(message)));
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(_formatCheckInError(error))),
+      );
+    }
+  }
+
+  Future<void> _handleCheckOut(BuildContext context) async {
+    String? note;
+    if (_isEarlyCheckOut()) {
+      note = await _promptForNote(context, AppLocalizations.of(context)!.checkOut);
+      if (note == null) return; // User cancelled
+      if (!context.mounted) return;
+    }
+
+    final localizations = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final result = await attendanceViewModel.checkOut(earlyCheckOutNote: note?.isEmpty ?? true ? null : note);
+      if (result == null) return;
+      final String message;
+      if (result.alreadyCheckedOut) {
+        message = localizations.alreadyCheckedOut;
+      } else if (result.success) {
+        message = localizations.checkOutSuccess;
+      } else {
+        message = localizations.checkOutFailed;
+      }
+      messenger.showSnackBar(SnackBar(content: Text(message)));
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(_formatCheckInError(error))),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = appColors(context);
+    final isCheckedIn = attendanceViewModel.isCheckedIn;
+    final checkInTime = attendanceViewModel.checkInTime;
+    final checkOutTime = attendanceViewModel.checkOutTime;
+    final isCheckedOut = !isCheckedIn && checkOutTime != null;
+
+    Duration? elapsed;
+    if (isCheckedIn && checkInTime != null) {
+      elapsed = DateTime.now().difference(checkInTime);
+    } else if (!isCheckedIn && checkInTime != null && checkOutTime != null) {
+      elapsed = checkOutTime.difference(checkInTime);
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: c.shadow,
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: (attendanceViewModel.isOnLeave || attendanceViewModel.isAbsent)
+                      ? c.warningLight
+                      : (isCheckedIn ? c.successLight : c.infoLight),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: (attendanceViewModel.isOnLeave || attendanceViewModel.isAbsent)
+                            ? c.warning
+                            : (isCheckedIn ? c.success : c.textSecondary),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      (attendanceViewModel.isOnLeave || attendanceViewModel.isAbsent)
+                          ? (attendanceViewModel.isOnLeave ? AppLocalizations.of(context)!.onLeave : AppLocalizations.of(context)!.absent)
+                          : (isCheckedIn
+                              ? AppLocalizations.of(context)!.checkedIn
+                              : (isCheckedOut
+                                  ? AppLocalizations.of(context)!.checkedOut
+                                  : AppLocalizations.of(context)!.notCheckedIn)),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: (attendanceViewModel.isOnLeave || attendanceViewModel.isAbsent)
+                            ? c.warning
+                            : (isCheckedIn ? c.success : c.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              if (elapsed != null)
+                Text(
+                  fmtDuration(elapsed),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: c.textPrimary,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _TimeDisplay(
+                  label: AppLocalizations.of(context)!.checkIn,
+                  time: fmtTime(checkInTime),
+                  iconColor: c.success,
+                  icon: Icons.login_rounded,
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: c.divider,
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              Expanded(
+                child: _TimeDisplay(
+                  label: AppLocalizations.of(context)!.checkOut,
+                  time: fmtTime(checkOutTime),
+                  iconColor: c.error,
+                  icon: Icons.logout_rounded,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (attendanceViewModel.isOnLeave || attendanceViewModel.isAbsent)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: c.infoLight,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                attendanceViewModel.isOnLeave
+                    ? '${AppLocalizations.of(context)!.onLeaveToday}${attendanceViewModel.todayRecord?.leaveType != null ? ' (${attendanceViewModel.todayRecord!.leaveType!.value})' : ''}.'
+                    : AppLocalizations.of(context)!.absent,
+                style: TextStyle(
+                  color: c.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  gradient: isCheckedOut
+                      ? null
+                      : LinearGradient(
+                          colors: isCheckedIn
+                              ? [c.error, const Color(0xFFC0392B)]
+                              : [c.primary, c.primaryDark],
+                        ),
+                  color: isCheckedOut ? c.divider : null,
+                  boxShadow: [
+                    if (!isCheckedOut)
+                      BoxShadow(
+                        color: (isCheckedIn ? c.error : c.primary)
+                            .withValues(alpha: 0.35),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                  ],
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: (attendanceViewModel.isActionLoading || isCheckedOut)
+                      ? null
+                      : isCheckedIn
+                      ? () => _handleCheckOut(context)
+                      : () => _handleCheckIn(context),
+                  icon: attendanceViewModel.isActionLoading
+                      ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                      : Icon(
+                    isCheckedOut ? Icons.check_circle_rounded : (isCheckedIn ? Icons.logout_rounded : Icons.login_rounded),
+                    size: 20,
+                  ),
+                  label: Text(isCheckedOut
+                      ? AppLocalizations.of(context)!.checkedOut
+                      : (isCheckedIn ? AppLocalizations.of(context)!.checkOut : AppLocalizations.of(context)!.checkIn)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: isCheckedOut ? c.textSecondary : Colors.white,
+                    disabledForegroundColor: isCheckedOut ? c.textSecondary : null,
+                    shadowColor: Colors.transparent,
+                    minimumSize: const Size.fromHeight(52),
+                    shape: const StadiumBorder(),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimeDisplay extends StatelessWidget {
+  const _TimeDisplay({
+    required this.label,
+    required this.time,
+    required this.iconColor,
+    required this.icon,
+  });
+
+  final String label;
+  final String time;
+  final Color iconColor;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = appColors(context);
+    return Column(
+      children: [
+        Icon(icon, color: iconColor, size: 22),
+        const SizedBox(height: 6),
+        Text(
+          time,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: c.textPrimary,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: c.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+}

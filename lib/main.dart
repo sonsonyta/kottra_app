@@ -10,22 +10,30 @@ import 'package:kottra_app/firebase_options.dart';
 import 'package:kottra_app/router/app_router.dart';
 import 'package:kottra_app/theme/app_theme.dart';
 import 'package:kottra_app/theme/theme_controller.dart';
+import 'package:kottra_app/theme/locale_controller.dart';
+
+import 'package:intl/date_symbol_data_local.dart';
+
+import 'l10n/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await ThemeController.instance.load();
+  await LocaleController.instance.load();
 
   if (kDebugMode) {
+
     await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
     FirebaseFunctions.instance.useFunctionsEmulator('localhost', 5001);
     FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
     await FirebaseStorage.instance.useStorageEmulator('localhost', 9199);
 
-    await FirebaseAppCheck.instance.activate(
+    /*await FirebaseAppCheck.instance.activate(
       providerAndroid: const AndroidDebugProvider(),
-      providerApple: const AppleDebugProvider(),
-    );
+      providerApple: const AppleDebugProvider()
+    );*/
   }else{
     await FirebaseAppCheck.instance.activate(
       providerAndroid: const AndroidPlayIntegrityProvider(),
@@ -42,7 +50,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: ThemeController.instance,
+      listenable: Listenable.merge([ThemeController.instance, LocaleController.instance]),
       builder: (context, _) {
         return MaterialApp.router(
           title: 'Kottra App',
@@ -50,6 +58,9 @@ class MyApp extends StatelessWidget {
           theme: buildLightTheme(),
           darkTheme: buildDarkTheme(),
           themeMode: ThemeController.instance.mode,
+          locale: LocaleController.instance.locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           routerConfig: appRouter,
         );
       },

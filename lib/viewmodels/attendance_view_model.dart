@@ -25,7 +25,6 @@ class AttendanceViewModel extends ChangeNotifier {
   final AttendanceService _attendanceService;
   final LocationServiceBase _locationService;
 
-  StreamSubscription<AttendanceRecord?>? _todaySub;
   StreamSubscription<List<AttendanceRecord>>? _historySub;
 
   AttendanceRecord? _todayRecord;
@@ -47,28 +46,65 @@ class AttendanceViewModel extends ChangeNotifier {
     final identity = _identity;
     if (identity == null) return;
 
-    _todaySub?.cancel();
-    _todaySub = _attendanceService
-        .streamTodayRecord(identity.storeId, identity.employeeId)
-        .listen((record) {
-      _todayRecord = record;
-      if (record?.checkIn != null) {
-        _optimisticAttendanceId = null;
-        _optimisticCheckInAt = null;
-      }
-      notifyListeners();
-    });
-
     _historySub?.cancel();
     _historySub = _attendanceService
         .streamHistory(identity.storeId, identity.employeeId)
         .listen((records) {
       _history = records;
+      _updateTodayRecord();
       notifyListeners();
     });
   }
 
+  void _updateTodayRecord() {
+    if (_history.isEmpty) {
+      _todayRecord = null;
+      return;
+    }
+
+    final latest = _history.first;
+    // If the latest record is still active (checked in but not checked out),
+    // treat it as the current active record, even if it started yesterday.
+    if (latest.checkIn != null && latest.checkOut == null) {
+      _todayRecord = latest;
+    } else {
+      final now = DateTime.now();
+      final recordDate = latest.date.toDate();
+      final isTodayDate = recordDate.year == now.year && recordDate.month == now.month && recordDate.day == now.day;
+      
+      if (latest.checkOut != null) {
+        final hoursSinceCheckOut = now.difference(latest.checkOut!).inHours;
+        if (hoursSinceCheckOut < 10) {
+          // Less than 10 hours since check-out
+          _todayRecord = latest;
+        } else {
+          // More than 10 hours since check-out
+          // If they marked absent or leave today, they can't check in.
+          if (isTodayDate && (latest.status == AttendanceStatus.absent || latest.status == AttendanceStatus.leave)) {
+            _todayRecord = latest;
+          } else {
+            _todayRecord = null;
+          }
+        }
+      } else {
+        // No checkOut time, so they are either still checked in (handled above)
+        // or they were marked absent/leave (which has no checkIn/checkOut).
+        if (isTodayDate) {
+          _todayRecord = latest;
+        } else {
+          _todayRecord = null;
+        }
+      }
+    }
+
+    if (_todayRecord?.checkIn != null) {
+      _optimisticAttendanceId = null;
+      _optimisticCheckInAt = null;
+    }
+  }
+
   bool get isOnLeave => _todayRecord?.status == AttendanceStatus.leave;
+  bool get isAbsent => _todayRecord?.status == AttendanceStatus.absent;
   AttendanceRecord? get todayRecord => _todayRecord;
 
   bool get isCheckedIn {
@@ -150,7 +186,7 @@ class AttendanceViewModel extends ChangeNotifier {
 
       if (result.success && !result.alreadyCheckedOut) {
         _optimisticAttendanceId = result.attendanceId;
-        _optimisticCheckInAt = DateTime.now();
+        _optimisticCheckInAt = null;
         notifyListeners();
       }
       return result;
@@ -162,7 +198,6 @@ class AttendanceViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
-    _todaySub?.cancel();
     _historySub?.cancel();
     super.dispose();
   }

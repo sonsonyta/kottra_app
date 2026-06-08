@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/viewmodels/attendance_view_model.dart';
+import '../../l10n/app_localizations.dart';
 
 class AttendanceTab extends StatelessWidget {
   const AttendanceTab({super.key, required this.attendanceViewModel});
@@ -33,7 +34,7 @@ class AttendanceTab extends StatelessWidget {
                   Expanded(
                     child: _SummaryCard(
                       value: '$presentCount',
-                      label: 'Present',
+                      label: AppLocalizations.of(context)!.present,
                       color: c.success,
                       background: c.successLight,
                     ),
@@ -42,7 +43,7 @@ class AttendanceTab extends StatelessWidget {
                   Expanded(
                     child: _SummaryCard(
                       value: '$lateCount',
-                      label: 'Late',
+                      label: AppLocalizations.of(context)!.late,
                       color: c.warning,
                       background: c.warningLight,
                     ),
@@ -51,7 +52,7 @@ class AttendanceTab extends StatelessWidget {
                   Expanded(
                     child: _SummaryCard(
                       value: '$absentCount',
-                      label: 'Absent',
+                      label: AppLocalizations.of(context)!.absent,
                       color: c.error,
                       background: c.errorLight,
                     ),
@@ -60,7 +61,7 @@ class AttendanceTab extends StatelessWidget {
                   Expanded(
                     child: _SummaryCard(
                       value: '$leaveCount',
-                      label: 'Leave',
+                      label: AppLocalizations.of(context)!.leave,
                       color: c.primary,
                       background: c.infoLight,
                     ),
@@ -68,7 +69,7 @@ class AttendanceTab extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              const SectionHeader(title: 'Attendance History'),
+              SectionHeader(title: AppLocalizations.of(context)!.attendanceHistory),
               const SizedBox(height: 12),
               ...records.map(
                 (r) => Padding(
@@ -89,9 +90,9 @@ class AttendanceTab extends StatelessWidget {
       pinned: true,
       backgroundColor: c.primary,
       elevation: 0,
-      title: const Text(
-        'Attendance',
-        style: TextStyle(
+      title: Text(
+        AppLocalizations.of(context)!.attendance,
+        style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w800,
           fontSize: 20,

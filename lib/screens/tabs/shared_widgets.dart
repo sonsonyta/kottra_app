@@ -101,6 +101,7 @@ class AttendanceListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = appColors(context);
     final cfg = _statusConfig(record.status, c);
+    final displayDate = record.checkIn ?? record.checkOut ?? record.date.toDate();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -126,7 +127,7 @@ class AttendanceListItem extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Text(
-              '${DateTime.tryParse(record.date)?.day ?? ''}',
+              '${displayDate.day}',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
@@ -139,31 +140,51 @@ class AttendanceListItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  fmtDateShort(DateTime.tryParse(record.date) ?? DateTime.now()),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: c.textPrimary,
+                if (record.checkIn != null)
+                  Text(
+                    'In: ${fmtDateShort(record.checkIn!)} ${fmtTime(record.checkIn)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: c.textPrimary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  record.checkIn != null && record.checkOut != null
-                      ? '${fmtTime(record.checkIn)} – ${fmtTime(record.checkOut)}'
-                      : record.status == AttendanceStatus.absent
-                          ? 'No attendance recorded'
-                          : record.status == AttendanceStatus.leave
-                              ? record.leaveNote ?? 'On leave'
-                              : record.status == AttendanceStatus.holiday
-                                  ? 'Public holiday'
-                                  : '--:-- – --:--',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: c.textSecondary,
-                    fontWeight: FontWeight.w500,
+                if (record.checkOut != null) ...[
+                  if (record.checkIn != null) const SizedBox(height: 4),
+                  Text(
+                    'Out: ${fmtDateShort(record.checkOut!)} ${fmtTime(record.checkOut)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: c.textPrimary,
+                    ),
                   ),
-                ),
+                ],
+                if (record.checkIn == null && record.checkOut == null) ...[
+                  Text(
+                    fmtDateShort(record.date.toDate()),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: c.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    record.status == AttendanceStatus.absent
+                        ? 'No attendance recorded'
+                        : record.status == AttendanceStatus.leave
+                            ? record.leaveNote ?? 'On leave'
+                            : record.status == AttendanceStatus.holiday
+                                ? 'Public holiday'
+                                : '--:--',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: c.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

@@ -24,6 +24,7 @@ class LocationService implements LocationServiceBase {
     }
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
+      print('Location permission denied: $permission');
       return null;
     }
 
@@ -38,7 +39,8 @@ class LocationService implements LocationServiceBase {
         latitude: position.latitude,
         longitude: position.longitude,
       );
-    } catch (_) {
+    } catch (e) {
+      print('Failed to get location: $e');
       return null;
     }
   }

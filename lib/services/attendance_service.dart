@@ -121,7 +121,7 @@ class AttendanceService {
     String? leaveNote,
     String? absentNote,
   }) async {
-    final data = await _callable('employeeCheckIn', <String, dynamic>{
+    final data = await _callable('employeeCheckInV1', <String, dynamic>{
       'storeId': storeId,
       'employeeId': employeeId,
       'latitude': ?latitude,
@@ -152,7 +152,7 @@ class AttendanceService {
     String? leaveNote,
     String? absentNote,
   }) async {
-    final data =  await _callable('employeeCheckOut', <String, dynamic>{
+    final data =  await _callable('employeeCheckOutV1', <String, dynamic>{
       'storeId': storeId,
       'attendanceId': attendanceId,
       'employeeId': employeeId,

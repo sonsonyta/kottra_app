@@ -1,9 +1,15 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/theme/theme_controller.dart';
+import 'package:kottra_app/theme/locale_controller.dart';
 import 'package:kottra_app/viewmodels/main_view_model.dart';
+
+import '../../../l10n/app_localizations.dart';
+import 'edit_profile.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key, required this.viewModel, required this.onLogout});
@@ -27,24 +33,26 @@ class ProfileTab extends StatelessWidget {
 
                   _ProfileMenuItem(
                     icon: Icons.badge_outlined,
-                    label: 'Employee ID',
+                    label: AppLocalizations.of(context)!.employeeId,
                     value: viewModel.employeeCode,
                   ),
                   _ProfileMenuItem(
                     icon: Icons.work_outline_rounded,
-                    label: 'Position',
+                    label: AppLocalizations.of(context)!.position,
                     value: viewModel.position,
                   ),
                   if (viewModel.department != null)
                     _ProfileMenuItem(
                       icon: Icons.business_center_outlined,
-                      label: 'Department',
+                      label: AppLocalizations.of(context)!.department,
                       value: viewModel.department!,
                     ),
                 ],
               ),
               const SizedBox(height: 16),
               const _AppearanceSection(),
+              const SizedBox(height: 16),
+              const _LanguageSection(),
               const SizedBox(height: 24),
               _LogoutButton(onLogout: onLogout),
             ]),
@@ -60,14 +68,27 @@ class ProfileTab extends StatelessWidget {
       pinned: true,
       backgroundColor: c.primary,
       elevation: 0,
-      title: const Text(
-        'Profile',
-        style: TextStyle(
+      title: Text(
+        AppLocalizations.of(context)!.profile,
+        style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w800,
           fontSize: 20,
         ),
       ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.edit_outlined, color: Colors.white),
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => EditProfileSheet(viewModel: viewModel),
+            );
+          },
+        ),
+      ],
       flexibleSpace: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -198,9 +219,7 @@ class _ProfileMenuItem extends StatelessWidget {
   const _ProfileMenuItem({
     required this.icon,
     required this.label,
-    this.value,
-    this.trailing,
-    this.onTap,
+    this.value, this.trailing, this.onTap,
   });
 
   final IconData icon;
@@ -274,7 +293,7 @@ class _AppearanceSection extends StatelessWidget {
               Icon(Icons.dark_mode_outlined, color: c.primary, size: 20),
               const SizedBox(width: 14),
               Text(
-                'Appearance',
+                AppLocalizations.of(context)!.appearance,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -323,7 +342,7 @@ class _ThemeModeSelector extends StatelessWidget {
           Expanded(
             child: _ThemeModeOption(
               icon: Icons.brightness_auto_outlined,
-              label: 'Auto',
+              label: AppLocalizations.of(context)!.themeAuto,
               isSelected: selected == ThemeMode.system,
               onTap: () => onChanged(ThemeMode.system),
             ),
@@ -331,7 +350,7 @@ class _ThemeModeSelector extends StatelessWidget {
           Expanded(
             child: _ThemeModeOption(
               icon: Icons.light_mode_outlined,
-              label: 'Light',
+              label: AppLocalizations.of(context)!.themeLight,
               isSelected: selected == ThemeMode.light,
               onTap: () => onChanged(ThemeMode.light),
             ),
@@ -339,7 +358,7 @@ class _ThemeModeSelector extends StatelessWidget {
           Expanded(
             child: _ThemeModeOption(
               icon: Icons.dark_mode_outlined,
-              label: 'Dark',
+              label: AppLocalizations.of(context)!.themeDark,
               isSelected: selected == ThemeMode.dark,
               onTap: () => onChanged(ThemeMode.dark),
             ),
@@ -417,15 +436,48 @@ class _LogoutButton extends StatelessWidget {
 
   final VoidCallback onLogout;
 
+  Future<void> _confirmLogout(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final c = appColors(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(l10n.confirmLogoutTitle, style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.bold)),
+          content: Text(l10n.confirmLogoutMessage, style: TextStyle(color: c.textSecondary)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.cancel, style: TextStyle(color: c.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: c.error,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Text(l10n.yesLogout),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      onLogout();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: onLogout,
+        onPressed: () => _confirmLogout(context),
         icon: const Icon(Icons.logout_rounded, size: 18),
-        label: const Text('Logout'),
+        label: Text(AppLocalizations.of(context)!.logout),
         style: OutlinedButton.styleFrom(
           foregroundColor: c.error,
           side: BorderSide(color: c.error),
@@ -440,3 +492,82 @@ class _LogoutButton extends StatelessWidget {
     );
   }
 }
+
+class _LanguageSection extends StatelessWidget {
+  const _LanguageSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = appColors(context);
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: c.shadowSubtle,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.language_outlined, color: c.primary, size: 20),
+              const SizedBox(width: 14),
+              Text(
+                l10n.language,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: c.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListenableBuilder(
+            listenable: LocaleController.instance,
+            builder: (context, _) {
+              final selected = LocaleController.instance.locale.languageCode;
+              return Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: c.surfaceMuted,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _ThemeModeOption(
+                        icon: Icons.translate,
+                        label: 'English',
+                        isSelected: selected == 'en',
+                        onTap: () => LocaleController.instance.setLocale(const Locale('en')),
+                      ),
+                    ),
+                    Expanded(
+                      child: _ThemeModeOption(
+                        icon: Icons.translate,
+                        label: 'ភាសាខ្មែរ',
+                        isSelected: selected == 'km',
+                        onTap: () => LocaleController.instance.setLocale(const Locale('km')),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+

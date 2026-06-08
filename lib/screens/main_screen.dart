@@ -3,13 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kottra_app/screens/tabs/attendance_tab.dart';
-import 'package:kottra_app/screens/tabs/home_tab.dart';
+import 'package:kottra_app/screens/tabs/home/home_tab.dart';
 import 'package:kottra_app/screens/tabs/payroll_tab.dart';
 import 'package:kottra_app/config/feature_flags.dart';
-import 'package:kottra_app/screens/tabs/profile_tab.dart';
+import 'package:kottra_app/screens/tabs/profile/profile_tab.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/viewmodels/attendance_view_model.dart';
 import 'package:kottra_app/viewmodels/main_view_model.dart';
+
+import '../l10n/app_localizations.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -117,7 +119,7 @@ class _BottomNav extends StatelessWidget {
               _NavItem(
                 icon: Icons.home_outlined,
                 activeIcon: Icons.home_rounded,
-                label: 'Home',
+                label: AppLocalizations.of(context)!.home,
                 index: 0,
                 currentIndex: currentIndex,
                 onTap: onTap,
@@ -125,7 +127,7 @@ class _BottomNav extends StatelessWidget {
               _NavItem(
                 icon: Icons.calendar_month_outlined,
                 activeIcon: Icons.calendar_month_rounded,
-                label: 'Attendance',
+                label: AppLocalizations.of(context)!.attendance,
                 index: 1,
                 currentIndex: currentIndex,
                 onTap: onTap,
@@ -134,7 +136,7 @@ class _BottomNav extends StatelessWidget {
                 _NavItem(
                   icon: Icons.payments_outlined,
                   activeIcon: Icons.payments_rounded,
-                  label: 'Payroll',
+                  label: AppLocalizations.of(context)!.payroll,
                   index: 2,
                   currentIndex: currentIndex,
                   onTap: onTap,
@@ -142,7 +144,7 @@ class _BottomNav extends StatelessWidget {
               _NavItem(
                 icon: Icons.person_outline_rounded,
                 activeIcon: Icons.person_rounded,
-                label: 'Profile',
+                label: AppLocalizations.of(context)!.profile,
                 index: FeatureFlags.enablePayroll ? 3 : 2,
                 currentIndex: currentIndex,
                 onTap: onTap,

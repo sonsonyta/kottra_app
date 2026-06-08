@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_image_compress_lite/flutter_image_compress_lite.dart';
 import 'package:kottra_app/models/hr_employee.dart';
 import 'package:kottra_app/models/hr_payslip.dart';
 import 'package:kottra_app/services/auth_service.dart';
@@ -88,6 +90,9 @@ class MainViewModel extends ChangeNotifier {
   User? get _currentUser => _firebaseAuth.currentUser;
 
   String get userName {
+    if (_employee != null && _employee!.fullName.trim().isNotEmpty) {
+      return _employee!.fullName;
+    }
     final user = _currentUser;
     if (user?.displayName != null && user!.displayName!.isNotEmpty) {
       return user.displayName!;
@@ -113,16 +118,91 @@ class MainViewModel extends ChangeNotifier {
 
   String get storeId => _identity?.storeId ?? '';
   String get employeeId => _identity?.employeeId ?? '';
+  String get firstName => _employee?.firstName ?? '';
+  String get lastName => _employee?.lastName ?? '';
   String get employeeCode => _employee?.employeeCode ?? _identity?.employeeId ?? '—';
   String get position => _employee?.position ?? '—';
   String? get department => _employee?.department;
   String? get workLocation => _employee?.workLocation;
+  String? get startWorkingTime => _employee?.startWorkingTime;
+  String? get endWorkingTime => _employee?.endWorkingTime;
+  int? get lateTime => _employee?.lateTime;
   EmployeeStatus get employeeStatus => _employee?.status ?? EmployeeStatus.active;
   String? get profileImageUrl => _employee?.profileImageThumbnail ?? _employee?.profileImage;
 
   // ── Payroll ──────────────────────────────────────────────────────────────────
 
   List<HRPayslip> get payslips => _payslips;
+
+  // ── Mutations ────────────────────────────────────────────────────────────────
+
+  bool _isUpdatingProfile = false;
+  bool get isUpdatingProfile => _isUpdatingProfile;
+
+  Future<void> updateProfile({
+    String? firstName,
+    String? lastName,
+    Uint8List? croppedImageBytes,
+  }) async {
+    final identity = _identity;
+    if (identity == null) return;
+
+    _isUpdatingProfile = true;
+    notifyListeners();
+
+    try {
+      final updates = <String, dynamic>{};
+      if (firstName != null && firstName.isNotEmpty) updates['firstName'] = firstName;
+      if (lastName != null && lastName.isNotEmpty) updates['lastName'] = lastName;
+
+      if (croppedImageBytes != null) {
+        final profileWebp = await FlutterImageCompress.compressWithList(
+          croppedImageBytes,
+          minWidth: 700,
+          minHeight: 700,
+          quality: 85,
+          format: CompressFormat.webp,
+        );
+
+        final thumbnailWebp = await FlutterImageCompress.compressWithList(
+          croppedImageBytes,
+          minWidth: 120,
+          minHeight: 120,
+          quality: 85,
+          format: CompressFormat.webp,
+        );
+
+        if (profileWebp.isNotEmpty && thumbnailWebp.isNotEmpty) {
+          final profileRef = FirebaseStorage.instance
+              .ref()
+              .child('stores/${identity.storeId}/employees/${identity.employeeId}/profile.webp');
+          final thumbRef = FirebaseStorage.instance
+              .ref()
+              .child('stores/${identity.storeId}/employees/${identity.employeeId}/profile_thumbnail.webp');
+
+          final profileTask = await profileRef.putData(
+            profileWebp,
+            SettableMetadata(contentType: 'image/webp'),
+          );
+          final thumbTask = await thumbRef.putData(
+            thumbnailWebp,
+            SettableMetadata(contentType: 'image/webp'),
+          );
+
+          updates['profileImage'] = await profileTask.ref.getDownloadURL();
+          updates['profileImageThumbnail'] = await thumbTask.ref.getDownloadURL();
+        }
+      }
+
+      if (updates.isNotEmpty) {
+        await _employeeService.updateEmployee(
+            identity.storeId, identity.employeeId, updates);
+      }
+    } finally {
+      _isUpdatingProfile = false;
+      notifyListeners();
+    }
+  }
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
 
