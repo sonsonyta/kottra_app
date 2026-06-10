@@ -66,4 +66,5 @@ class DefaultFirebaseOptions {
     iosClientId: '421403764828-1dognl8sf8m49hn8mt92gumjq7lgh163.apps.googleusercontent.com',
     iosBundleId: 'com.kottra.app',
   );
+
 }

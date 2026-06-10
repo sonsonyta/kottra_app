@@ -16,19 +16,31 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'l10n/app_localizations.dart';
 
+import 'dart:ui';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
   await ThemeController.instance.load();
   await LocaleController.instance.load();
 
   if (kDebugMode) {
 
-    await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
-    FirebaseFunctions.instance.useFunctionsEmulator('localhost', 5001);
-    FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
-    await FirebaseStorage.instance.useStorageEmulator('localhost', 9199);
+    final String localHostString = defaultTargetPlatform == TargetPlatform.android ? '10.0.2.2' : 'localhost';
+
+    await FirebaseAuth.instance.useAuthEmulator(localHostString, 9099);
+    FirebaseFunctions.instance.useFunctionsEmulator(localHostString, 5001);
+    FirebaseFirestore.instance.useFirestoreEmulator(localHostString, 8080);
+    await FirebaseStorage.instance.useStorageEmulator(localHostString, 9199);
 
     /*await FirebaseAppCheck.instance.activate(
       providerAndroid: const AndroidDebugProvider(),
