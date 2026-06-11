@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_image_compress_lite/flutter_image_compress_lite.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:kottra_app/models/hr_employee.dart';
 import 'package:kottra_app/models/hr_payslip.dart';
 import 'package:kottra_app/services/auth_service.dart';
