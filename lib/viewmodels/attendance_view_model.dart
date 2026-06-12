@@ -15,9 +15,9 @@ class AttendanceViewModel extends ChangeNotifier {
     FirebaseAuth? firebaseAuth,
     AttendanceService? attendanceService,
     LocationServiceBase? locationService,
-  })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-        _attendanceService = attendanceService ?? AttendanceService(),
-        _locationService = locationService ?? const LocationService() {
+  }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
+       _attendanceService = attendanceService ?? AttendanceService(),
+       _locationService = locationService ?? const LocationService() {
     _subscribeToAttendance();
   }
 
@@ -50,10 +50,10 @@ class AttendanceViewModel extends ChangeNotifier {
     _historySub = _attendanceService
         .streamHistory(identity.storeId, identity.employeeId)
         .listen((records) {
-      _history = records;
-      _updateTodayRecord();
-      notifyListeners();
-    });
+          _history = records;
+          _updateTodayRecord();
+          notifyListeners();
+        });
   }
 
   void _updateTodayRecord() {
@@ -62,16 +62,36 @@ class AttendanceViewModel extends ChangeNotifier {
       return;
     }
 
+    final now = DateTime.now();
+
     final latest = _history.first;
+    final recordDate = latest.date.toDate();
+    final isTodayDate =
+        recordDate.year == now.year &&
+        recordDate.month == now.month &&
+        recordDate.day == now.day;
     // If the latest record is still active (checked in but not checked out),
     // treat it as the current active record, even if it started yesterday.
     if (latest.checkIn != null && latest.checkOut == null) {
-      _todayRecord = latest;
+      // if miss check out and check in more than 20 hours
+      final hoursSinceCheckIn = now.difference(latest.checkIn!).inHours;
+
+      print('hoursSinceCheckIn: $hoursSinceCheckIn');
+
+      if (hoursSinceCheckIn > 20) {
+        // More than 10 hours since check-out
+        // If they marked absent or leave today, they can't check in.
+        if (isTodayDate &&
+            (latest.status == AttendanceStatus.absent ||
+                latest.status == AttendanceStatus.leave)) {
+          _todayRecord = latest;
+        } else {
+          _todayRecord = null;
+        }
+      } else {
+        _todayRecord = latest;
+      }
     } else {
-      final now = DateTime.now();
-      final recordDate = latest.date.toDate();
-      final isTodayDate = recordDate.year == now.year && recordDate.month == now.month && recordDate.day == now.day;
-      
       if (latest.checkOut != null) {
         final hoursSinceCheckOut = now.difference(latest.checkOut!).inHours;
         if (hoursSinceCheckOut < 10) {
@@ -80,7 +100,9 @@ class AttendanceViewModel extends ChangeNotifier {
         } else {
           // More than 10 hours since check-out
           // If they marked absent or leave today, they can't check in.
-          if (isTodayDate && (latest.status == AttendanceStatus.absent || latest.status == AttendanceStatus.leave)) {
+          if (isTodayDate &&
+              (latest.status == AttendanceStatus.absent ||
+                  latest.status == AttendanceStatus.leave)) {
             _todayRecord = latest;
           } else {
             _todayRecord = null;
@@ -172,7 +194,7 @@ class AttendanceViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       final coords = await _locationService.getCurrentCoords();
-      final result  = await _attendanceService.checkOut(
+      final result = await _attendanceService.checkOut(
         storeId: identity.storeId,
         attendanceId: attendanceId,
         employeeId: identity.employeeId,
@@ -202,4 +224,3 @@ class AttendanceViewModel extends ChangeNotifier {
     super.dispose();
   }
 }
-

@@ -54,7 +54,7 @@ class AttendanceService {
        _callable =
            callable ??
            ((name, params) async {
-             final fn = (functions ?? FirebaseFunctions.instance).httpsCallable(
+             final fn = (functions ?? FirebaseFunctions.instanceFor(region: 'asia-southeast1')).httpsCallable(
                name,options: HttpsCallableOptions(limitedUseAppCheckToken: true)
              );
              final result = await fn.call(params);

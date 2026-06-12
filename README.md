@@ -69,3 +69,34 @@ This project supports the Firebase Emulator Suite for local development.
     ```
 
 > **Note**: When running in `kDebugMode`, the app is configured in `main.dart` to automatically connect to local Firebase emulators (Auth, Firestore, Functions, Storage). Ensure your emulators are running or adjust the environment configuration as needed.
+
+## Troubleshooting
+
+### iOS Build: Firebase SPM Platform Mismatch
+
+After running `flutter clean` or `flutter pub get`, you may encounter Xcode build errors like:
+
+```
+The package product 'firebase-core' requires minimum platform version 15.0
+for the iOS platform, but this target supports 13
+```
+
+**Cause:** Flutter generates `ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift` with `.iOS("13.0")` by default. Firebase Swift packages require iOS 15.0+, causing a platform mismatch.
+
+**Fix:** Run the following command to force Flutter to regenerate the package config using your Xcode project's deployment target (15.6):
+
+```bash
+flutter build ios --config-only
+```
+
+This updates the generated `Package.swift` to `.iOS("15.6")`, matching your project settings. After this, rebuild in Xcode normally.
+
+**Full recovery steps if needed:**
+
+```bash
+flutter clean
+flutter pub get
+flutter build ios --config-only
+```
+
+> **Tip**: Always run `flutter build ios --config-only` after `flutter clean` before opening Xcode to avoid this error.

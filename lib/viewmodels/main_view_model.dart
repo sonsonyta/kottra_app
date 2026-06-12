@@ -198,6 +198,8 @@ class MainViewModel extends ChangeNotifier {
         await _employeeService.updateEmployee(
             identity.storeId, identity.employeeId, updates);
       }
+    }catch(e){
+      rethrow;
     } finally {
       _isUpdatingProfile = false;
       notifyListeners();

@@ -84,6 +84,7 @@ class EditProfileSheetState extends State<EditProfileSheet> {
       );
       if (mounted) Navigator.pop(context);
     } catch (e) {
+      print(e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to update profile: $e')),
