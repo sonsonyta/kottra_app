@@ -11,6 +11,7 @@ import 'package:kottra_app/router/app_router.dart';
 import 'package:kottra_app/theme/app_theme.dart';
 import 'package:kottra_app/theme/theme_controller.dart';
 import 'package:kottra_app/theme/locale_controller.dart';
+import 'package:kottra_app/services/notification_service.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -22,7 +23,9 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting();
+  await NotificationService.instance.initialize();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  NotificationService.instance.setupForegroundMessaging();
 
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
   PlatformDispatcher.instance.onError = (error, stack) {
@@ -39,7 +42,12 @@ Future<void> main() async {
 
     await FirebaseAuth.instance.useAuthEmulator(localHostString, 9099);
     FirebaseFunctions.instance.useFunctionsEmulator(localHostString, 5001);
+    FirebaseFunctions.instanceFor(region: 'asia-southeast1').useFunctionsEmulator(localHostString, 5001);
     FirebaseFirestore.instance.useFirestoreEmulator(localHostString, 8080);
+    
+    // Clear persistence to prevent emulator cache issues where data does not update
+    await FirebaseFirestore.instance.clearPersistence();
+
     await FirebaseStorage.instance.useStorageEmulator(localHostString, 9199);
 
     /*await FirebaseAppCheck.instance.activate(

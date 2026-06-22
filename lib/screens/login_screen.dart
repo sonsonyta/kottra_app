@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
-import 'package:kottra_app/viewmodels/login_view_model.dart';
+import 'package:kottra_app/view_models/login_view_model.dart';
 
 const BorderRadius _loginFieldRadius = BorderRadius.all(Radius.circular(20));
 const BorderRadius _loginButtonRadius = BorderRadius.all(Radius.circular(999));

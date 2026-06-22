@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kottra_app/services/attendance_service.dart';
 import 'package:kottra_app/services/location_service.dart';
-import 'package:kottra_app/viewmodels/attendance_view_model.dart';
+import 'package:kottra_app/view_models/attendance_view_model.dart';
 
 class FakeUser implements User {
   FakeUser({required this.uid});

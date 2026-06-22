@@ -74,7 +74,7 @@ void main() {
       );
 
       expect(recorder.calls, 1);
-      expect(recorder.lastName, 'employeeCheckIn');
+      expect(recorder.lastName, 'employeeCheckInV1');
       expect(recorder.lastParams, {
         'storeId': 'store-1',
         'employeeId': 'emp-1',
@@ -181,7 +181,9 @@ void main() {
     test('invokes employeeCheckOut with the required fields only when no coords '
         'are provided', () async {
       final recorder = _CallRecorder();
-      final service = AttendanceService(callable: recorder.capture(null));
+      final service = AttendanceService(
+        callable: recorder.capture(<Object?, Object?>{'success': true}),
+      );
 
       await service.checkOut(
         storeId: 'store-1',
@@ -190,7 +192,7 @@ void main() {
       );
 
       expect(recorder.calls, 1);
-      expect(recorder.lastName, 'employeeCheckOut');
+      expect(recorder.lastName, 'employeeCheckOutV1');
       expect(recorder.lastParams, {
         'storeId': 'store-1',
         'attendanceId': 'att-1',
@@ -200,7 +202,9 @@ void main() {
 
     test('forwards coordinates when provided', () async {
       final recorder = _CallRecorder();
-      final service = AttendanceService(callable: recorder.capture(null));
+      final service = AttendanceService(
+        callable: recorder.capture(<Object?, Object?>{'success': true}),
+      );
 
       await service.checkOut(
         storeId: 'store-1',

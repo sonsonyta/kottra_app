@@ -1,10 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kottra_app/services/auth_service.dart';
 import 'package:kottra_app/services/employee_service.dart';
 import 'package:kottra_app/services/payslip_service.dart';
-import 'package:kottra_app/viewmodels/employee_identity.dart';
-import 'package:kottra_app/viewmodels/main_view_model.dart';
+import 'package:kottra_app/view_models/employee_identity.dart';
+import 'package:kottra_app/view_models/main_view_model.dart';
 
 class FakeUser implements User {
   FakeUser({required this.uid, this.email, this.displayName});
@@ -82,6 +83,10 @@ class FakePayslipService implements PayslipService {
 }
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   group('parseEmployeeUid', () {
     test('parses a valid hr_employee uid', () {
       expect(
@@ -97,7 +102,7 @@ void main() {
   });
 
   group('MainViewModel', () {
-    test('updates tab index and notifies listeners', () {
+    test('updates tab index and notifies listeners', () async {
       final viewModel = MainViewModel(
         authService: FakeAuthService(),
         firebaseAuth: FakeFirebaseAuth(user: FakeUser(uid: 'hr_employee:s:e')),
@@ -115,10 +120,11 @@ void main() {
       viewModel.setTabIndex(1); // no-op
       expect(notifications, 1);
 
+      await Future.delayed(Duration.zero);
       viewModel.dispose();
     });
 
-    test('userName falls back to email prefix', () {
+    test('userName falls back to email prefix', () async {
       final viewModel = MainViewModel(
         authService: FakeAuthService(),
         firebaseAuth: FakeFirebaseAuth(
@@ -130,6 +136,7 @@ void main() {
 
       expect(viewModel.userName, 'alex');
 
+      await Future.delayed(Duration.zero);
       viewModel.dispose();
     });
   });

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kottra_app/services/notification_service.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -9,7 +11,7 @@ import 'package:kottra_app/models/hr_payslip.dart';
 import 'package:kottra_app/services/auth_service.dart';
 import 'package:kottra_app/services/employee_service.dart';
 import 'package:kottra_app/services/payslip_service.dart';
-import 'package:kottra_app/viewmodels/employee_identity.dart';
+import 'package:kottra_app/view_models/employee_identity.dart';
 
 export 'package:kottra_app/models/hr_employee.dart';
 export 'package:kottra_app/models/hr_payslip.dart';
@@ -24,6 +26,7 @@ class MainViewModel extends ChangeNotifier {
         _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
         _employeeService = employeeService ?? EmployeeService(),
         _payslipService = payslipService ?? PayslipService() {
+    _loadPreferences();
     _subscribeToEmployee();
     _subscribeToPayslips();
   }
@@ -50,6 +53,46 @@ class MainViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Preferences ─────────────────────────────────────────────────────────────
+
+  bool _remindersEnabled = false;
+  bool get remindersEnabled => _remindersEnabled;
+
+  bool _leaveNotificationsEnabled = true;
+  bool get leaveNotificationsEnabled => _leaveNotificationsEnabled;
+
+  Future<void> _loadPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    _remindersEnabled = prefs.getBool('attendance_reminders') ?? false;
+    _leaveNotificationsEnabled = prefs.getBool('leave_notifications') ?? true;
+    NotificationService.instance.leaveNotificationsEnabled = _leaveNotificationsEnabled;
+    notifyListeners();
+  }
+
+  Future<void> toggleReminders(bool value) async {
+    _remindersEnabled = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('attendance_reminders', value);
+    notifyListeners();
+
+    if (value) {
+      await NotificationService.instance.requestPermissions();
+      if (startWorkingTime != null && endWorkingTime != null) {
+        await NotificationService.instance.scheduleAttendanceReminders(startWorkingTime!, endWorkingTime!);
+      }
+    } else {
+      await NotificationService.instance.cancelAllReminders();
+    }
+  }
+
+  Future<void> toggleLeaveNotifications(bool value) async {
+    _leaveNotificationsEnabled = value;
+    NotificationService.instance.leaveNotificationsEnabled = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('leave_notifications', value);
+    notifyListeners();
+  }
+
   // ── Identity ─────────────────────────────────────────────────────────────────
 
   /// Parsed from the Firebase Auth UID (`hr_employee:<storeId>:<employeeId>`).
@@ -66,9 +109,28 @@ class MainViewModel extends ChangeNotifier {
     _employeeSub?.cancel();
     _employeeSub = _employeeService
         .streamEmployee(identity.storeId, identity.employeeId)
-        .listen((emp) {
+        .listen((emp) async {
           _employee = emp;
           notifyListeners();
+
+          if (emp != null) {
+            try {
+              final token = await NotificationService.instance.getFcmToken();
+              if (token != null && emp.fcmToken != token) {
+                await _employeeService.updateEmployee(
+                  identity.storeId,
+                  identity.employeeId,
+                  {'fcmToken': token},
+                );
+              }
+            } catch (e) {
+              debugPrint('Error updating FCM token: $e');
+            }
+          }
+
+          if (_remindersEnabled && emp?.startWorkingTime != null && emp?.endWorkingTime != null) {
+            NotificationService.instance.scheduleAttendanceReminders(emp!.startWorkingTime!, emp.endWorkingTime!);
+          }
         });
   }
 

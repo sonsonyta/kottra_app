@@ -409,6 +409,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Good evening'**
   String get goodEvening;
+
+  /// No description provided for @myLeaves.
+  ///
+  /// In en, this message translates to:
+  /// **'My Leaves'**
+  String get myLeaves;
+
+  /// No description provided for @noLeavesRequestedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No leaves requested yet.'**
+  String get noLeavesRequestedYet;
+
+  /// No description provided for @requestedOnDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested on {date}'**
+  String requestedOnDate(String date);
+
+  /// No description provided for @leaveRequestSubmittedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave request submitted successfully.'**
+  String get leaveRequestSubmittedSuccess;
+
+  /// No description provided for @leaveType.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Type'**
+  String get leaveType;
+
+  /// No description provided for @dateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Date Range'**
+  String get dateRange;
+
+  /// No description provided for @startDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Date'**
+  String get startDate;
+
+  /// No description provided for @endDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End Date'**
+  String get endDate;
+
+  /// No description provided for @reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get reason;
+
+  /// No description provided for @enterLeaveReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter reason for your leave...'**
+  String get enterLeaveReason;
+
+  /// No description provided for @pleaseEnterReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a reason'**
+  String get pleaseEnterReason;
+
+  /// No description provided for @attachmentOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment (Optional)'**
+  String get attachmentOptional;
+
+  /// No description provided for @tapToSelectDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to select a document'**
+  String get tapToSelectDocument;
+
+  /// No description provided for @submitRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Request'**
+  String get submitRequest;
+
+  /// No description provided for @errorPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {message}'**
+  String errorPrefix(String message);
+
+  /// No description provided for @sickLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Sick Leave'**
+  String get sickLeave;
+
+  /// No description provided for @paidLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid Leave'**
+  String get paidLeave;
+
+  /// No description provided for @otherLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get otherLeave;
+
+  /// No description provided for @unpaidLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpaid Leave'**
+  String get unpaidLeave;
+
+  /// No description provided for @annualLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual Leave'**
+  String get annualLeave;
+
+  /// No description provided for @statusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get statusPending;
+
+  /// No description provided for @statusApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get statusApproved;
+
+  /// No description provided for @statusRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get statusRejected;
+
+  /// No description provided for @attendanceReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance Reminders'**
+  String get attendanceReminders;
+
+  /// No description provided for @dailyCheckInOutAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Check-in/out Alerts'**
+  String get dailyCheckInOutAlerts;
+
+  /// No description provided for @dailyCheckInOutAlertsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Get reminded 15 mins before shift starts and after shift ends.'**
+  String get dailyCheckInOutAlertsSubtitle;
+
+  /// No description provided for @testNotificationSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Test notification sent! Check your notification tray or allow permissions if prompted.'**
+  String get testNotificationSent;
+
+  /// No description provided for @testNotificationNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Test Notification Now'**
+  String get testNotificationNow;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @leaveNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Notifications'**
+  String get leaveNotifications;
+
+  /// No description provided for @leaveNotificationsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Get notified when your leave request is approved or rejected.'**
+  String get leaveNotificationsSubtitle;
 }
 
 class _AppLocalizationsDelegate

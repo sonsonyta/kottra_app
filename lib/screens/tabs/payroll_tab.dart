@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/screens/tabs/tab_helpers.dart';
-import 'package:kottra_app/viewmodels/main_view_model.dart';
+import 'package:kottra_app/view_models/main_view_model.dart';
 
 class PayrollTab extends StatelessWidget {
   const PayrollTab({super.key, required this.viewModel});

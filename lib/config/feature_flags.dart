@@ -3,5 +3,5 @@ class FeatureFlags {
   static const bool enablePayroll = false;
 
   /// Toggle this to enable or disable the Leave Request feature across the app.
-  static const bool enableLeaveRequest = false;
+  static const bool enableLeaveRequest = true;
 }

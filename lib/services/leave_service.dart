@@ -8,7 +8,7 @@ class LeaveService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> _col(String storeId) =>
-      _db.collection('stores/$storeId/hr_leaves');
+      _db.collection('stores/$storeId/hr_leave_requests');
 
   Future<void> submitLeaveRequest(LeaveRequest request) async {
     final docRef = _col(request.storeId).doc();
@@ -19,7 +19,7 @@ class LeaveService {
   Future<List<LeaveRequest>> fetchEmployeeLeaves(String storeId, String employeeId) async {
     final snapshot = await _col(storeId)
         .where('employeeId', isEqualTo: employeeId)
-        .orderBy('createdAt', descending: true)
+        .orderBy('requestedAt', descending: true)
         .get();
 
     return snapshot.docs
@@ -30,7 +30,7 @@ class LeaveService {
   Stream<List<LeaveRequest>> streamEmployeeLeaves(String storeId, String employeeId) {
     return _col(storeId)
         .where('employeeId', isEqualTo: employeeId)
-        .orderBy('createdAt', descending: true)
+        .orderBy('requestedAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => LeaveRequest.fromMap(doc.id, doc.data()))

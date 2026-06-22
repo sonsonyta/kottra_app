@@ -70,6 +70,14 @@ This project supports the Firebase Emulator Suite for local development.
 
 > **Note**: When running in `kDebugMode`, the app is configured in `main.dart` to automatically connect to local Firebase emulators (Auth, Firestore, Functions, Storage). Ensure your emulators are running or adjust the environment configuration as needed.
 
+### Development Best Practices
+
+It's highly recommended to run the Flutter analyzer after making any code changes to catch potential syntax errors or type mismatches:
+
+```bash
+flutter analyze
+```
+
 ## Troubleshooting
 
 ### iOS Build: Firebase SPM Platform Mismatch

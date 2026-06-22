@@ -58,5 +58,50 @@
   "save": "Save",
   "goodMorning": "Good morning",
   "goodAfternoon": "Good afternoon",
-  "goodEvening": "Good evening"
+  "goodEvening": "Good evening",
+  "myLeaves": "My Leaves",
+  "noLeavesRequestedYet": "No leaves requested yet.",
+  "requestedOnDate": "Requested on {date}",
+  "@requestedOnDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveRequestSubmittedSuccess": "Leave request submitted successfully.",
+  "leaveType": "Leave Type",
+  "dateRange": "Date Range",
+  "startDate": "Start Date",
+  "endDate": "End Date",
+  "reason": "Reason",
+  "enterLeaveReason": "Enter reason for your leave...",
+  "pleaseEnterReason": "Please enter a reason",
+  "attachmentOptional": "Attachment (Optional)",
+  "tapToSelectDocument": "Tap to select a document",
+  "submitRequest": "Submit Request",
+  "errorPrefix": "Error: {message}",
+  "@errorPrefix": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "sickLeave": "Sick Leave",
+  "paidLeave": "Paid Leave",
+  "otherLeave": "Other",
+  "unpaidLeave": "Unpaid Leave",
+  "annualLeave": "Annual Leave",
+  "statusPending": "Pending",
+  "statusApproved": "Approved",
+  "statusRejected": "Rejected",
+  "attendanceReminders": "Attendance Reminders",
+  "dailyCheckInOutAlerts": "Daily Check-in/out Alerts",
+  "dailyCheckInOutAlertsSubtitle": "Get reminded 15 mins before shift starts and after shift ends.",
+  "testNotificationSent": "Test notification sent! Check your notification tray or allow permissions if prompted.",
+  "testNotificationNow": "Test Notification Now",
+  "notifications": "Notifications",
+  "leaveNotifications": "Leave Notifications",
+  "leaveNotificationsSubtitle": "Get notified when your leave request is approved or rejected."
 }

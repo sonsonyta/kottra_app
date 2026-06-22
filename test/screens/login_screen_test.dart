@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kottra_app/screens/login_screen.dart';
 import 'package:kottra_app/services/auth_service.dart';
-import 'package:kottra_app/viewmodels/login_view_model.dart';
+import 'package:kottra_app/view_models/login_view_model.dart';
 
 class FakeAuthService implements AuthServiceBase {
   FakeAuthService({

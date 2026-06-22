@@ -2,8 +2,8 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../../../viewmodels/attendance_view_model.dart';
-import '../../../viewmodels/main_view_model.dart';
+import '../../../view_models/attendance_view_model.dart';
+import '../../../view_models/main_view_model.dart';
 import '../tab_colors.dart';
 import '../tab_helpers.dart';
 
@@ -71,53 +71,10 @@ class CheckInCard extends StatelessWidget {
     );
   }
 
-  bool _isLateCheckIn() {
-    final startStr = viewModel.startWorkingTime;
-    if (startStr == null || startStr.isEmpty) return false;
-    final parts = startStr.split(':');
-    if (parts.length != 2) return false;
-    final startHour = int.tryParse(parts[0]) ?? 0;
-    final startMin = int.tryParse(parts[1]) ?? 0;
-    final grace = viewModel.lateTime ?? 0;
-
-    final now = DateTime.now();
-    final limitTime = DateTime(now.year, now.month, now.day, startHour, startMin).add(Duration(minutes: grace));
-
-    return now.isAfter(limitTime);
-  }
-
-  bool _isEarlyCheckOut() {
-    final startStr = viewModel.startWorkingTime;
-    final endStr = viewModel.endWorkingTime;
-
-    if (endStr == null || endStr.isEmpty || startStr == null || startStr.isEmpty) return false;
-
-    final startParts = startStr.split(':');
-    final endParts = endStr.split(':');
-
-    if (startParts.length != 2 || endParts.length != 2) return false;
-
-    final startHour = int.tryParse(startParts[0]) ?? 0;
-    final endHour = int.tryParse(endParts[0]) ?? 0;
-    final endMin = int.tryParse(endParts[1]) ?? 0;
-
-    final now = DateTime.now();
-    DateTime endTime = DateTime(now.year, now.month, now.day, endHour, endMin);
-
-    // Cross-day schedule detection
-    if (endHour < startHour) {
-      if (now.hour >= startHour) {
-        // If checking out before midnight (e.g., 23:00), the shift ends tomorrow.
-        endTime = endTime.add(const Duration(days: 1));
-      }
-    }
-
-    return now.isBefore(endTime);
-  }
 
   Future<void> _handleCheckIn(BuildContext context) async {
     String? note;
-    if (_isLateCheckIn()) {
+    if (attendanceViewModel.isLateCheckIn(viewModel.startWorkingTime, viewModel.lateTime)) {
       note = await _promptForNote(context, AppLocalizations.of(context)!.checkIn);
       if (note == null) return; // User cancelled
       if (!context.mounted) return;
@@ -146,7 +103,7 @@ class CheckInCard extends StatelessWidget {
 
   Future<void> _handleCheckOut(BuildContext context) async {
     String? note;
-    if (_isEarlyCheckOut()) {
+    if (attendanceViewModel.isEarlyCheckOut(viewModel.startWorkingTime, viewModel.endWorkingTime)) {
       note = await _promptForNote(context, AppLocalizations.of(context)!.checkOut);
       if (note == null) return; // User cancelled
       if (!context.mounted) return;

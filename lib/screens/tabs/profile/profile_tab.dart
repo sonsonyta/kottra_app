@@ -1,10 +1,11 @@
-
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/theme/theme_controller.dart';
 import 'package:kottra_app/theme/locale_controller.dart';
-import 'package:kottra_app/viewmodels/main_view_model.dart';
+import 'package:kottra_app/view_models/main_view_model.dart';
+import 'package:kottra_app/services/notification_service.dart';
 
 import '../../../l10n/app_localizations.dart';
 import 'edit_profile.dart';
@@ -30,6 +31,19 @@ class ProfileTab extends StatelessWidget {
                 items: [
 
                   _ProfileMenuItem(
+                    icon: Icons.calendar_today_outlined,
+                    label: AppLocalizations.of(context)!.requestLeave,
+                    onTap: () {
+                      context.push('/leaves', extra: viewModel);
+                    },
+                    trailing: Icon(
+                      Icons.chevron_right_rounded,
+                      color: appColors(context).textSecondary,
+                      size: 20,
+                    ),
+                  ),
+
+                  _ProfileMenuItem(
                     icon: Icons.badge_outlined,
                     label: AppLocalizations.of(context)!.employeeId,
                     value: viewModel.employeeCode,
@@ -47,6 +61,8 @@ class ProfileTab extends StatelessWidget {
                     ),
                 ],
               ),
+              const SizedBox(height: 16),
+              _NotificationSettingsSection(viewModel: viewModel),
               const SizedBox(height: 16),
               const _AppearanceSection(),
               const SizedBox(height: 16),
@@ -258,6 +274,99 @@ class _ProfileMenuItem extends StatelessWidget {
               ),
             ?trailing,
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationSettingsSection extends StatelessWidget {
+  const _NotificationSettingsSection({required this.viewModel});
+
+  final MainViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = appColors(context);
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: c.shadowSubtle,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: c.surface,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+          Row(
+            children: [
+              Icon(Icons.notifications_active_outlined, color: c.primary, size: 20),
+              const SizedBox(width: 14),
+              Text(
+                AppLocalizations.of(context)!.notifications,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: c.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListenableBuilder(
+            listenable: viewModel,
+            builder: (context, _) {
+              return Column(
+                children: [
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      AppLocalizations.of(context)!.attendanceReminders,
+                      style: TextStyle(fontSize: 14, color: c.textPrimary),
+                    ),
+                    subtitle: Text(
+                      AppLocalizations.of(context)!.dailyCheckInOutAlertsSubtitle,
+                      style: TextStyle(fontSize: 12, color: c.textSecondary),
+                    ),
+                    activeThumbColor: c.primary,
+                    value: viewModel.remindersEnabled,
+                    onChanged: (value) {
+                      viewModel.toggleReminders(value);
+                    },
+                  ),
+                  Divider(height: 1, color: c.divider),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      AppLocalizations.of(context)!.leaveNotifications,
+                      style: TextStyle(fontSize: 14, color: c.textPrimary),
+                    ),
+                    subtitle: Text(
+                      AppLocalizations.of(context)!.leaveNotificationsSubtitle,
+                      style: TextStyle(fontSize: 12, color: c.textSecondary),
+                    ),
+                    activeThumbColor: c.primary,
+                    value: viewModel.leaveNotificationsEnabled,
+                    onChanged: (value) {
+                      viewModel.toggleLeaveNotifications(value);
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
         ),
       ),
     );

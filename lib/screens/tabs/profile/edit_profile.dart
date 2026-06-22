@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../../../viewmodels/main_view_model.dart';
+import '../../../view_models/main_view_model.dart';
 import '../shared_widgets.dart';
 import '../tab_colors.dart';
 

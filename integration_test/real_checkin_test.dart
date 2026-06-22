@@ -8,7 +8,7 @@ import 'package:kottra_app/firebase_options.dart';
 import 'package:kottra_app/models/attendance_record.dart';
 import 'package:kottra_app/services/attendance_service.dart';
 import 'package:kottra_app/services/auth_service.dart';
-import 'package:kottra_app/viewmodels/employee_identity.dart';
+import 'package:kottra_app/view_models/employee_identity.dart';
 
 const _employeeLoginToken = '7pZXQuJa7YXWCdkkQV3e0bxBrjz5wd-H';
 const _latitude = '11.568574105178529';

@@ -7,8 +7,8 @@ import 'package:kottra_app/screens/login_screen.dart';
 import 'package:kottra_app/screens/main_screen.dart';
 import 'package:kottra_app/screens/leave/leave_list_screen.dart';
 import 'package:kottra_app/screens/leave/request_leave_screen.dart';
-import 'package:kottra_app/viewmodels/leave_view_model.dart';
-import 'package:kottra_app/viewmodels/main_view_model.dart';
+import 'package:kottra_app/view_models/leave_view_model.dart';
+import 'package:kottra_app/view_models/main_view_model.dart';
 
 class _GoRouterRefreshStream extends ChangeNotifier {
   _GoRouterRefreshStream(Stream<dynamic> stream) {

@@ -2,9 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum LeaveType {
   sick('Sick Leave'),
-  vacation('Vacation Leave'),
-  personal('Personal Leave'),
-  unpaid('Unpaid Leave');
+  paid('Paid Leave'),
+  other('Other'),
+  unpaid('Unpaid Leave'),
+  annual('Annual Leave');
 
   const LeaveType(this.value);
 
@@ -14,7 +15,7 @@ enum LeaveType {
   static LeaveType fromString(String value) {
     return LeaveType.values.firstWhere(
       (s) => s.name == value || s.value == value,
-      orElse: () => LeaveType.personal,
+      orElse: () => LeaveType.other,
     );
   }
 }
@@ -29,15 +30,16 @@ enum LeaveStatus {
   final String value;
 
   static LeaveStatus fromString(String value) {
+    final lower = value.toLowerCase();
     return LeaveStatus.values.firstWhere(
-      (s) => s.name == value || s.value == value,
+      (s) => s.name == lower || s.value.toLowerCase() == lower,
       orElse: () => LeaveStatus.pending,
     );
   }
 }
 
 class LeaveRequest {
-  const LeaveRequest({
+  LeaveRequest({
     required this.id,
     required this.storeId,
     required this.employeeId,
@@ -47,11 +49,12 @@ class LeaveRequest {
     required this.type,
     required this.status,
     required this.reason,
-    this.approverId,
+    this.actionedBy,
+    this.actionedAt,
+    this.actionReason,
     this.attachmentUrl,
-    this.createdAt,
-    this.updatedAt,
-  });
+    DateTime? requestedAt,
+  }) : requestedAt = requestedAt ?? DateTime.now();
 
   final String id;
   final String storeId;
@@ -62,20 +65,26 @@ class LeaveRequest {
   final LeaveType type;
   final LeaveStatus status;
   final String reason;
-  final String? approverId;
   final String? attachmentUrl;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
+  final DateTime requestedAt;
+  final String? actionedBy;
+  final DateTime? actionedAt;
+  final String? actionReason;
 
   factory LeaveRequest.fromMap(String id, Map<String, dynamic> map) {
-    DateTime? toDateTime(dynamic ts) {
-      if (ts == null) return null;
+
+    DateTime toDateTime(dynamic ts) {
       if (ts is DateTime) return ts;
       try {
-        return (ts as dynamic).toDate() as DateTime;
+        return (ts as Timestamp).toDate();
       } catch (_) {
-        return null;
+        return DateTime.now();
       }
+    }
+
+    DateTime? toDateTimeNullable(dynamic ts) {
+      if (ts == null) return null;
+      return toDateTime(ts);
     }
 
     return LeaveRequest(
@@ -83,15 +92,16 @@ class LeaveRequest {
       storeId: map['storeId'] as String? ?? '',
       employeeId: map['employeeId'] as String? ?? '',
       employeeName: map['employeeName'] as String? ?? '',
-      startDate: toDateTime(map['startDate']) ?? DateTime.now(),
-      endDate: toDateTime(map['endDate']) ?? DateTime.now(),
+      startDate: toDateTime(map['startDate']),
+      endDate: toDateTime(map['endDate']),
       type: LeaveType.fromString(map['type'] as String? ?? ''),
       status: LeaveStatus.fromString(map['status'] as String? ?? ''),
       reason: map['reason'] as String? ?? '',
-      approverId: map['approverId'] as String?,
+      actionedBy: map['actionedBy'] as String?,
+      actionedAt: toDateTimeNullable(map['actionedAt']),
+      actionReason:map['actionReason'] as String? ?? '',
       attachmentUrl: map['attachmentUrl'] as String?,
-      createdAt: toDateTime(map['createdAt']),
-      updatedAt: toDateTime(map['updatedAt']),
+      requestedAt: toDateTime(map['requestedAt']),
     );
   }
 
@@ -102,22 +112,18 @@ class LeaveRequest {
       'employeeName': employeeName,
       'startDate': startDate,
       'endDate': endDate,
-      'type': type.name,
-      'status': status.name,
+      'type': type.value,
+      'status': status.value,
       'reason': reason,
-      if (approverId != null) 'approverId': approverId,
       if (attachmentUrl != null) 'attachmentUrl': attachmentUrl,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'requestedAt': FieldValue.serverTimestamp(),
     };
   }
 
   /// Useful for updates where you might only want to update `updatedAt` server timestamp.
   Map<String, dynamic> toUpdateMap() {
     return {
-      'status': status.name,
-      if (approverId != null) 'approverId': approverId,
-      'updatedAt': FieldValue.serverTimestamp(),
+      'status': status.value
     };
   }
 }

@@ -5,12 +5,16 @@ import 'package:flutter/foundation.dart';
 import 'package:kottra_app/models/attendance_record.dart';
 import 'package:kottra_app/services/attendance_service.dart';
 import 'package:kottra_app/services/location_service.dart';
-import 'package:kottra_app/viewmodels/employee_identity.dart';
+import 'package:kottra_app/view_models/employee_identity.dart';
 
 export 'package:kottra_app/models/attendance_record.dart';
 export 'package:kottra_app/services/attendance_service.dart' show CheckInResult;
 
 class AttendanceViewModel extends ChangeNotifier {
+  static const int maxHoursBeforeStaleCheckIn = 18;
+  static const int minHoursBeforeNewCheckIn = 8;
+  static const Duration optimisticTimeout = Duration(seconds: 10);
+
   AttendanceViewModel({
     FirebaseAuth? firebaseAuth,
     AttendanceService? attendanceService,
@@ -32,6 +36,7 @@ class AttendanceViewModel extends ChangeNotifier {
 
   String? _optimisticAttendanceId;
   DateTime? _optimisticCheckInAt;
+  Timer? _optimisticTimer;
 
   bool _isActionLoading = false;
   bool get isActionLoading => _isActionLoading;
@@ -48,7 +53,7 @@ class AttendanceViewModel extends ChangeNotifier {
 
     _historySub?.cancel();
     _historySub = _attendanceService
-        .streamHistory(identity.storeId, identity.employeeId)
+        .streamHistory(identity.storeId, identity.employeeId, limit: 90)
         .listen((records) {
           _history = records;
           _updateTodayRecord();
@@ -73,13 +78,11 @@ class AttendanceViewModel extends ChangeNotifier {
     // If the latest record is still active (checked in but not checked out),
     // treat it as the current active record, even if it started yesterday.
     if (latest.checkIn != null && latest.checkOut == null) {
-      // if miss check out and check in more than 20 hours
+      // if miss check out and check in more than maxHoursBeforeStaleCheckIn hours
       final hoursSinceCheckIn = now.difference(latest.checkIn!).inHours;
 
-      print('hoursSinceCheckIn: $hoursSinceCheckIn');
-
-      if (hoursSinceCheckIn > 20) {
-        // More than 10 hours since check-out
+      if (hoursSinceCheckIn > maxHoursBeforeStaleCheckIn) {
+        // More than maxHoursBeforeStaleCheckIn hours since check-in
         // If they marked absent or leave today, they can't check in.
         if (isTodayDate &&
             (latest.status == AttendanceStatus.absent ||
@@ -94,11 +97,11 @@ class AttendanceViewModel extends ChangeNotifier {
     } else {
       if (latest.checkOut != null) {
         final hoursSinceCheckOut = now.difference(latest.checkOut!).inHours;
-        if (hoursSinceCheckOut < 10) {
-          // Less than 10 hours since check-out
+        if (hoursSinceCheckOut < minHoursBeforeNewCheckIn) {
+          // Less than minHoursBeforeNewCheckIn hours since check-out
           _todayRecord = latest;
         } else {
-          // More than 10 hours since check-out
+          // More than minHoursBeforeNewCheckIn hours since check-out
           // If they marked absent or leave today, they can't check in.
           if (isTodayDate &&
               (latest.status == AttendanceStatus.absent ||
@@ -120,6 +123,8 @@ class AttendanceViewModel extends ChangeNotifier {
     }
 
     if (_todayRecord?.checkIn != null) {
+      _optimisticTimer?.cancel();
+      _optimisticTimer = null;
       _optimisticAttendanceId = null;
       _optimisticCheckInAt = null;
     }
@@ -142,19 +147,73 @@ class AttendanceViewModel extends ChangeNotifier {
 
   List<AttendanceRecord> get attendanceRecords => _history;
 
+  List<AttendanceRecord> getRecordsForDay(DateTime day) {
+    return _history.where((r) {
+      final rDate = r.date.toDate();
+      return rDate.year == day.year && rDate.month == day.month && rDate.day == day.day;
+    }).toList();
+  }
+
+  bool isLateCheckIn(String? startWorkingTime, int? lateTime) {
+    if (startWorkingTime == null || startWorkingTime.isEmpty) return false;
+    final parts = startWorkingTime.split(':');
+    if (parts.length != 2) return false;
+    final startHour = int.tryParse(parts[0]) ?? 0;
+    final startMin = int.tryParse(parts[1]) ?? 0;
+    final grace = lateTime ?? 0;
+
+    final now = DateTime.now();
+    final limitTime = DateTime(now.year, now.month, now.day, startHour, startMin).add(Duration(minutes: grace));
+
+    return now.isAfter(limitTime);
+  }
+
+  bool isEarlyCheckOut(String? startWorkingTime, String? endWorkingTime) {
+    if (endWorkingTime == null || endWorkingTime.isEmpty || startWorkingTime == null || startWorkingTime.isEmpty) return false;
+
+    final startParts = startWorkingTime.split(':');
+    final endParts = endWorkingTime.split(':');
+
+    if (startParts.length != 2 || endParts.length != 2) return false;
+
+    final startHour = int.tryParse(startParts[0]) ?? 0;
+    final endHour = int.tryParse(endParts[0]) ?? 0;
+    final endMin = int.tryParse(endParts[1]) ?? 0;
+
+    final now = DateTime.now();
+    DateTime endTime = DateTime(now.year, now.month, now.day, endHour, endMin);
+
+    // Cross-day schedule detection
+    if (endHour < startHour) {
+      if (now.hour >= startHour) {
+        // If checking out before midnight (e.g., 23:00), the shift ends tomorrow.
+        endTime = endTime.add(const Duration(days: 1));
+      }
+    }
+
+    return now.isBefore(endTime);
+  }
+
   Future<CheckInResult?> checkIn({
     String? lateCheckInNote,
     String? earlyCheckOutNote,
     String? leaveNote,
     String? absentNote,
   }) async {
+    if (_isActionLoading) return null;
     final identity = _identity;
     if (identity == null) return null;
 
     _isActionLoading = true;
     notifyListeners();
     try {
-      final coords = await _locationService.getCurrentCoords();
+      dynamic coords;
+      try {
+        coords = await _locationService.getCurrentCoords();
+      } catch (e) {
+        debugPrint('Location error during check-in: $e');
+      }
+
       final result = await _attendanceService.checkIn(
         storeId: identity.storeId,
         employeeId: identity.employeeId,
@@ -169,6 +228,14 @@ class AttendanceViewModel extends ChangeNotifier {
       if (result.success && !result.alreadyCheckedIn) {
         _optimisticAttendanceId = result.attendanceId;
         _optimisticCheckInAt = DateTime.now();
+        _optimisticTimer?.cancel();
+        _optimisticTimer = Timer(optimisticTimeout, () {
+          if (_optimisticCheckInAt != null && _todayRecord?.checkIn == null) {
+            _optimisticCheckInAt = null;
+            _optimisticAttendanceId = null;
+            notifyListeners();
+          }
+        });
         notifyListeners();
       }
       return result;
@@ -184,6 +251,7 @@ class AttendanceViewModel extends ChangeNotifier {
     String? leaveNote,
     String? absentNote,
   }) async {
+    if (_isActionLoading) return null;
     final identity = _identity;
     if (identity == null) return null;
 
@@ -193,7 +261,13 @@ class AttendanceViewModel extends ChangeNotifier {
     _isActionLoading = true;
     notifyListeners();
     try {
-      final coords = await _locationService.getCurrentCoords();
+      dynamic coords;
+      try {
+        coords = await _locationService.getCurrentCoords();
+      } catch (e) {
+        debugPrint('Location error during check-out: $e');
+      }
+
       final result = await _attendanceService.checkOut(
         storeId: identity.storeId,
         attendanceId: attendanceId,
@@ -209,6 +283,7 @@ class AttendanceViewModel extends ChangeNotifier {
       if (result.success && !result.alreadyCheckedOut) {
         _optimisticAttendanceId = result.attendanceId;
         _optimisticCheckInAt = null;
+        _optimisticTimer?.cancel();
         notifyListeners();
       }
       return result;
@@ -220,6 +295,7 @@ class AttendanceViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _optimisticTimer?.cancel();
     _historySub?.cancel();
     super.dispose();
   }

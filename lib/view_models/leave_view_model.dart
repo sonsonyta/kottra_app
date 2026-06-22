@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+
 import 'package:flutter/foundation.dart';
 import 'package:kottra_app/models/leave_request.dart';
 import 'package:kottra_app/services/leave_service.dart';
@@ -42,7 +43,7 @@ class LeaveViewModel extends ChangeNotifier {
     required DateTime endDate,
     required LeaveType type,
     required String reason,
-    String? approverId,
+    String? actionedBy,
     PlatformFile? attachment,
   }) async {
     if (employeeId.isEmpty) {
@@ -64,7 +65,7 @@ class LeaveViewModel extends ChangeNotifier {
       if (attachment != null) {
         final storageRef = FirebaseStorage.instance
             .ref()
-            .child('leaves/$employeeId/${DateTime.now().millisecondsSinceEpoch}_${attachment.name}');
+            .child('hr_leave_requests/$employeeId/${DateTime.now().millisecondsSinceEpoch}_${attachment.name}');
             
         if (kIsWeb && attachment.bytes != null) {
           final uploadTask = await storageRef.putData(attachment.bytes!);
@@ -86,7 +87,7 @@ class LeaveViewModel extends ChangeNotifier {
         type: type,
         status: LeaveStatus.pending,
         reason: reason,
-        approverId: approverId,
+        actionedBy: actionedBy,
         attachmentUrl: attachmentUrl,
       );
 

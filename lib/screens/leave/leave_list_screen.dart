@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/models/leave_request.dart';
+import 'package:intl/intl.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
-import 'package:kottra_app/screens/tabs/tab_helpers.dart';
-import 'package:kottra_app/viewmodels/leave_view_model.dart';
-import 'package:kottra_app/viewmodels/main_view_model.dart';
+import 'package:kottra_app/view_models/leave_view_model.dart';
+import 'package:kottra_app/view_models/main_view_model.dart';
 
 class LeaveListScreen extends StatefulWidget {
   const LeaveListScreen({super.key, required this.mainViewModel});
@@ -37,13 +38,14 @@ class _LeaveListScreenState extends State<LeaveListScreen> {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: c.background,
       appBar: AppBar(
         backgroundColor: c.primary,
-        title: const Text(
-          'My Leaves',
-          style: TextStyle(
+        title: Text(
+          l10n.myLeaves,
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w800,
             fontSize: 20,
@@ -55,7 +57,7 @@ class _LeaveListScreenState extends State<LeaveListScreen> {
         listenable: _leaveViewModel,
         builder: (context, _) {
           if (_leaveViewModel.leaves.isEmpty) {
-            return const Center(child: Text('No leaves requested yet.'));
+            return Center(child: Text(l10n.noLeavesRequestedYet));
           }
 
           return ListView.separated(
@@ -75,9 +77,9 @@ class _LeaveListScreenState extends State<LeaveListScreen> {
           context.push('/leaves/request', extra: _leaveViewModel);
         },
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Request Leave',
-          style: TextStyle(
+        label: Text(
+          l10n.requestLeave,
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
@@ -116,9 +118,31 @@ class _LeaveCard extends StatelessWidget {
     }
   }
 
+  String _getLeaveType(BuildContext context, LeaveType type) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (type) {
+      case LeaveType.sick: return l10n.sickLeave;
+      case LeaveType.paid: return l10n.paidLeave;
+      case LeaveType.other: return l10n.otherLeave;
+      case LeaveType.unpaid: return l10n.unpaidLeave;
+      case LeaveType.annual: return l10n.annualLeave;
+    }
+  }
+
+  String _getLeaveStatus(BuildContext context, LeaveStatus status) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (status) {
+      case LeaveStatus.pending: return l10n.statusPending;
+      case LeaveStatus.approved: return l10n.statusApproved;
+      case LeaveStatus.rejected: return l10n.statusRejected;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
     final statusColor = _getStatusColor(context, leave.status);
     final statusBg = _getStatusBgColor(context, leave.status);
 
@@ -142,7 +166,7 @@ class _LeaveCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                leave.type.value,
+                _getLeaveType(context, leave.type),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -156,7 +180,7 @@ class _LeaveCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  leave.status.value,
+                  _getLeaveStatus(context, leave.status),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -172,7 +196,7 @@ class _LeaveCard extends StatelessWidget {
               Icon(Icons.calendar_today_outlined, size: 16, color: c.textSecondary),
               const SizedBox(width: 8),
               Text(
-                '${fmtDateShort(leave.startDate)}  -  ${fmtDateShort(leave.endDate)}',
+                '${DateFormat('E, d MMM', locale).format(leave.startDate)}  -  ${DateFormat('E, d MMM', locale).format(leave.endDate)}',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -191,16 +215,14 @@ class _LeaveCard extends StatelessWidget {
               ),
             ),
           ],
-          if (leave.createdAt != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              'Requested on ${fmtDateShort(leave.createdAt!)}',
-              style: TextStyle(
-                fontSize: 11,
-                color: c.textSecondary,
-              ),
+          const SizedBox(height: 12),
+          Text(
+            l10n.requestedOnDate(DateFormat('E, d MMM', locale).format(leave.requestedAt)),
+            style: TextStyle(
+              fontSize: 11,
+              color: c.textSecondary,
             ),
-          ],
+          ),
         ],
       ),
     );

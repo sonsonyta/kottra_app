@@ -166,4 +166,105 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goodEvening => 'Good evening';
+
+  @override
+  String get myLeaves => 'My Leaves';
+
+  @override
+  String get noLeavesRequestedYet => 'No leaves requested yet.';
+
+  @override
+  String requestedOnDate(String date) {
+    return 'Requested on $date';
+  }
+
+  @override
+  String get leaveRequestSubmittedSuccess =>
+      'Leave request submitted successfully.';
+
+  @override
+  String get leaveType => 'Leave Type';
+
+  @override
+  String get dateRange => 'Date Range';
+
+  @override
+  String get startDate => 'Start Date';
+
+  @override
+  String get endDate => 'End Date';
+
+  @override
+  String get reason => 'Reason';
+
+  @override
+  String get enterLeaveReason => 'Enter reason for your leave...';
+
+  @override
+  String get pleaseEnterReason => 'Please enter a reason';
+
+  @override
+  String get attachmentOptional => 'Attachment (Optional)';
+
+  @override
+  String get tapToSelectDocument => 'Tap to select a document';
+
+  @override
+  String get submitRequest => 'Submit Request';
+
+  @override
+  String errorPrefix(String message) {
+    return 'Error: $message';
+  }
+
+  @override
+  String get sickLeave => 'Sick Leave';
+
+  @override
+  String get paidLeave => 'Paid Leave';
+
+  @override
+  String get otherLeave => 'Other';
+
+  @override
+  String get unpaidLeave => 'Unpaid Leave';
+
+  @override
+  String get annualLeave => 'Annual Leave';
+
+  @override
+  String get statusPending => 'Pending';
+
+  @override
+  String get statusApproved => 'Approved';
+
+  @override
+  String get statusRejected => 'Rejected';
+
+  @override
+  String get attendanceReminders => 'Attendance Reminders';
+
+  @override
+  String get dailyCheckInOutAlerts => 'Daily Check-in/out Alerts';
+
+  @override
+  String get dailyCheckInOutAlertsSubtitle =>
+      'Get reminded 15 mins before shift starts and after shift ends.';
+
+  @override
+  String get testNotificationSent =>
+      'Test notification sent! Check your notification tray or allow permissions if prompted.';
+
+  @override
+  String get testNotificationNow => 'Test Notification Now';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get leaveNotifications => 'Leave Notifications';
+
+  @override
+  String get leaveNotificationsSubtitle =>
+      'Get notified when your leave request is approved or rejected.';
 }

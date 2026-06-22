@@ -104,6 +104,7 @@ class HREmployee {
     this.skills,
     this.notes,
     this.allowCheckinRemote,
+    this.fcmToken,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -185,6 +186,9 @@ class HREmployee {
   // Attendance
   final bool? allowCheckinRemote;
 
+  // Messaging
+  final String? fcmToken;
+
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -258,6 +262,7 @@ class HREmployee {
       skills: map['skills'] as String?,
       notes: map['notes'] as String?,
       allowCheckinRemote: map['allowCheckinRemote'] as bool?,
+      fcmToken: map['fcmToken'] as String?,
       createdAt: toDateTime(map['createdAt']),
       updatedAt: toDateTime(map['updatedAt']),
     );
@@ -323,6 +328,7 @@ class HREmployee {
         if (skills != null) 'skills': skills,
         if (notes != null) 'notes': notes,
         if (allowCheckinRemote != null) 'allowCheckinRemote': allowCheckinRemote,
+        if (fcmToken != null) 'fcmToken': fcmToken,
         'createdAt': Timestamp.fromDate(createdAt),
         'updatedAt': Timestamp.fromDate(updatedAt),
       };

@@ -3,8 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:kottra_app/models/leave_request.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/screens/tabs/tab_helpers.dart';
-import 'package:kottra_app/viewmodels/leave_view_model.dart';
+import 'package:kottra_app/view_models/leave_view_model.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:kottra_app/l10n/app_localizations.dart';
 
 class RequestLeaveScreen extends StatefulWidget {
   const RequestLeaveScreen({super.key, required this.viewModel});
@@ -19,7 +20,7 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
   final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
 
-  LeaveType _selectedType = LeaveType.personal;
+  LeaveType _selectedType = LeaveType.other;
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
   PlatformFile? _attachment;
@@ -39,6 +40,17 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
       setState(() {
         _attachment = result.files.first;
       });
+    }
+  }
+
+  String _getLeaveType(BuildContext context, LeaveType type) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (type) {
+      case LeaveType.sick: return l10n.sickLeave;
+      case LeaveType.paid: return l10n.paidLeave;
+      case LeaveType.other: return l10n.otherLeave;
+      case LeaveType.unpaid: return l10n.unpaidLeave;
+      case LeaveType.annual: return l10n.annualLeave;
     }
   }
 
@@ -95,27 +107,32 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Leave request submitted successfully.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.leaveRequestSubmittedSuccess)),
       );
       context.pop();
-    } catch (e) {
+    } catch (e,trace) {
+
+      print(e);
+      print(trace);
+
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.errorPrefix(e.toString()))));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: c.background,
       appBar: AppBar(
         backgroundColor: c.primary,
-        title: const Text(
-          'Request Leave',
-          style: TextStyle(
+        title: Text(
+          l10n.requestLeave,
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w800,
             fontSize: 20,
@@ -131,7 +148,7 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
             child: ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                _buildSectionHeader(context, 'Leave Type'),
+                _buildSectionHeader(context, l10n.leaveType),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 12,
@@ -139,7 +156,7 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
                   children: LeaveType.values.map((type) {
                     final isSelected = _selectedType == type;
                     return ChoiceChip(
-                      label: Text(type.value),
+                      label: Text(_getLeaveType(context, type)),
                       selected: isSelected,
                       onSelected: (selected) {
                         if (selected) {
@@ -158,13 +175,13 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
                   }).toList(),
                 ),
                 const SizedBox(height: 24),
-                _buildSectionHeader(context, 'Date Range'),
+                _buildSectionHeader(context, l10n.dateRange),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: _DateField(
-                        label: 'Start Date',
+                        label: l10n.startDate,
                         date: _startDate,
                         onTap: () => _pickDate(context, true),
                       ),
@@ -172,7 +189,7 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: _DateField(
-                        label: 'End Date',
+                        label: l10n.endDate,
                         date: _endDate,
                         onTap: () => _pickDate(context, false),
                       ),
@@ -180,13 +197,13 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                _buildSectionHeader(context, 'Reason'),
+                _buildSectionHeader(context, l10n.reason),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _reasonController,
                   maxLines: 4,
                   decoration: InputDecoration(
-                    hintText: 'Enter reason for your leave...',
+                    hintText: l10n.enterLeaveReason,
                     filled: true,
                     fillColor: c.surface,
                     border: OutlineInputBorder(
@@ -196,13 +213,13 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a reason';
+                      return l10n.pleaseEnterReason;
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 24),
-                _buildSectionHeader(context, 'Attachment (Optional)'),
+                _buildSectionHeader(context, l10n.attachmentOptional),
                 const SizedBox(height: 12),
                 InkWell(
                   onTap: _pickFile,
@@ -229,7 +246,7 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
                         Expanded(
                           child: Text(
                             _attachment == null
-                                ? 'Tap to select a document'
+                                ? l10n.tapToSelectDocument
                                 : _attachment!.name,
                             style: TextStyle(
                               color: _attachment == null
@@ -262,9 +279,9 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
                   ),
                   child: widget.viewModel.isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'Submit Request',
-                          style: TextStyle(
+                      : Text(
+                          l10n.submitRequest,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,

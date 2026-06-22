@@ -165,4 +165,105 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get goodEvening => 'សាយ័ន្តសួស្តី';
+
+  @override
+  String get myLeaves => 'ការសុំច្បាប់របស់ខ្ញុំ';
+
+  @override
+  String get noLeavesRequestedYet => 'មិនទាន់មានការស្នើសុំឈប់សម្រាកនៅឡើយទេ។';
+
+  @override
+  String requestedOnDate(String date) {
+    return 'បានស្នើសុំនៅ $date';
+  }
+
+  @override
+  String get leaveRequestSubmittedSuccess =>
+      'ការស្នើសុំឈប់សម្រាកត្រូវបានបញ្ជូនដោយជោគជ័យ។';
+
+  @override
+  String get leaveType => 'ប្រភេទនៃការឈប់សម្រាក';
+
+  @override
+  String get dateRange => 'រយៈពេល';
+
+  @override
+  String get startDate => 'ថ្ងៃចាប់ផ្តើម';
+
+  @override
+  String get endDate => 'ថ្ងៃបញ្ចប់';
+
+  @override
+  String get reason => 'មូលហេតុ';
+
+  @override
+  String get enterLeaveReason => 'បញ្ចូលមូលហេតុនៃការឈប់សម្រាករបស់អ្នក...';
+
+  @override
+  String get pleaseEnterReason => 'សូមបញ្ចូលមូលហេតុ';
+
+  @override
+  String get attachmentOptional => 'ឯកសារភ្ជាប់ (ជាជម្រើស)';
+
+  @override
+  String get tapToSelectDocument => 'ប៉ះដើម្បីជ្រើសរើសឯកសារ';
+
+  @override
+  String get submitRequest => 'បញ្ជូនការស្នើសុំ';
+
+  @override
+  String errorPrefix(String message) {
+    return 'កំហុស: $message';
+  }
+
+  @override
+  String get sickLeave => 'ច្បាប់ឈឺ';
+
+  @override
+  String get paidLeave => 'ច្បាប់សម្រាកមានប្រាក់ឈ្នួល';
+
+  @override
+  String get otherLeave => 'ផ្សេងៗ';
+
+  @override
+  String get unpaidLeave => 'ច្បាប់សម្រាកគ្មានប្រាក់ឈ្នួល';
+
+  @override
+  String get annualLeave => 'ច្បាប់សម្រាកប្រចាំឆ្នាំ';
+
+  @override
+  String get statusPending => 'រង់ចាំការអនុម័ត';
+
+  @override
+  String get statusApproved => 'បានអនុម័ត';
+
+  @override
+  String get statusRejected => 'បានបដិសេធ';
+
+  @override
+  String get attendanceReminders => 'ការរំលឹកវត្តមាន';
+
+  @override
+  String get dailyCheckInOutAlerts => 'ការជូនដំណឹងកត់វត្តមានចូល/ចេញប្រចាំថ្ងៃ';
+
+  @override
+  String get dailyCheckInOutAlertsSubtitle =>
+      'ទទួលបានការរំលឹក ១៥ នាទីមុនពេលចាប់ផ្តើមវេន និងបន្ទាប់ពីវេនបញ្ចប់។';
+
+  @override
+  String get testNotificationSent =>
+      'ការជូនដំណឹងសាកល្បងបានផ្ញើ! ពិនិត្យមើលការជូនដំណឹងរបស់អ្នក ឬអនុញ្ញាតការអនុញ្ញាតប្រសិនបើត្រូវបានសុំ។';
+
+  @override
+  String get testNotificationNow => 'សាកល្បងការជូនដំណឹងឥឡូវ';
+
+  @override
+  String get notifications => 'ការជូនដំណឹង';
+
+  @override
+  String get leaveNotifications => 'ការជូនដំណឹងច្បាប់ឈប់សម្រាក';
+
+  @override
+  String get leaveNotificationsSubtitle =>
+      'ទទួលបានការជូនដំណឹងនៅពេលការស្នើសុំឈប់សម្រាករបស់អ្នកត្រូវបានអនុម័ត ឬបដិសេធ។';
 }

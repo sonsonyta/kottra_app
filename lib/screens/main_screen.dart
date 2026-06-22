@@ -8,8 +8,8 @@ import 'package:kottra_app/screens/tabs/payroll_tab.dart';
 import 'package:kottra_app/config/feature_flags.dart';
 import 'package:kottra_app/screens/tabs/profile/profile_tab.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
-import 'package:kottra_app/viewmodels/attendance_view_model.dart';
-import 'package:kottra_app/viewmodels/main_view_model.dart';
+import 'package:kottra_app/view_models/attendance_view_model.dart';
+import 'package:kottra_app/view_models/main_view_model.dart';
 
 import '../l10n/app_localizations.dart';
 
