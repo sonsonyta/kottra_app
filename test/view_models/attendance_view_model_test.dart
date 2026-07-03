@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kottra_app/models/store.dart';
 import 'package:kottra_app/services/attendance_service.dart';
 import 'package:kottra_app/services/location_service.dart';
+import 'package:kottra_app/services/store_service.dart';
 import 'package:kottra_app/view_models/attendance_view_model.dart';
 
 class FakeUser implements User {
@@ -107,6 +109,18 @@ class FakeAttendanceService implements AttendanceService {
   dynamic noSuchMethod(Invocation invocation) => null;
 }
 
+class FakeStoreService implements StoreService {
+  FakeStoreService({this.store});
+
+  final Store? store;
+
+  @override
+  Future<Store?> getStore(String storeId) async => store;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
 class FakeLocationService implements LocationServiceBase {
   FakeLocationService({this.coords, this.error});
 
@@ -135,6 +149,7 @@ void main() {
         ),
         attendanceService: attendanceService,
         locationService: locationService,
+        storeService: FakeStoreService(),
       );
 
       final result = await viewModel.checkIn();
@@ -162,6 +177,7 @@ void main() {
         ),
         attendanceService: attendanceService,
         locationService: FakeLocationService(),
+        storeService: FakeStoreService(),
       );
       final loadingStates = <bool>[];
 
@@ -186,6 +202,7 @@ void main() {
           firebaseAuth: FakeFirebaseAuth(user: FakeUser(uid: 'invalid-user-id')),
           attendanceService: attendanceService,
           locationService: locationService,
+          storeService: FakeStoreService(),
         );
 
         final result = await viewModel.checkIn();

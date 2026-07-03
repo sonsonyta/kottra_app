@@ -5,7 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:kottra_app/models/attendance_record.dart';
 import 'package:kottra_app/services/attendance_service.dart';
 import 'package:kottra_app/services/location_service.dart';
+import 'package:kottra_app/services/store_service.dart';
 import 'package:kottra_app/view_models/employee_identity.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 export 'package:kottra_app/models/attendance_record.dart';
 export 'package:kottra_app/services/attendance_service.dart' show CheckInResult;
@@ -19,15 +21,25 @@ class AttendanceViewModel extends ChangeNotifier {
     FirebaseAuth? firebaseAuth,
     AttendanceService? attendanceService,
     LocationServiceBase? locationService,
+    StoreService? storeService,
   }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
        _attendanceService = attendanceService ?? AttendanceService(),
-       _locationService = locationService ?? const LocationService() {
+       _locationService = locationService ?? const LocationService(),
+       _storeService = storeService ?? StoreService() {
     _subscribeToAttendance();
+    _loadStoreTimezone();
   }
 
   final FirebaseAuth _firebaseAuth;
   final AttendanceService _attendanceService;
   final LocationServiceBase _locationService;
+  final StoreService _storeService;
+
+  /// The store's configured IANA timezone (e.g. `Asia/Phnom_Penh`), used so
+  /// shift/attendance-day calculations match the server regardless of the
+  /// employee device's local timezone. Falls back to the device timezone
+  /// until loaded or if the store hasn't been migrated to set it.
+  String? _storeTimezone;
 
   StreamSubscription<List<AttendanceRecord>>? _historySub;
 
@@ -61,16 +73,54 @@ class AttendanceViewModel extends ChangeNotifier {
         });
   }
 
+  Future<void> _loadStoreTimezone() async {
+    final identity = _identity;
+    if (identity == null) return;
+
+    try {
+      final store = await _storeService.getStore(identity.storeId);
+      _storeTimezone = store?.timezone;
+    } catch (e) {
+      debugPrint('Error loading store timezone: $e');
+    }
+    _updateTodayRecord();
+    notifyListeners();
+  }
+
+  tz.Location get _storeLocation {
+    final name = _storeTimezone;
+    if (name != null && name.isNotEmpty) {
+      try {
+        return tz.getLocation(name);
+      } catch (_) {
+        // Unknown timezone name — fall through to the device timezone.
+      }
+    }
+    try {
+      return tz.local;
+    } catch (_) {
+      // Timezone database not initialized (e.g. in tests) — last resort.
+      return tz.UTC;
+    }
+  }
+
+  /// The current wall-clock time in the store's timezone.
+  tz.TZDateTime _now() => tz.TZDateTime.now(_storeLocation);
+
+  /// Converts an absolute instant to the store's timezone.
+  tz.TZDateTime _inStoreZone(DateTime instant) =>
+      tz.TZDateTime.from(instant, _storeLocation);
+
   void _updateTodayRecord() {
     if (_history.isEmpty) {
       _todayRecord = null;
       return;
     }
 
-    final now = DateTime.now();
+    final now = _now();
 
     final latest = _history.first;
-    final recordDate = latest.date.toDate();
+    final recordDate = _inStoreZone(latest.date.toDate());
     final isTodayDate =
         recordDate.year == now.year &&
         recordDate.month == now.month &&
@@ -162,8 +212,9 @@ class AttendanceViewModel extends ChangeNotifier {
     final startMin = int.tryParse(parts[1]) ?? 0;
     final grace = lateTime ?? 0;
 
-    final now = DateTime.now();
-    final limitTime = DateTime(now.year, now.month, now.day, startHour, startMin).add(Duration(minutes: grace));
+    final now = _now();
+    final limitTime = tz.TZDateTime(_storeLocation, now.year, now.month, now.day, startHour, startMin)
+        .add(Duration(minutes: grace));
 
     return now.isAfter(limitTime);
   }
@@ -180,8 +231,8 @@ class AttendanceViewModel extends ChangeNotifier {
     final endHour = int.tryParse(endParts[0]) ?? 0;
     final endMin = int.tryParse(endParts[1]) ?? 0;
 
-    final now = DateTime.now();
-    DateTime endTime = DateTime(now.year, now.month, now.day, endHour, endMin);
+    final now = _now();
+    tz.TZDateTime endTime = tz.TZDateTime(_storeLocation, now.year, now.month, now.day, endHour, endMin);
 
     // Cross-day schedule detection
     if (endHour < startHour) {
