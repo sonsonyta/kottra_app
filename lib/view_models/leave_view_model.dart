@@ -5,8 +5,10 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:kottra_app/models/leave_request.dart';
 import 'package:kottra_app/services/leave_service.dart';
+import 'package:kottra_app/services/store_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 class LeaveViewModel extends ChangeNotifier {
   LeaveViewModel({
@@ -14,18 +16,29 @@ class LeaveViewModel extends ChangeNotifier {
     required this.employeeId,
     required this.employeeName,
     LeaveService? leaveService,
-  }) : _leaveService = leaveService ?? LeaveService() {
+    StoreService? storeService,
+  })  : _leaveService = leaveService ?? LeaveService(),
+        _storeService = storeService ?? StoreService() {
     _subscribeToLeaves();
+    _loadStoreTimezone();
   }
 
   final String storeId;
   final String employeeId;
   final String employeeName;
   final LeaveService _leaveService;
+  final StoreService _storeService;
+
+  /// The store's configured IANA timezone, used so leave dates are recorded
+  /// as calendar days in the store's timezone rather than the employee
+  /// device's local timezone. Falls back to the device timezone until
+  /// loaded or if the store hasn't been migrated to set it.
+  String? _storeTimezone;
 
   StreamSubscription<List<LeaveRequest>>? _leaveSub;
   List<LeaveRequest> _leaves = [];
   bool _isLoading = false;
+  bool _disposed = false;
 
   List<LeaveRequest> get leaves => _leaves;
   bool get isLoading => _isLoading;
@@ -38,6 +51,38 @@ class LeaveViewModel extends ChangeNotifier {
       notifyListeners();
     });
   }
+
+  Future<void> _loadStoreTimezone() async {
+    try {
+      final store = await _storeService.getStore(storeId);
+      _storeTimezone = store?.timezone;
+    } catch (e) {
+      debugPrint('Error loading store timezone: $e');
+    }
+  }
+
+  tz.Location get _storeLocation {
+    final name = _storeTimezone;
+    if (name != null && name.isNotEmpty) {
+      try {
+        return tz.getLocation(name);
+      } catch (_) {
+        // Unknown timezone name — fall through to the device timezone.
+      }
+    }
+    try {
+      return tz.local;
+    } catch (_) {
+      // Timezone database not initialized (e.g. in tests) — last resort.
+      return tz.UTC;
+    }
+  }
+
+  /// Reinterprets the calendar day the employee picked (year/month/day) as
+  /// midnight in the store's timezone, so the leave date lines up with the
+  /// store's calendar regardless of the device's local timezone.
+  tz.TZDateTime _asStoreDate(DateTime date) =>
+      tz.TZDateTime(_storeLocation, date.year, date.month, date.day);
 
   Future<void> submitRequest({
     required DateTime startDate,
@@ -83,8 +128,8 @@ class LeaveViewModel extends ChangeNotifier {
         storeId: storeId,
         employeeId: employeeId,
         employeeName: employeeName,
-        startDate: startDate,
-        endDate: endDate,
+        startDate: _asStoreDate(startDate),
+        endDate: _asStoreDate(endDate),
         type: type,
         status: LeaveStatus.pending,
         reason: reason,
@@ -95,12 +140,13 @@ class LeaveViewModel extends ChangeNotifier {
       await _leaveService.submitLeaveRequest(request);
     } finally {
       _isLoading = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _leaveSub?.cancel();
     super.dispose();
   }

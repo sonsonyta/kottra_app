@@ -48,6 +48,8 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/main', builder: (context, state) => const MainScreen()),
     GoRoute(
       path: '/leaves',
+      redirect: (context, state) =>
+          state.extra is MainViewModel ? null : '/main',
       builder: (context, state) {
         final mainViewModel = state.extra as MainViewModel;
         return LeaveListScreen(mainViewModel: mainViewModel);
@@ -55,6 +57,8 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/leaves/request',
+      redirect: (context, state) =>
+          state.extra is LeaveViewModel ? null : '/main',
       builder: (context, state) {
         final viewModel = state.extra as LeaveViewModel;
         return RequestLeaveScreen(viewModel: viewModel);

@@ -71,25 +71,6 @@ class AttendanceService {
 
   // ── Streams ──────────────────────────────────────────────────────────────────
 
-  /// Streams the current employee's attendance record for today.
-  Stream<AttendanceRecord?> streamTodayRecord(
-    String storeId,
-    String employeeId,
-  ) {
-    final midnight = _midnight(DateTime.now());
-    final dateString = "${midnight.year}-${midnight.month.toString().padLeft(2, '0')}-${midnight.day.toString().padLeft(2, '0')}";
-    return _col(storeId)
-        .where('employeeId', isEqualTo: employeeId)
-        .where('date', isEqualTo: dateString)
-        .limit(1)
-        .snapshots()
-        .map((snap) {
-          if (snap.docs.isEmpty) return null;
-          final doc = snap.docs.first;
-          return AttendanceRecord.fromMap(doc.id, doc.data());
-        });
-  }
-
   /// Streams the employee's full attendance history, newest first.
   Stream<List<AttendanceRecord>> streamHistory(
     String storeId,
@@ -173,7 +154,4 @@ class AttendanceService {
     return CheckOutResult.fromMap(data.cast<Object?, Object?>());
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────────
-
-  static DateTime _midnight(DateTime dt) => DateTime.utc(dt.year, dt.month, dt.day);
 }

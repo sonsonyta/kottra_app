@@ -42,6 +42,8 @@ class MainViewModel extends ChangeNotifier {
   HREmployee? _employee;
   List<HRPayslip> _payslips = [];
 
+  bool _disposed = false;
+
   // ── Navigation ──────────────────────────────────────────────────────────────
 
   int _currentTabIndex = 0;
@@ -63,6 +65,7 @@ class MainViewModel extends ChangeNotifier {
 
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
+    if (_disposed) return;
     _remindersEnabled = prefs.getBool('attendance_reminders') ?? false;
     _leaveNotificationsEnabled = prefs.getBool('leave_notifications') ?? true;
     NotificationService.instance.leaveNotificationsEnabled = _leaveNotificationsEnabled;
@@ -73,6 +76,7 @@ class MainViewModel extends ChangeNotifier {
     _remindersEnabled = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('attendance_reminders', value);
+    if (_disposed) return;
     notifyListeners();
 
     if (value) {
@@ -90,6 +94,7 @@ class MainViewModel extends ChangeNotifier {
     NotificationService.instance.leaveNotificationsEnabled = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('leave_notifications', value);
+    if (_disposed) return;
     notifyListeners();
   }
 
@@ -102,6 +107,8 @@ class MainViewModel extends ChangeNotifier {
     return parseEmployeeUid(uid);
   }
 
+  bool _fcmTokenSynced = false;
+
   void _subscribeToEmployee() {
     final identity = _identity;
     if (identity == null) return;
@@ -113,7 +120,8 @@ class MainViewModel extends ChangeNotifier {
           _employee = emp;
           notifyListeners();
 
-          if (emp != null) {
+          if (emp != null && !_fcmTokenSynced) {
+            _fcmTokenSynced = true;
             try {
               final token = await NotificationService.instance.getFcmToken();
               if (token != null && emp.fcmToken != token) {
@@ -260,11 +268,9 @@ class MainViewModel extends ChangeNotifier {
         await _employeeService.updateEmployee(
             identity.storeId, identity.employeeId, updates);
       }
-    }catch(e){
-      rethrow;
     } finally {
       _isUpdatingProfile = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 
@@ -274,6 +280,7 @@ class MainViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _employeeSub?.cancel();
     _payslipSub?.cancel();
     super.dispose();

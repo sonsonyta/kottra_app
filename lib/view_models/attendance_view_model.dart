@@ -53,6 +53,8 @@ class AttendanceViewModel extends ChangeNotifier {
   bool _isActionLoading = false;
   bool get isActionLoading => _isActionLoading;
 
+  bool _disposed = false;
+
   ({String storeId, String employeeId})? get _identity {
     final uid = _firebaseAuth.currentUser?.uid;
     if (uid == null) return null;
@@ -83,6 +85,7 @@ class AttendanceViewModel extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error loading store timezone: $e');
     }
+    if (_disposed) return;
     _updateTodayRecord();
     notifyListeners();
   }
@@ -284,15 +287,15 @@ class AttendanceViewModel extends ChangeNotifier {
           if (_optimisticCheckInAt != null && _todayRecord?.checkIn == null) {
             _optimisticCheckInAt = null;
             _optimisticAttendanceId = null;
-            notifyListeners();
+            if (!_disposed) notifyListeners();
           }
         });
-        notifyListeners();
+        if (!_disposed) notifyListeners();
       }
       return result;
     } finally {
       _isActionLoading = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 
@@ -335,17 +338,18 @@ class AttendanceViewModel extends ChangeNotifier {
         _optimisticAttendanceId = result.attendanceId;
         _optimisticCheckInAt = null;
         _optimisticTimer?.cancel();
-        notifyListeners();
+        if (!_disposed) notifyListeners();
       }
       return result;
     } finally {
       _isActionLoading = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _optimisticTimer?.cancel();
     _historySub?.cancel();
     super.dispose();

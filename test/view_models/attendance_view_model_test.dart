@@ -100,12 +100,6 @@ class FakeAttendanceService implements AttendanceService {
   }) => Stream.value(const []);
 
   @override
-  Stream<AttendanceRecord?> streamTodayRecord(
-    String storeId,
-    String employeeId,
-  ) => Stream.value(null);
-
-  @override
   dynamic noSuchMethod(Invocation invocation) => null;
 }
 

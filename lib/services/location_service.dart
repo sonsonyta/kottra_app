@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
 class LocationCoords {
@@ -24,7 +25,7 @@ class LocationService implements LocationServiceBase {
     }
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
-      print('Location permission denied: $permission');
+      debugPrint('Location permission denied: $permission');
       return null;
     }
 
@@ -40,7 +41,7 @@ class LocationService implements LocationServiceBase {
         longitude: position.longitude,
       );
     } catch (e) {
-      print('Failed to get location: $e');
+      debugPrint('Failed to get location: $e');
       return null;
     }
   }
