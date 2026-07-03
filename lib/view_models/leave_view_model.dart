@@ -13,14 +13,15 @@ class LeaveViewModel extends ChangeNotifier {
     required this.storeId,
     required this.employeeId,
     required this.employeeName,
-  }) {
+    LeaveService? leaveService,
+  }) : _leaveService = leaveService ?? LeaveService() {
     _subscribeToLeaves();
   }
 
   final String storeId;
   final String employeeId;
   final String employeeName;
-  final LeaveService _leaveService = LeaveService.instance;
+  final LeaveService _leaveService;
 
   StreamSubscription<List<LeaveRequest>>? _leaveSub;
   List<LeaveRequest> _leaves = [];
@@ -65,7 +66,7 @@ class LeaveViewModel extends ChangeNotifier {
       if (attachment != null) {
         final storageRef = FirebaseStorage.instance
             .ref()
-            .child('hr_leave_requests/$employeeId/${DateTime.now().millisecondsSinceEpoch}_${attachment.name}');
+            .child('stores/$storeId/hr_leave_requests/$employeeId/${DateTime.now().millisecondsSinceEpoch}_${attachment.name}');
             
         if (kIsWeb && attachment.bytes != null) {
           final uploadTask = await storageRef.putData(attachment.bytes!);

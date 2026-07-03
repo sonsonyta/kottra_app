@@ -2,10 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kottra_app/models/leave_request.dart';
 
 class LeaveService {
-  LeaveService._();
+  LeaveService({FirebaseFirestore? firestore})
+      : _db = firestore ?? FirebaseFirestore.instance;
 
-  static final LeaveService instance = LeaveService._();
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore _db;
 
   CollectionReference<Map<String, dynamic>> _col(String storeId) =>
       _db.collection('stores/$storeId/hr_leave_requests');
