@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kottra_app/models/store.dart';
@@ -92,12 +93,14 @@ class FakeAttendanceService implements AttendanceService {
     return checkOutResult;
   }
 
+  List<AttendanceRecord> history = const [];
+
   @override
   Stream<List<AttendanceRecord>> streamHistory(
     String storeId,
     String employeeId, {
     int limit = 30,
-  }) => Stream.value(const []);
+  }) => Stream.value(history);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => null;
@@ -205,6 +208,52 @@ void main() {
         expect(locationService.calls, 0);
         expect(attendanceService.checkInCalls, 0);
         expect(viewModel.isActionLoading, isFalse);
+
+        viewModel.dispose();
+      },
+    );
+  });
+
+  group('AttendanceViewModel.todayRecord', () {
+    test(
+      'ignores a future-dated leave record when resolving today\'s attendance',
+      () async {
+        final now = DateTime.now();
+        final futureLeave = AttendanceRecord(
+          id: 'future-leave',
+          storeId: 'store-1',
+          employeeId: 'emp-1',
+          employeeName: 'Employee',
+          date: Timestamp.fromDate(now.add(const Duration(days: 3))),
+          status: AttendanceStatus.leave,
+        );
+        final todayCheckIn = AttendanceRecord(
+          id: 'today-checkin',
+          storeId: 'store-1',
+          employeeId: 'emp-1',
+          employeeName: 'Employee',
+          date: Timestamp.fromDate(now),
+          checkIn: now,
+          status: AttendanceStatus.present,
+        );
+
+        final attendanceService = FakeAttendanceService()
+          ..history = [futureLeave, todayCheckIn];
+
+        final viewModel = AttendanceViewModel(
+          firebaseAuth: FakeFirebaseAuth(
+            user: FakeUser(uid: 'hr_employee:store-1:emp-1'),
+          ),
+          attendanceService: attendanceService,
+          locationService: FakeLocationService(),
+          storeService: FakeStoreService(),
+        );
+
+        // Let the fake history stream and store-timezone future resolve.
+        await Future<void>.delayed(Duration.zero);
+
+        expect(viewModel.isCheckedIn, isTrue);
+        expect(viewModel.todayRecord?.id, 'today-checkin');
 
         viewModel.dispose();
       },

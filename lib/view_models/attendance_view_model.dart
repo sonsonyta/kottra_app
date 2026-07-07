@@ -122,7 +122,20 @@ class AttendanceViewModel extends ChangeNotifier {
 
     final now = _now();
 
-    final latest = _history.first;
+    // Ignore records dated after right now — e.g. attendance placeholders
+    // created for an approved future leave request. _history is already
+    // ordered newest-first by `date`, so a future-dated record would
+    // otherwise always outrank today's real check-in/check-out and mask
+    // the employee's actual attendance state until that future date passes.
+    final relevantHistory = _history.where(
+      (r) => !_inStoreZone(r.date.toDate()).isAfter(now),
+    );
+    if (relevantHistory.isEmpty) {
+      _todayRecord = null;
+      return;
+    }
+
+    final latest = relevantHistory.first;
     final recordDate = _inStoreZone(latest.date.toDate());
     final isTodayDate =
         recordDate.year == now.year &&
