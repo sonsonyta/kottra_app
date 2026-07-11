@@ -84,6 +84,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leave => 'Leave';
 
   @override
+  String get dayOff => 'Day Off';
+
+  @override
+  String get onDayOffToday => 'You are scheduled off today.';
+
+  @override
   String get quickActions => 'Quick Actions';
 
   @override

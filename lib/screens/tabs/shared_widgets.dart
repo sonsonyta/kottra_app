@@ -177,7 +177,9 @@ class AttendanceListItem extends StatelessWidget {
                             ? record.leaveNote ?? 'On leave'
                             : record.status == AttendanceStatus.holiday
                                 ? 'Public holiday'
-                                : '--:--',
+                                : record.status == AttendanceStatus.dayOff
+                                    ? 'Scheduled day off'
+                                    : '--:--',
                     style: TextStyle(
                       fontSize: 12,
                       color: c.textSecondary,
@@ -250,6 +252,11 @@ class AttendanceListItem extends StatelessWidget {
           label: 'Holiday',
           color: c.holiday,
           background: c.holidayLight,
+        ),
+      AttendanceStatus.dayOff => StatusConfig(
+          label: 'Day Off',
+          color: c.primary,
+          background: c.infoLight,
         ),
     };
   }

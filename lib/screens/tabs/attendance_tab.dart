@@ -193,6 +193,7 @@ class _AttendanceTabState extends State<AttendanceTab> {
                 break;
               case AttendanceStatus.leave:
               case AttendanceStatus.holiday:
+              case AttendanceStatus.dayOff:
                 markerColor = c.primary;
                 break;
             }

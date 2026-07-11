@@ -25,6 +25,8 @@
   "late": "Late",
   "absent": "Absent",
   "leave": "Leave",
+  "dayOff": "Day Off",
+  "onDayOffToday": "You are scheduled off today.",
   "quickActions": "Quick Actions",
   "requestLeave": "Request Leave",
   "myPayslips": "My Payslips",

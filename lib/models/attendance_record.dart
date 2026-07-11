@@ -25,7 +25,8 @@ enum AttendanceStatus {
   absent('Absent'),
   late('Late'),
   leave('Leave'),
-  holiday('Holiday');
+  holiday('Holiday'),
+  dayOff('Day Off');
 
   const AttendanceStatus(this.value);
 

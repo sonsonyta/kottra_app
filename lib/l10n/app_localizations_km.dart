@@ -84,6 +84,12 @@ class AppLocalizationsKm extends AppLocalizations {
   String get leave => 'ឈប់សម្រាក';
 
   @override
+  String get dayOff => 'ថ្ងៃឈប់';
+
+  @override
+  String get onDayOffToday => 'ថ្ងៃនេះជាថ្ងៃឈប់សម្រាករបស់អ្នក។';
+
+  @override
   String get quickActions => 'សកម្មភាពរហ័ស';
 
   @override

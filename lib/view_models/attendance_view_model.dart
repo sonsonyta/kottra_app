@@ -149,10 +149,11 @@ class AttendanceViewModel extends ChangeNotifier {
 
       if (hoursSinceCheckIn > maxHoursBeforeStaleCheckIn) {
         // More than maxHoursBeforeStaleCheckIn hours since check-in
-        // If they marked absent or leave today, they can't check in.
+        // If they marked absent, leave, or day off today, they can't check in.
         if (isTodayDate &&
             (latest.status == AttendanceStatus.absent ||
-                latest.status == AttendanceStatus.leave)) {
+                latest.status == AttendanceStatus.leave ||
+                latest.status == AttendanceStatus.dayOff)) {
           _todayRecord = latest;
         } else {
           _todayRecord = null;
@@ -168,10 +169,11 @@ class AttendanceViewModel extends ChangeNotifier {
           _todayRecord = latest;
         } else {
           // More than minHoursBeforeNewCheckIn hours since check-out
-          // If they marked absent or leave today, they can't check in.
+          // If they marked absent, leave, or day off today, they can't check in.
           if (isTodayDate &&
               (latest.status == AttendanceStatus.absent ||
-                  latest.status == AttendanceStatus.leave)) {
+                  latest.status == AttendanceStatus.leave ||
+                  latest.status == AttendanceStatus.dayOff)) {
             _todayRecord = latest;
           } else {
             _todayRecord = null;
@@ -198,6 +200,7 @@ class AttendanceViewModel extends ChangeNotifier {
 
   bool get isOnLeave => _todayRecord?.status == AttendanceStatus.leave;
   bool get isAbsent => _todayRecord?.status == AttendanceStatus.absent;
+  bool get isDayOff => _todayRecord?.status == AttendanceStatus.dayOff;
   AttendanceRecord? get todayRecord => _todayRecord;
 
   bool get isCheckedIn {

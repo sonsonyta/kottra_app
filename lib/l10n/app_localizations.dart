@@ -248,6 +248,18 @@ abstract class AppLocalizations {
   /// **'Leave'**
   String get leave;
 
+  /// No description provided for @dayOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Day Off'**
+  String get dayOff;
+
+  /// No description provided for @onDayOffToday.
+  ///
+  /// In en, this message translates to:
+  /// **'You are scheduled off today.'**
+  String get onDayOffToday;
+
   /// No description provided for @quickActions.
   ///
   /// In en, this message translates to:

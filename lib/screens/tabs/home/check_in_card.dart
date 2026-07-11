@@ -145,6 +145,17 @@ class CheckInCard extends StatelessWidget {
       elapsed = checkOutTime.difference(checkInTime);
     }
 
+    final isOnLeave = attendanceViewModel.isOnLeave;
+    final isAbsent = attendanceViewModel.isAbsent;
+    final isDayOff = attendanceViewModel.isDayOff;
+    final isBlocked = isOnLeave || isAbsent || isDayOff;
+    final localizations = AppLocalizations.of(context)!;
+    final blockedLabel = isOnLeave
+        ? localizations.onLeave
+        : isDayOff
+            ? localizations.dayOff
+            : localizations.absent;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -165,7 +176,7 @@ class CheckInCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: (attendanceViewModel.isOnLeave || attendanceViewModel.isAbsent)
+                  color: isBlocked
                       ? c.warningLight
                       : (isCheckedIn ? c.successLight : c.infoLight),
                   borderRadius: BorderRadius.circular(999),
@@ -178,15 +189,15 @@ class CheckInCard extends StatelessWidget {
                       height: 8,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: (attendanceViewModel.isOnLeave || attendanceViewModel.isAbsent)
+                        color: isBlocked
                             ? c.warning
                             : (isCheckedIn ? c.success : c.textSecondary),
                       ),
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      (attendanceViewModel.isOnLeave || attendanceViewModel.isAbsent)
-                          ? (attendanceViewModel.isOnLeave ? AppLocalizations.of(context)!.onLeave : AppLocalizations.of(context)!.absent)
+                      isBlocked
+                          ? blockedLabel
                           : (isCheckedIn
                               ? AppLocalizations.of(context)!.checkedIn
                               : (isCheckedOut
@@ -195,7 +206,7 @@ class CheckInCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: (attendanceViewModel.isOnLeave || attendanceViewModel.isAbsent)
+                        color: isBlocked
                             ? c.warning
                             : (isCheckedIn ? c.success : c.textSecondary),
                       ),
@@ -243,7 +254,7 @@ class CheckInCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          if (attendanceViewModel.isOnLeave || attendanceViewModel.isAbsent)
+          if (isBlocked)
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
               alignment: Alignment.center,
@@ -252,9 +263,11 @@ class CheckInCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
-                attendanceViewModel.isOnLeave
+                isOnLeave
                     ? '${AppLocalizations.of(context)!.onLeaveToday}${attendanceViewModel.todayRecord?.leaveType != null ? ' (${attendanceViewModel.todayRecord!.leaveType!.value})' : ''}.'
-                    : AppLocalizations.of(context)!.absent,
+                    : isDayOff
+                        ? AppLocalizations.of(context)!.onDayOffToday
+                        : AppLocalizations.of(context)!.absent,
                 style: TextStyle(
                   color: c.textPrimary,
                   fontSize: 15,
