@@ -198,7 +198,30 @@ class MainViewModel extends ChangeNotifier {
   String? get endWorkingTime => _employee?.endWorkingTime;
   int? get lateTime => _employee?.lateTime;
   EmployeeStatus get employeeStatus => _employee?.status ?? EmployeeStatus.active;
-  String? get profileImageUrl => _employee?.profileImageThumbnail ?? _employee?.profileImage;
+  String? get profileImageUrl {
+    final url = _employee?.profileImageThumbnail ?? _employee?.profileImage;
+    return _resolveEmulatorUrl(url);
+  }
+
+  /// In debug mode the Storage emulator returns download URLs pointing at
+  /// `localhost`/`127.0.0.1`, which the Android emulator cannot reach — it must
+  /// use `10.0.2.2` (matching the emulator host wired up in `main.dart`).
+  String? _resolveEmulatorUrl(String? url) {
+    if (url == null) return null;
+    if (kDebugMode && defaultTargetPlatform == TargetPlatform.android) {
+      return url
+          .replaceFirst('localhost', '10.0.2.2')
+          .replaceFirst('127.0.0.1', '10.0.2.2');
+    }
+    return url;
+  }
+
+  /// On Android the Storage emulator returns download URLs hosted at
+  /// `10.0.2.2` (the emulator host). Persisting that would make the URL
+  /// unreachable from iOS. Store the canonical `localhost` form instead and let
+  /// [_resolveEmulatorUrl] rewrite it back to `10.0.2.2` per-platform on read.
+  /// A no-op in release, where URLs point at real Firebase Storage hosts.
+  String _canonicalizeUploadUrl(String url) => url.replaceFirst('10.0.2.2', 'localhost');
 
   // ── Payroll ──────────────────────────────────────────────────────────────────
 
@@ -226,52 +249,86 @@ class MainViewModel extends ChangeNotifier {
       if (lastName != null && lastName.isNotEmpty) updates['lastName'] = lastName;
 
       if (croppedImageBytes != null) {
-        final profileWebp = await FlutterImageCompress.compressWithList(
-          croppedImageBytes,
-          minWidth: 700,
-          minHeight: 700,
-          quality: 85,
-          format: CompressFormat.webp,
+        final profile = await _compressImage(croppedImageBytes, 700);
+        final thumbnail = await _compressImage(croppedImageBytes, 120);
+
+        final profileRef = FirebaseStorage.instance.ref().child(
+            'stores/${identity.storeId}/employees/${identity.employeeId}/profile.${profile.ext}');
+        final thumbRef = FirebaseStorage.instance.ref().child(
+            'stores/${identity.storeId}/employees/${identity.employeeId}/profile_thumbnail.${thumbnail.ext}');
+
+        final profileTask = await _withTimeout(
+          profileRef.putData(
+            profile.bytes,
+            SettableMetadata(contentType: profile.contentType),
+          ),
+          'uploading profile image',
+        );
+        final thumbTask = await _withTimeout(
+          thumbRef.putData(
+            thumbnail.bytes,
+            SettableMetadata(contentType: thumbnail.contentType),
+          ),
+          'uploading thumbnail',
         );
 
-        final thumbnailWebp = await FlutterImageCompress.compressWithList(
-          croppedImageBytes,
-          minWidth: 120,
-          minHeight: 120,
-          quality: 85,
-          format: CompressFormat.webp,
-        );
-
-        if (profileWebp.isNotEmpty && thumbnailWebp.isNotEmpty) {
-          final profileRef = FirebaseStorage.instance
-              .ref()
-              .child('stores/${identity.storeId}/employees/${identity.employeeId}/profile.webp');
-          final thumbRef = FirebaseStorage.instance
-              .ref()
-              .child('stores/${identity.storeId}/employees/${identity.employeeId}/profile_thumbnail.webp');
-
-          final profileTask = await profileRef.putData(
-            profileWebp,
-            SettableMetadata(contentType: 'image/webp'),
-          );
-          final thumbTask = await thumbRef.putData(
-            thumbnailWebp,
-            SettableMetadata(contentType: 'image/webp'),
-          );
-
-          updates['profileImage'] = await profileTask.ref.getDownloadURL();
-          updates['profileImageThumbnail'] = await thumbTask.ref.getDownloadURL();
-        }
+        updates['profileImage'] = _canonicalizeUploadUrl(
+            await _withTimeout(profileTask.ref.getDownloadURL(), 'getting profile image URL'));
+        updates['profileImageThumbnail'] = _canonicalizeUploadUrl(
+            await _withTimeout(thumbTask.ref.getDownloadURL(), 'getting thumbnail URL'));
       }
 
       if (updates.isNotEmpty) {
-        await _employeeService.updateEmployee(
-            identity.storeId, identity.employeeId, updates);
+        await _withTimeout(
+          _employeeService.updateEmployee(
+              identity.storeId, identity.employeeId, updates),
+          'saving profile',
+        );
       }
     } finally {
       _isUpdatingProfile = false;
       if (!_disposed) notifyListeners();
     }
+  }
+
+  /// Guards a network step so a stalled backend (e.g. an unresponsive emulator
+  /// connection) surfaces a clear error instead of leaving the UI spinning
+  /// forever. The [step] label names which operation timed out.
+  Future<T> _withTimeout<T>(Future<T> future, String step) {
+    return future.timeout(
+      const Duration(seconds: 30),
+      onTimeout: () => throw TimeoutException('Timed out while $step'),
+    );
+  }
+
+  /// Compresses [source] to a square of [size]px. Prefers WebP, but on Android
+  /// WebP encoding can return an empty list, so we fall back to JPEG (which is
+  /// reliably supported on both platforms). Throws if compression fails
+  /// entirely, so callers surface an error instead of silently doing nothing.
+  Future<_CompressedImage> _compressImage(Uint8List source, int size) async {
+    final webp = await FlutterImageCompress.compressWithList(
+      source,
+      minWidth: size,
+      minHeight: size,
+      quality: 85,
+      format: CompressFormat.webp,
+    );
+    if (webp.isNotEmpty) {
+      return _CompressedImage(webp, 'webp', 'image/webp');
+    }
+
+    final jpeg = await FlutterImageCompress.compressWithList(
+      source,
+      minWidth: size,
+      minHeight: size,
+      quality: 85,
+      format: CompressFormat.jpeg,
+    );
+    if (jpeg.isNotEmpty) {
+      return _CompressedImage(jpeg, 'jpg', 'image/jpeg');
+    }
+
+    throw Exception('Image compression failed to produce any output.');
   }
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
@@ -285,4 +342,12 @@ class MainViewModel extends ChangeNotifier {
     _payslipSub?.cancel();
     super.dispose();
   }
+}
+
+class _CompressedImage {
+  const _CompressedImage(this.bytes, this.ext, this.contentType);
+
+  final Uint8List bytes;
+  final String ext;
+  final String contentType;
 }

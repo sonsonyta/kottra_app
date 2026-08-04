@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
+import 'package:crop_your_image/crop_your_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:image_cropper/image_cropper.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../view_models/main_view_model.dart';
@@ -40,37 +40,27 @@ class EditProfileSheetState extends State<EditProfileSheet> {
   Future<void> _pickImage() async {
     final result = await FilePicker.pickFiles(
       type: FileType.image,
+      withData: true,
     );
-    if (result != null && result.files.isNotEmpty) {
-      final file = result.files.first;
-      if (file.path != null) {
-        if (!mounted) return;
-        final c = appColors(context);
-        final croppedFile = await ImageCropper().cropImage(
-          sourcePath: file.path!,
-          aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-          uiSettings: [
-            AndroidUiSettings(
-              toolbarTitle: 'Crop Image',
-              toolbarColor: c.primary,
-              toolbarWidgetColor: Colors.white,
-              initAspectRatio: CropAspectRatioPreset.square,
-              lockAspectRatio: true,
-            ),
-            IOSUiSettings(
-              title: 'Crop Image',
-              aspectRatioLockEnabled: true,
-              resetAspectRatioEnabled: false,
-            ),
-          ],
-        );
-        if (croppedFile != null) {
-          final bytes = await croppedFile.readAsBytes();
-          setState(() {
-            _croppedImageBytes = bytes;
-          });
-        }
-      }
+    if (result == null || result.files.isEmpty) return;
+
+    final bytes = result.files.first.bytes;
+    if (bytes == null) return;
+    if (!mounted) return;
+
+    // Crop in a pure-Dart cropper (crop_your_image). This renders entirely
+    // inside Flutter and never launches a separate Android activity, avoiding
+    // the native "Reply already submitted" crash of image_cropper's uCrop flow.
+    final cropped = await Navigator.of(context).push<Uint8List>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => _CropImageScreen(imageBytes: bytes),
+      ),
+    );
+    if (cropped != null && mounted) {
+      setState(() {
+        _croppedImageBytes = cropped;
+      });
     }
   }
 
@@ -195,6 +185,80 @@ class EditProfileSheetState extends State<EditProfileSheet> {
                 : Text(l10n.save, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Full-screen square cropper backed by crop_your_image (pure Dart).
+/// Returns the cropped image bytes via [Navigator.pop], or nothing if canceled.
+class _CropImageScreen extends StatefulWidget {
+  const _CropImageScreen({required this.imageBytes});
+
+  final Uint8List imageBytes;
+
+  @override
+  State<_CropImageScreen> createState() => _CropImageScreenState();
+}
+
+class _CropImageScreenState extends State<_CropImageScreen> {
+  final _controller = CropController();
+  bool _isCropping = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = appColors(context);
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: const Text('Crop Image'),
+        actions: [
+          if (_isCropping)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Center(
+                child: SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ),
+              ),
+            )
+          else
+            TextButton(
+              onPressed: () {
+                setState(() => _isCropping = true);
+                _controller.crop();
+              },
+              child: Text(
+                AppLocalizations.of(context)!.save,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+        ],
+      ),
+      body: Crop(
+        image: widget.imageBytes,
+        controller: _controller,
+        aspectRatio: 1,
+        baseColor: Colors.black,
+        maskColor: Colors.black.withValues(alpha: 0.6),
+        cornerDotBuilder: (size, edgeAlignment) =>
+            DotControl(color: c.primary),
+        onCropped: (result) {
+          if (!mounted) return;
+          switch (result) {
+            case CropSuccess(:final croppedImage):
+              Navigator.of(context).pop(croppedImage);
+            case CropFailure():
+              setState(() => _isCropping = false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Failed to crop image')),
+              );
+          }
+        },
       ),
     );
   }

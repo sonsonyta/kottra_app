@@ -27,8 +27,11 @@ class _AttendanceTabState extends State<AttendanceTab> {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
-    final records = widget.attendanceViewModel.attendanceRecords;
-    
+    final records = widget.attendanceViewModel.attendanceRecords.where((r) {
+      final d = r.date.toDate();
+      return d.year == _focusedDay.year && d.month == _focusedDay.month;
+    });
+
     final presentCount = records.where((r) => r.status == AttendanceStatus.present).length;
     final lateCount = records.where((r) => r.status == AttendanceStatus.late).length;
     final absentCount = records.where((r) => r.status == AttendanceStatus.absent).length;
@@ -141,6 +144,11 @@ class _AttendanceTabState extends State<AttendanceTab> {
         onDaySelected: (selectedDay, focusedDay) {
           setState(() {
             _selectedDay = selectedDay;
+            _focusedDay = focusedDay;
+          });
+        },
+        onPageChanged: (focusedDay) {
+          setState(() {
             _focusedDay = focusedDay;
           });
         },

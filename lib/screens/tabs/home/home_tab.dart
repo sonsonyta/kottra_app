@@ -154,7 +154,11 @@ class _TodayStatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
-    final records = attendanceViewModel.attendanceRecords;
+    final now = DateTime.now();
+    final records = attendanceViewModel.attendanceRecords.where((r) {
+      final d = r.date.toDate();
+      return d.year == now.year && d.month == now.month;
+    });
     final presentCount =
         records.where((r) => r.status == AttendanceStatus.present).length;
     final lateCount =
