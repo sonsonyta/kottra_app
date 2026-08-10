@@ -3,13 +3,19 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:kottra_app/models/attendance_record.dart';
+import 'package:kottra_app/models/hr_employee.dart';
+import 'package:kottra_app/models/hr_settings.dart';
+import 'package:kottra_app/models/payroll_deductions.dart';
 import 'package:kottra_app/services/attendance_service.dart';
+import 'package:kottra_app/services/employee_service.dart';
 import 'package:kottra_app/services/location_service.dart';
+import 'package:kottra_app/services/settings_service.dart';
 import 'package:kottra_app/services/store_service.dart';
 import 'package:kottra_app/view_models/employee_identity.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 export 'package:kottra_app/models/attendance_record.dart';
+export 'package:kottra_app/models/payroll_deductions.dart';
 export 'package:kottra_app/services/attendance_service.dart' show CheckInResult;
 
 class AttendanceViewModel extends ChangeNotifier {
@@ -22,11 +28,16 @@ class AttendanceViewModel extends ChangeNotifier {
     AttendanceService? attendanceService,
     LocationServiceBase? locationService,
     StoreService? storeService,
+    SettingsService? settingsService,
+    EmployeeService? employeeService,
   }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
        _attendanceService = attendanceService ?? AttendanceService(),
        _locationService = locationService ?? const LocationService(),
-       _storeService = storeService ?? StoreService() {
+       _storeService = storeService ?? StoreService(),
+       _settingsService = settingsService ?? SettingsService(),
+       _employeeService = employeeService ?? EmployeeService() {
     _subscribeToAttendance();
+    _subscribeToDeductionInputs();
     _loadStoreTimezone();
   }
 
@@ -34,6 +45,8 @@ class AttendanceViewModel extends ChangeNotifier {
   final AttendanceService _attendanceService;
   final LocationServiceBase _locationService;
   final StoreService _storeService;
+  final SettingsService _settingsService;
+  final EmployeeService _employeeService;
 
   /// The store's configured IANA timezone (e.g. `Asia/Phnom_Penh`), used so
   /// shift/attendance-day calculations match the server regardless of the
@@ -42,6 +55,11 @@ class AttendanceViewModel extends ChangeNotifier {
   String? _storeTimezone;
 
   StreamSubscription<List<AttendanceRecord>>? _historySub;
+  StreamSubscription<HrSettings>? _settingsSub;
+  StreamSubscription<HREmployee?>? _employeeSub;
+
+  HrSettings? _hrSettings;
+  HREmployee? _employee;
 
   AttendanceRecord? _todayRecord;
   List<AttendanceRecord> _history = [];
@@ -73,6 +91,48 @@ class AttendanceViewModel extends ChangeNotifier {
           _updateTodayRecord();
           notifyListeners();
         });
+  }
+
+  /// Streams the two slow-moving inputs to the deduction figure — the store's
+  /// HR settings and the employee's own record (salary/currency). The running
+  /// deduction itself recomputes live off the attendance stream; these just
+  /// keep the config and salary current.
+  void _subscribeToDeductionInputs() {
+    final identity = _identity;
+    if (identity == null) return;
+
+    _settingsSub?.cancel();
+    _settingsSub = _settingsService
+        .streamHrSettings(identity.storeId)
+        .listen((settings) {
+          _hrSettings = settings;
+          if (!_disposed) notifyListeners();
+        }, onError: (Object e) => debugPrint('Error loading HR settings: $e'));
+
+    _employeeSub?.cancel();
+    _employeeSub = _employeeService
+        .streamEmployee(identity.storeId, identity.employeeId)
+        .listen((employee) {
+          _employee = employee;
+          if (!_disposed) notifyListeners();
+        }, onError: (Object e) => debugPrint('Error loading employee: $e'));
+  }
+
+  /// The employee's accrued late + absence deductions for the current pay
+  /// period, or `null` until the settings and employee record have loaded.
+  /// Recomputed on demand so it always reflects the latest attendance stream.
+  DeductionBreakdown? get periodDeductions {
+    final employee = _employee;
+    final settings = _hrSettings;
+    if (employee == null || settings == null) return null;
+    return computePeriodDeductions(
+      records: _history,
+      monthlyBasicSalary: employee.basicSalary,
+      currency: employee.currency,
+      settings: settings,
+      today: _now(),
+      toStoreZone: _inStoreZone,
+    );
   }
 
   Future<void> _loadStoreTimezone() async {
@@ -368,6 +428,8 @@ class AttendanceViewModel extends ChangeNotifier {
     _disposed = true;
     _optimisticTimer?.cancel();
     _historySub?.cancel();
+    _settingsSub?.cancel();
+    _employeeSub?.cancel();
     super.dispose();
   }
 }

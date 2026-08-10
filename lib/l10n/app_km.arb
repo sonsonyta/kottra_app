@@ -84,5 +84,20 @@
   "testNotificationNow": "សាកល្បងការជូនដំណឹងឥឡូវ",
   "notifications": "ការជូនដំណឹង",
   "leaveNotifications": "ការជូនដំណឹងច្បាប់ឈប់សម្រាក",
-  "leaveNotificationsSubtitle": "ទទួលបានការជូនដំណឹងនៅពេលការស្នើសុំឈប់សម្រាករបស់អ្នកត្រូវបានអនុម័ត ឬបដិសេធ។"
+  "leaveNotificationsSubtitle": "ទទួលបានការជូនដំណឹងនៅពេលការស្នើសុំឈប់សម្រាករបស់អ្នកត្រូវបានអនុម័ត ឬបដិសេធ។",
+  "scheduleTitle": "កាលវិភាគ",
+  "today": "ថ្ងៃនេះ",
+  "holiday": "ថ្ងៃឈប់បុណ្យ",
+  "yourDaysOff": "ថ្ងៃឈប់សម្រាករបស់អ្នក",
+  "holidaysThisMonth": "ថ្ងៃឈប់បុណ្យ",
+  "noDaysOffThisMonth": "មិនមានថ្ងៃឈប់សម្រាកសម្រាប់ខែនេះទេ។",
+  "noHolidaysThisMonth": "មិនមានថ្ងៃឈប់បុណ្យសម្រាប់ខែនេះទេ។",
+  "deductions": "ការកាត់ប្រាក់",
+  "deductionsThisPeriod": "ការកាត់ប្រាក់ក្នុងអំឡុងពេលនេះ",
+  "total": "សរុប",
+  "noDeductionsYet": "មិនទាន់មានការកាត់ប្រាក់ក្នុងអំឡុងពេលនេះទេ។",
+  "periodFirstHalf": "ថ្ងៃ១–១៥",
+  "periodSecondHalf": "ថ្ងៃ១៦–ចុងខែ",
+  "periodFullMonth": "ខែនេះ",
+  "estimatedFromAttendance": "បា៉ន់ស្មានតាមវត្តមានរបស់អ្នករហូតមកដល់ពេលនេះ។ ចំនួនចុងក្រោយត្រូវបានកំណត់នៅពេលដំណើរការប្រាក់ខែ។"
 }

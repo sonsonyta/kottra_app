@@ -51,6 +51,7 @@ class AttendanceRecord {
     this.checkIn,
     this.checkOut,
     required this.status,
+    this.lateMinutes = 0,
     this.leaveType,
     this.lateCheckInNote,
     this.earlyCheckOutNote,
@@ -71,6 +72,11 @@ class AttendanceRecord {
   final DateTime? checkOut;
 
   final AttendanceStatus status;
+
+  /// Minutes late past the employee's grace period (0 when on time). Written
+  /// server-side on check-in; drives the late-arrival payroll deduction.
+  final int lateMinutes;
+
   final LeaveType? leaveType;
   final String? lateCheckInNote;
   final String? earlyCheckOutNote;
@@ -108,6 +114,7 @@ class AttendanceRecord {
       checkIn: map['checkIn'] != null ? toDateTime(map['checkIn']) : null,
       checkOut: map['checkOut'] != null ? toDateTime(map['checkOut']) : null,
       status: AttendanceStatus.fromString(map['status'] as String),
+      lateMinutes: (map['lateMinutes'] as num?)?.toInt() ?? 0,
       leaveType: LeaveType.fromString(map['leaveType'] as String?),
       lateCheckInNote: map['lateCheckInNote'] as String?,
       earlyCheckOutNote: map['earlyCheckOutNote'] as String?,
@@ -127,6 +134,7 @@ class AttendanceRecord {
         'checkIn': checkIn,
         'checkOut': checkOut,
         'status': status.value,
+        'lateMinutes': lateMinutes,
         if (leaveType != null) 'leaveType': leaveType!.value,
         if (lateCheckInNote != null) 'lateCheckInNote': lateCheckInNote,
         if (earlyCheckOutNote != null) 'earlyCheckOutNote': earlyCheckOutNote,

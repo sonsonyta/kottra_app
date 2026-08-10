@@ -105,5 +105,20 @@
   "testNotificationNow": "Test Notification Now",
   "notifications": "Notifications",
   "leaveNotifications": "Leave Notifications",
-  "leaveNotificationsSubtitle": "Get notified when your leave request is approved or rejected."
+  "leaveNotificationsSubtitle": "Get notified when your leave request is approved or rejected.",
+  "scheduleTitle": "Schedule",
+  "today": "Today",
+  "holiday": "Holiday",
+  "yourDaysOff": "Your Days Off",
+  "holidaysThisMonth": "Holidays",
+  "noDaysOffThisMonth": "No days off scheduled this month.",
+  "noHolidaysThisMonth": "No holidays this month.",
+  "deductions": "Deductions",
+  "deductionsThisPeriod": "Deductions This Period",
+  "total": "Total",
+  "noDeductionsYet": "No deductions so far this period.",
+  "periodFirstHalf": "1st–15th",
+  "periodSecondHalf": "16th–end of month",
+  "periodFullMonth": "This month",
+  "estimatedFromAttendance": "Estimated from your attendance so far. Final amounts are set when payroll is run."
 }

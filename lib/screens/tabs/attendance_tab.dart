@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:kottra_app/models/hr_employee.dart';
+import 'package:kottra_app/models/hr_settings.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/view_models/attendance_view_model.dart';
@@ -32,7 +34,12 @@ class _AttendanceTabState extends State<AttendanceTab> {
       return d.year == _focusedDay.year && d.month == _focusedDay.month;
     });
 
-    final presentCount = records.where((r) => r.status == AttendanceStatus.present).length;
+    // A late arrival still counts as showing up, so Present includes Late.
+    final presentCount = records
+        .where((r) =>
+            r.status == AttendanceStatus.present ||
+            r.status == AttendanceStatus.late)
+        .length;
     final lateCount = records.where((r) => r.status == AttendanceStatus.late).length;
     final absentCount = records.where((r) => r.status == AttendanceStatus.absent).length;
     final leaveCount = records.where((r) => r.status == AttendanceStatus.leave).length;
@@ -86,6 +93,10 @@ class _AttendanceTabState extends State<AttendanceTab> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              _DeductionCard(
+                breakdown: widget.attendanceViewModel.periodDeductions,
               ),
               const SizedBox(height: 24),
               _buildCalendar(context),
@@ -246,6 +257,204 @@ class _AttendanceTabState extends State<AttendanceTab> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Live "deductions so far this period" card. Recomputes from the streamed
+/// attendance so it updates in realtime as records change. Hidden until the
+/// employee salary and store settings have loaded ([breakdown] null).
+class _DeductionCard extends StatelessWidget {
+  const _DeductionCard({required this.breakdown});
+
+  final DeductionBreakdown? breakdown;
+
+  String _money(double v, SalaryCurrency currency) => currency ==
+          SalaryCurrency.usd
+      ? '\$${v.toStringAsFixed(2)}'
+      : '${v.toStringAsFixed(0)} ៛';
+
+  String _periodLabel(AppLocalizations l, PayPeriod p) {
+    if (p.frequency == PayrollFrequency.monthly) return l.periodFullMonth;
+    return p.isFirstHalf ? l.periodFirstHalf : l.periodSecondHalf;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final b = breakdown;
+    if (b == null) return const SizedBox.shrink();
+
+    final c = appColors(context);
+    final l = AppLocalizations.of(context)!;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: c.shadow, blurRadius: 24, offset: const Offset(0, 8)),
+        ],
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  l.deductionsThisPeriod,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: c.textPrimary,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: c.infoLight,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _periodLabel(l, b.period),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: c.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (!b.hasDeductions)
+            Row(
+              children: [
+                Icon(Icons.check_circle_rounded, size: 20, color: c.success),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l.noDeductionsYet,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: c.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          else ...[
+            _DeductionRow(
+              label: l.late,
+              detail: b.lateMinutes > 0 ? '${b.lateMinutes} min' : null,
+              amount: _money(b.late, b.currency),
+              color: c.warning,
+            ),
+            const SizedBox(height: 10),
+            _DeductionRow(
+              label: l.absent,
+              detail: b.unpaidDays > 0 ? '${b.unpaidDays}d' : null,
+              amount: _money(b.absence, b.currency),
+              color: c.error,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Divider(height: 1, color: c.textSecondary.withValues(alpha: 0.15)),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  l.total,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: c.textPrimary,
+                  ),
+                ),
+                Text(
+                  _money(b.total, b.currency),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: c.error,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 12),
+          Text(
+            l.estimatedFromAttendance,
+            style: TextStyle(
+              fontSize: 11,
+              height: 1.4,
+              color: c.textSecondary.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeductionRow extends StatelessWidget {
+  const _DeductionRow({
+    required this.label,
+    required this.amount,
+    required this.color,
+    this.detail,
+  });
+
+  final String label;
+  final String amount;
+  final Color color;
+  final String? detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = appColors(context);
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: c.textPrimary,
+          ),
+        ),
+        if (detail != null) ...[
+          const SizedBox(width: 6),
+          Text(
+            '· $detail',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: c.textSecondary,
+            ),
+          ),
+        ],
+        const Spacer(),
+        Text(
+          amount,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: c.textPrimary,
+          ),
+        ),
+      ],
     );
   }
 }

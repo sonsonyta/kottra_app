@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kottra_app/config/feature_flags.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/theme/theme_controller.dart';
@@ -41,6 +42,20 @@ class ProfileTab extends StatelessWidget {
                       size: 20,
                     ),
                   ),
+
+                  if (FeatureFlags.enableSchedule)
+                    _ProfileMenuItem(
+                      icon: Icons.event_available_outlined,
+                      label: AppLocalizations.of(context)!.scheduleTitle,
+                      onTap: () {
+                        context.push('/schedule', extra: viewModel);
+                      },
+                      trailing: Icon(
+                        Icons.chevron_right_rounded,
+                        color: appColors(context).textSecondary,
+                        size: 20,
+                      ),
+                    ),
 
                   _ProfileMenuItem(
                     icon: Icons.badge_outlined,

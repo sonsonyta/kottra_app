@@ -273,4 +273,50 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get leaveNotificationsSubtitle =>
       'Get notified when your leave request is approved or rejected.';
+
+  @override
+  String get scheduleTitle => 'Schedule';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get holiday => 'Holiday';
+
+  @override
+  String get yourDaysOff => 'Your Days Off';
+
+  @override
+  String get holidaysThisMonth => 'Holidays';
+
+  @override
+  String get noDaysOffThisMonth => 'No days off scheduled this month.';
+
+  @override
+  String get noHolidaysThisMonth => 'No holidays this month.';
+
+  @override
+  String get deductions => 'Deductions';
+
+  @override
+  String get deductionsThisPeriod => 'Deductions This Period';
+
+  @override
+  String get total => 'Total';
+
+  @override
+  String get noDeductionsYet => 'No deductions so far this period.';
+
+  @override
+  String get periodFirstHalf => '1st–15th';
+
+  @override
+  String get periodSecondHalf => '16th–end of month';
+
+  @override
+  String get periodFullMonth => 'This month';
+
+  @override
+  String get estimatedFromAttendance =>
+      'Estimated from your attendance so far. Final amounts are set when payroll is run.';
 }

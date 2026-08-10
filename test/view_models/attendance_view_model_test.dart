@@ -1,9 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kottra_app/models/hr_employee.dart';
+import 'package:kottra_app/models/hr_settings.dart';
 import 'package:kottra_app/models/store.dart';
 import 'package:kottra_app/services/attendance_service.dart';
+import 'package:kottra_app/services/employee_service.dart';
 import 'package:kottra_app/services/location_service.dart';
+import 'package:kottra_app/services/settings_service.dart';
 import 'package:kottra_app/services/store_service.dart';
 import 'package:kottra_app/view_models/attendance_view_model.dart';
 
@@ -118,6 +122,36 @@ class FakeStoreService implements StoreService {
   dynamic noSuchMethod(Invocation invocation) => null;
 }
 
+class FakeSettingsService implements SettingsService {
+  FakeSettingsService({this.settings});
+
+  final HrSettings? settings;
+
+  @override
+  Stream<HrSettings> streamHrSettings(String storeId) =>
+      settings == null ? const Stream.empty() : Stream.value(settings!);
+
+  @override
+  Future<HrSettings> getHrSettings(String storeId) async =>
+      settings ?? HrSettings.defaults;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
+class FakeEmployeeService implements EmployeeService {
+  FakeEmployeeService({this.employee});
+
+  final HREmployee? employee;
+
+  @override
+  Stream<HREmployee?> streamEmployee(String storeId, String employeeId) =>
+      Stream.value(employee);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
 class FakeLocationService implements LocationServiceBase {
   FakeLocationService({this.coords, this.error});
 
@@ -147,6 +181,8 @@ void main() {
         attendanceService: attendanceService,
         locationService: locationService,
         storeService: FakeStoreService(),
+        settingsService: FakeSettingsService(),
+        employeeService: FakeEmployeeService(),
       );
 
       final result = await viewModel.checkIn();
@@ -175,6 +211,8 @@ void main() {
         attendanceService: attendanceService,
         locationService: FakeLocationService(),
         storeService: FakeStoreService(),
+        settingsService: FakeSettingsService(),
+        employeeService: FakeEmployeeService(),
       );
       final loadingStates = <bool>[];
 
@@ -200,6 +238,8 @@ void main() {
           attendanceService: attendanceService,
           locationService: locationService,
           storeService: FakeStoreService(),
+        settingsService: FakeSettingsService(),
+        employeeService: FakeEmployeeService(),
         );
 
         final result = await viewModel.checkIn();
@@ -247,6 +287,8 @@ void main() {
           attendanceService: attendanceService,
           locationService: FakeLocationService(),
           storeService: FakeStoreService(),
+        settingsService: FakeSettingsService(),
+        employeeService: FakeEmployeeService(),
         );
 
         // Let the fake history stream and store-timezone future resolve.

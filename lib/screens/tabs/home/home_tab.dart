@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kottra_app/config/feature_flags.dart';
+import 'package:kottra_app/models/hr_settings.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/screens/tabs/tab_helpers.dart';
 import 'package:kottra_app/view_models/attendance_view_model.dart';
 import 'package:kottra_app/view_models/main_view_model.dart';
+import 'package:kottra_app/view_models/profile_view_model.dart';
 
 import '../../../l10n/app_localizations.dart';
 import 'check_in_card.dart';
@@ -17,11 +19,13 @@ class HomeTab extends StatelessWidget {
     super.key,
     required this.viewModel,
     required this.attendanceViewModel,
+    required this.profileViewModel,
     required this.now,
   });
 
   final MainViewModel viewModel;
   final AttendanceViewModel attendanceViewModel;
+  final ProfileViewModel profileViewModel;
   final DateTime now;
 
   String _getGreeting(BuildContext context) {
@@ -48,11 +52,19 @@ class HomeTab extends StatelessWidget {
               _TodayStatsRow(attendanceViewModel: attendanceViewModel),
               const SizedBox(height: 20),
               if (FeatureFlags.enablePayroll) ...[
-                _MonthDeductionCard(viewModel: viewModel),
+                _MonthDeductionCard(
+                  viewModel: viewModel,
+                  attendanceViewModel: attendanceViewModel,
+                ),
                 const SizedBox(height: 20),
               ],
-              if (FeatureFlags.enableLeaveRequest || FeatureFlags.enablePayroll) ...[
-                _QuickActionsRow(viewModel: viewModel),
+              if (FeatureFlags.enableLeaveRequest ||
+                  FeatureFlags.enablePayroll ||
+                  FeatureFlags.enableSchedule) ...[
+                _QuickActionsRow(
+                  viewModel: viewModel,
+                  profileViewModel: profileViewModel,
+                ),
                 const SizedBox(height: 24),
               ],
               SectionHeader(title: AppLocalizations.of(context)!.recentAttendance),
@@ -164,8 +176,12 @@ class _TodayStatsRow extends StatelessWidget {
       final d = r.date.toDate();
       return d.year == now.year && d.month == now.month;
     });
-    final presentCount =
-        records.where((r) => r.status == AttendanceStatus.present).length;
+    // A late arrival still counts as showing up, so Present includes Late.
+    final presentCount = records
+        .where((r) =>
+            r.status == AttendanceStatus.present ||
+            r.status == AttendanceStatus.late)
+        .length;
     final lateCount =
         records.where((r) => r.status == AttendanceStatus.late).length;
     final absentCount =
@@ -219,22 +235,36 @@ class _TodayStatsRow extends StatelessWidget {
   }
 }
 
+/// Compact "deductions this period" card on Home. Sourced from the live,
+/// attendance-based preview ([AttendanceViewModel.periodDeductions]) — the same
+/// estimate the Attendance tab shows — never from a payroll run. Tapping opens
+/// the Attendance tab for the full breakdown.
 class _MonthDeductionCard extends StatelessWidget {
-  const _MonthDeductionCard({required this.viewModel});
+  const _MonthDeductionCard({
+    required this.viewModel,
+    required this.attendanceViewModel,
+  });
 
   final MainViewModel viewModel;
+  final AttendanceViewModel attendanceViewModel;
+
+  String _periodLabel(AppLocalizations l, PayPeriod p) {
+    if (p.frequency == PayrollFrequency.monthly) return l.periodFullMonth;
+    return p.isFirstHalf ? l.periodFirstHalf : l.periodSecondHalf;
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
-    final payslip = viewModel.currentMonthPayslip;
-    final hasData = payslip != null;
-    final isPreview = viewModel.isCurrentMonthDeductionPreview;
-    final currency = payslip?.currency.value ?? 'USD';
-    final amount = viewModel.currentMonthDeduction;
+    final l = AppLocalizations.of(context)!;
+    final b = attendanceViewModel.periodDeductions;
+    if (b == null) return const SizedBox.shrink();
+
+    final currency = b.currency.value;
+    final has = b.hasDeductions;
 
     return InkWell(
-      onTap: () => viewModel.setTabIndex(2),
+      onTap: () => viewModel.setTabIndex(1), // Attendance tab (full breakdown)
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -271,7 +301,7 @@ class _MonthDeductionCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'This Month',
+                    _periodLabel(l, b.period),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -281,33 +311,35 @@ class _MonthDeductionCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      Text(
-                        'Deductions',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: c.textPrimary,
+                      Flexible(
+                        child: Text(
+                          l.deductions,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: c.textPrimary,
+                          ),
                         ),
                       ),
-                      if (isPreview) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: c.warningLight,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            'Preview',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: c.warning,
-                            ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: c.warningLight,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'Preview',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: c.warning,
                           ),
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ],
@@ -317,20 +349,16 @@ class _MonthDeductionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  hasData ? '-${fmtMoney(amount, currency)}' : '—',
+                  has ? '-${fmtMoney(b.total, currency)}' : fmtMoney(0, currency),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: hasData ? c.error : c.textSecondary,
+                    color: has ? c.error : c.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  hasData
-                      ? (isPreview
-                          ? 'Before payroll runs'
-                          : 'Tap for details')
-                      : 'No payroll yet',
+                  'Tap for details',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
@@ -433,9 +461,13 @@ class _ViewAllButton extends StatelessWidget {
 }
 
 class _QuickActionsRow extends StatelessWidget {
-  const _QuickActionsRow({required this.viewModel});
+  const _QuickActionsRow({
+    required this.viewModel,
+    required this.profileViewModel,
+  });
 
   final MainViewModel viewModel;
+  final ProfileViewModel profileViewModel;
 
   @override
   Widget build(BuildContext context) {
@@ -450,7 +482,8 @@ class _QuickActionsRow extends StatelessWidget {
             if (FeatureFlags.enableLeaveRequest)
               Expanded(
                 child: InkWell(
-                  onTap: () => context.push('/leaves', extra: viewModel),
+                  onTap: () =>
+                      context.push('/leaves', extra: profileViewModel),
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
@@ -510,6 +543,47 @@ class _QuickActionsRow extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           AppLocalizations.of(context)!.myPayslips,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: c.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            if (FeatureFlags.enableSchedule) ...[
+              if (FeatureFlags.enableLeaveRequest || FeatureFlags.enablePayroll)
+                const SizedBox(width: 12),
+              Expanded(
+                child: InkWell(
+                  onTap: () =>
+                      context.push('/schedule', extra: profileViewModel),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: c.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: c.divider),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: c.holidayLight,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.event_available_outlined, color: c.holiday, size: 24),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          AppLocalizations.of(context)!.scheduleTitle,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,

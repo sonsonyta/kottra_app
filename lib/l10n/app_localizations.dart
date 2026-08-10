@@ -607,6 +607,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Get notified when your leave request is approved or rejected.'**
   String get leaveNotificationsSubtitle;
+
+  /// No description provided for @scheduleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get scheduleTitle;
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @holiday.
+  ///
+  /// In en, this message translates to:
+  /// **'Holiday'**
+  String get holiday;
+
+  /// No description provided for @yourDaysOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Days Off'**
+  String get yourDaysOff;
+
+  /// No description provided for @holidaysThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Holidays'**
+  String get holidaysThisMonth;
+
+  /// No description provided for @noDaysOffThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'No days off scheduled this month.'**
+  String get noDaysOffThisMonth;
+
+  /// No description provided for @noHolidaysThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'No holidays this month.'**
+  String get noHolidaysThisMonth;
+
+  /// No description provided for @deductions.
+  ///
+  /// In en, this message translates to:
+  /// **'Deductions'**
+  String get deductions;
+
+  /// No description provided for @deductionsThisPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Deductions This Period'**
+  String get deductionsThisPeriod;
+
+  /// No description provided for @total.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get total;
+
+  /// No description provided for @noDeductionsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No deductions so far this period.'**
+  String get noDeductionsYet;
+
+  /// No description provided for @periodFirstHalf.
+  ///
+  /// In en, this message translates to:
+  /// **'1st–15th'**
+  String get periodFirstHalf;
+
+  /// No description provided for @periodSecondHalf.
+  ///
+  /// In en, this message translates to:
+  /// **'16th–end of month'**
+  String get periodSecondHalf;
+
+  /// No description provided for @periodFullMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This month'**
+  String get periodFullMonth;
+
+  /// No description provided for @estimatedFromAttendance.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated from your attendance so far. Final amounts are set when payroll is run.'**
+  String get estimatedFromAttendance;
 }
 
 class _AppLocalizationsDelegate

@@ -7,6 +7,7 @@ import 'package:kottra_app/screens/login_screen.dart';
 import 'package:kottra_app/screens/main_screen.dart';
 import 'package:kottra_app/screens/leave/leave_list_screen.dart';
 import 'package:kottra_app/screens/leave/request_leave_screen.dart';
+import 'package:kottra_app/screens/schedule/schedule_screen.dart';
 import 'package:kottra_app/view_models/leave_view_model.dart';
 import 'package:kottra_app/view_models/profile_view_model.dart';
 
@@ -62,6 +63,15 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final viewModel = state.extra as LeaveViewModel;
         return RequestLeaveScreen(viewModel: viewModel);
+      },
+    ),
+    GoRoute(
+      path: '/schedule',
+      redirect: (context, state) =>
+          state.extra is ProfileViewModel ? null : '/main',
+      builder: (context, state) {
+        final profileViewModel = state.extra as ProfileViewModel;
+        return ScheduleScreen(profileViewModel: profileViewModel);
       },
     ),
   ],

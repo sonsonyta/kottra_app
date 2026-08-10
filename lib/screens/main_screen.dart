@@ -67,6 +67,7 @@ class _MainScreenState extends State<MainScreen> {
               HomeTab(
                 viewModel: _viewModel,
                 attendanceViewModel: _attendanceViewModel,
+                profileViewModel: _profileViewModel,
                 now: _now,
               ),
               AttendanceTab(attendanceViewModel: _attendanceViewModel),

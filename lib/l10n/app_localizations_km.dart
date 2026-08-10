@@ -272,4 +272,50 @@ class AppLocalizationsKm extends AppLocalizations {
   @override
   String get leaveNotificationsSubtitle =>
       'ទទួលបានការជូនដំណឹងនៅពេលការស្នើសុំឈប់សម្រាករបស់អ្នកត្រូវបានអនុម័ត ឬបដិសេធ។';
+
+  @override
+  String get scheduleTitle => 'កាលវិភាគ';
+
+  @override
+  String get today => 'ថ្ងៃនេះ';
+
+  @override
+  String get holiday => 'ថ្ងៃឈប់បុណ្យ';
+
+  @override
+  String get yourDaysOff => 'ថ្ងៃឈប់សម្រាករបស់អ្នក';
+
+  @override
+  String get holidaysThisMonth => 'ថ្ងៃឈប់បុណ្យ';
+
+  @override
+  String get noDaysOffThisMonth => 'មិនមានថ្ងៃឈប់សម្រាកសម្រាប់ខែនេះទេ។';
+
+  @override
+  String get noHolidaysThisMonth => 'មិនមានថ្ងៃឈប់បុណ្យសម្រាប់ខែនេះទេ។';
+
+  @override
+  String get deductions => 'ការកាត់ប្រាក់';
+
+  @override
+  String get deductionsThisPeriod => 'ការកាត់ប្រាក់ក្នុងអំឡុងពេលនេះ';
+
+  @override
+  String get total => 'សរុប';
+
+  @override
+  String get noDeductionsYet => 'មិនទាន់មានការកាត់ប្រាក់ក្នុងអំឡុងពេលនេះទេ។';
+
+  @override
+  String get periodFirstHalf => 'ថ្ងៃ១–១៥';
+
+  @override
+  String get periodSecondHalf => 'ថ្ងៃ១៦–ចុងខែ';
+
+  @override
+  String get periodFullMonth => 'ខែនេះ';
+
+  @override
+  String get estimatedFromAttendance =>
+      'បា៉ន់ស្មានតាមវត្តមានរបស់អ្នករហូតមកដល់ពេលនេះ។ ចំនួនចុងក្រោយត្រូវបានកំណត់នៅពេលដំណើរការប្រាក់ខែ។';
 }
