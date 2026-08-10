@@ -81,6 +81,7 @@ class _LatestPayslipCard extends StatelessWidget {
     final c = appColors(context);
     final currency = payslip.currency.value;
     final isPaid = payslip.status == PayslipStatus.paid;
+    final isPreview = payslip.status == PayslipStatus.pending;
 
     return Container(
       padding: const EdgeInsets.all(22),
@@ -104,9 +105,9 @@ class _LatestPayslipCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text(
-                'Latest Payslip',
-                style: TextStyle(
+              Text(
+                isPreview ? 'Current Deductions' : 'Latest Payslip',
+                style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -144,7 +145,9 @@ class _LatestPayslipCard extends StatelessWidget {
           Text(
             isPaid && payslip.paidDate != null
                 ? 'Paid on ${fmtDateFull(payslip.paidDate!)}'
-                : 'Awaiting payment',
+                : isPreview
+                    ? 'Preview · finalized when payroll runs'
+                    : 'Awaiting payment',
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 12,
@@ -204,6 +207,32 @@ class _LatestPayslipCard extends StatelessWidget {
             ],
             currency: currency,
           ),
+          if (isPreview) ...[
+            const SizedBox(height: 14),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  color: Colors.white70,
+                  size: 15,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'These figures are provisional and may change until '
+                    'payroll is finalized.',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

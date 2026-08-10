@@ -5,12 +5,12 @@ import 'package:kottra_app/models/leave_request.dart';
 import 'package:intl/intl.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/view_models/leave_view_model.dart';
-import 'package:kottra_app/view_models/main_view_model.dart';
+import 'package:kottra_app/view_models/profile_view_model.dart';
 
 class LeaveListScreen extends StatefulWidget {
-  const LeaveListScreen({super.key, required this.mainViewModel});
+  const LeaveListScreen({super.key, required this.profileViewModel});
 
-  final MainViewModel mainViewModel;
+  final ProfileViewModel profileViewModel;
 
   @override
   State<LeaveListScreen> createState() => _LeaveListScreenState();
@@ -23,9 +23,9 @@ class _LeaveListScreenState extends State<LeaveListScreen> {
   void initState() {
     super.initState();
     _leaveViewModel = LeaveViewModel(
-      storeId: widget.mainViewModel.storeId,
-      employeeId: widget.mainViewModel.employeeId,
-      employeeName: widget.mainViewModel.userName,
+      storeId: widget.profileViewModel.storeId,
+      employeeId: widget.profileViewModel.employeeId,
+      employeeName: widget.profileViewModel.userName,
     );
   }
 

@@ -8,7 +8,7 @@ import 'package:kottra_app/screens/main_screen.dart';
 import 'package:kottra_app/screens/leave/leave_list_screen.dart';
 import 'package:kottra_app/screens/leave/request_leave_screen.dart';
 import 'package:kottra_app/view_models/leave_view_model.dart';
-import 'package:kottra_app/view_models/main_view_model.dart';
+import 'package:kottra_app/view_models/profile_view_model.dart';
 
 class _GoRouterRefreshStream extends ChangeNotifier {
   _GoRouterRefreshStream(Stream<dynamic> stream) {
@@ -49,10 +49,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/leaves',
       redirect: (context, state) =>
-          state.extra is MainViewModel ? null : '/main',
+          state.extra is ProfileViewModel ? null : '/main',
       builder: (context, state) {
-        final mainViewModel = state.extra as MainViewModel;
-        return LeaveListScreen(mainViewModel: mainViewModel);
+        final profileViewModel = state.extra as ProfileViewModel;
+        return LeaveListScreen(profileViewModel: profileViewModel);
       },
     ),
     GoRoute(

@@ -10,6 +10,7 @@ import 'package:kottra_app/screens/tabs/profile/profile_tab.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/view_models/attendance_view_model.dart';
 import 'package:kottra_app/view_models/main_view_model.dart';
+import 'package:kottra_app/view_models/profile_view_model.dart';
 
 import '../l10n/app_localizations.dart';
 
@@ -23,6 +24,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   late final MainViewModel _viewModel;
   late final AttendanceViewModel _attendanceViewModel;
+  late final ProfileViewModel _profileViewModel;
   Timer? _clockTimer;
   DateTime _now = DateTime.now();
 
@@ -31,6 +33,7 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     _viewModel = MainViewModel();
     _attendanceViewModel = AttendanceViewModel();
+    _profileViewModel = ProfileViewModel();
     _startClock();
 
   }
@@ -46,6 +49,7 @@ class _MainScreenState extends State<MainScreen> {
     _clockTimer?.cancel();
     _viewModel.dispose();
     _attendanceViewModel.dispose();
+    _profileViewModel.dispose();
     super.dispose();
   }
 
@@ -53,7 +57,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final c = appColors(context);
     return ListenableBuilder(
-      listenable: Listenable.merge([_viewModel, _attendanceViewModel]),
+      listenable: Listenable.merge([_viewModel, _attendanceViewModel, _profileViewModel]),
       builder: (context, _) {
         return Scaffold(
           backgroundColor: c.background,
@@ -67,7 +71,7 @@ class _MainScreenState extends State<MainScreen> {
               ),
               AttendanceTab(attendanceViewModel: _attendanceViewModel),
               if (FeatureFlags.enablePayroll) PayrollTab(viewModel: _viewModel),
-              ProfileTab(viewModel: _viewModel, onLogout: _handleLogout),
+              ProfileTab(viewModel: _profileViewModel, onLogout: _handleLogout),
             ],
           ),
           bottomNavigationBar: _BottomNav(

@@ -4,8 +4,7 @@ import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/theme/theme_controller.dart';
 import 'package:kottra_app/theme/locale_controller.dart';
-import 'package:kottra_app/view_models/main_view_model.dart';
-import 'package:kottra_app/services/notification_service.dart';
+import 'package:kottra_app/view_models/profile_view_model.dart';
 
 import '../../../l10n/app_localizations.dart';
 import 'edit_profile.dart';
@@ -13,7 +12,7 @@ import 'edit_profile.dart';
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key, required this.viewModel, required this.onLogout});
 
-  final MainViewModel viewModel;
+  final ProfileViewModel viewModel;
   final VoidCallback onLogout;
 
   @override
@@ -119,7 +118,7 @@ class ProfileTab extends StatelessWidget {
 class _ProfileInfoCard extends StatelessWidget {
   const _ProfileInfoCard({required this.viewModel});
 
-  final MainViewModel viewModel;
+  final ProfileViewModel viewModel;
 
   @override
   Widget build(BuildContext context) {
@@ -283,7 +282,7 @@ class _ProfileMenuItem extends StatelessWidget {
 class _NotificationSettingsSection extends StatelessWidget {
   const _NotificationSettingsSection({required this.viewModel});
 
-  final MainViewModel viewModel;
+  final ProfileViewModel viewModel;
 
   @override
   Widget build(BuildContext context) {

@@ -5,13 +5,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../../../view_models/main_view_model.dart';
+import '../../../view_models/profile_view_model.dart';
 import '../shared_widgets.dart';
 import '../tab_colors.dart';
 
 class EditProfileSheet extends StatefulWidget {
   const EditProfileSheet({super.key, required this.viewModel});
-  final MainViewModel viewModel;
+  final ProfileViewModel viewModel;
 
   @override
   State<EditProfileSheet> createState() => EditProfileSheetState();

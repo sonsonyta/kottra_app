@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:kottra_app/config/feature_flags.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
+import 'package:kottra_app/screens/tabs/tab_helpers.dart';
 import 'package:kottra_app/view_models/attendance_view_model.dart';
 import 'package:kottra_app/view_models/main_view_model.dart';
 
@@ -46,6 +47,10 @@ class HomeTab extends StatelessWidget {
               const SizedBox(height: 20),
               _TodayStatsRow(attendanceViewModel: attendanceViewModel),
               const SizedBox(height: 20),
+              if (FeatureFlags.enablePayroll) ...[
+                _MonthDeductionCard(viewModel: viewModel),
+                const SizedBox(height: 20),
+              ],
               if (FeatureFlags.enableLeaveRequest || FeatureFlags.enablePayroll) ...[
                 _QuickActionsRow(viewModel: viewModel),
                 const SizedBox(height: 24),
@@ -210,6 +215,133 @@ class _TodayStatsRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _MonthDeductionCard extends StatelessWidget {
+  const _MonthDeductionCard({required this.viewModel});
+
+  final MainViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = appColors(context);
+    final payslip = viewModel.currentMonthPayslip;
+    final hasData = payslip != null;
+    final isPreview = viewModel.isCurrentMonthDeductionPreview;
+    final currency = payslip?.currency.value ?? 'USD';
+    final amount = viewModel.currentMonthDeduction;
+
+    return InkWell(
+      onTap: () => viewModel.setTabIndex(2),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: c.shadowSubtle,
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: c.errorLight,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.remove_circle_outline_rounded,
+                color: c.error,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'This Month',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: c.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Text(
+                        'Deductions',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: c.textPrimary,
+                        ),
+                      ),
+                      if (isPreview) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: c.warningLight,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            'Preview',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: c.warning,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  hasData ? '-${fmtMoney(amount, currency)}' : '—',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: hasData ? c.error : c.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  hasData
+                      ? (isPreview
+                          ? 'Before payroll runs'
+                          : 'Tap for details')
+                      : 'No payroll yet',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: c.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
