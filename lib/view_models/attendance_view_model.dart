@@ -119,12 +119,15 @@ class AttendanceViewModel extends ChangeNotifier {
   }
 
   /// The employee's accrued late + absence deductions for the current pay
-  /// period, or `null` until the settings and employee record have loaded.
+  /// period, or `null` when unavailable — the settings/employee haven't loaded
+  /// yet, or the store has hidden the preview
+  /// (`allowDisplayPreviewDeduction` = false). Callers hide their card on null.
   /// Recomputed on demand so it always reflects the latest attendance stream.
   DeductionBreakdown? get periodDeductions {
     final employee = _employee;
     final settings = _hrSettings;
     if (employee == null || settings == null) return null;
+    if (!settings.allowDisplayPreviewDeduction) return null;
     return computePeriodDeductions(
       records: _history,
       monthlyBasicSalary: employee.basicSalary,

@@ -186,8 +186,16 @@ class _LatestPayslipCard extends StatelessWidget {
             rows: [
               _BreakdownRow(label: 'Basic salary', value: payslip.basicSalary),
               _BreakdownRow(label: 'Overtime', value: payslip.overtimePay),
-              _BreakdownRow(label: 'Bonuses', value: payslip.bonuses),
-              _BreakdownRow(label: 'Allowances', value: payslip.allowances),
+              _BreakdownRow(
+                label: 'Bonuses',
+                value: payslip.bonuses,
+                note: payslip.bonusNote,
+              ),
+              _BreakdownRow(
+                label: 'Allowances',
+                value: payslip.allowances,
+                note: payslip.allowanceNote,
+              ),
             ],
             currency: currency,
           ),
@@ -267,15 +275,34 @@ class _BreakdownGroup extends StatelessWidget {
         ...rows.map((r) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 3),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(
-                      r.label,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          r.label,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (r.note != null && r.note!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2, right: 8),
+                            child: Text(
+                              r.note!,
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 10.5,
+                                fontStyle: FontStyle.italic,
+                                height: 1.3,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                   Text(
@@ -295,9 +322,10 @@ class _BreakdownGroup extends StatelessWidget {
 }
 
 class _BreakdownRow {
-  const _BreakdownRow({required this.label, required this.value});
+  const _BreakdownRow({required this.label, required this.value, this.note});
   final String label;
   final double value;
+  final String? note;
 }
 
 class _PayslipFigure extends StatelessWidget {

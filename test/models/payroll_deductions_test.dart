@@ -31,11 +31,14 @@ HrSettings _settings({
   PayrollFrequency frequency = PayrollFrequency.semiMonthly,
   LateDeductionSettings? late,
   AbsenceDeductionSettings? absence,
+  DeductionPeriodBasis basis = DeductionPeriodBasis.payrollFrequency,
 }) {
   return HrSettings(
     payrollFrequency: frequency,
     lateDeduction: late ?? LateDeductionSettings.disabled,
     absenceDeduction: absence ?? AbsenceDeductionSettings.legacyDefault,
+    allowDisplayPreviewDeduction: true,
+    deductionPeriodBasis: basis,
   );
 }
 
@@ -268,6 +271,71 @@ void main() {
       );
       expect(b.unpaidDays, 0);
       expect(b.absence, 0);
+    });
+  });
+
+  group('end-of-month basis', () {
+    const absenceProportional = AbsenceDeductionSettings(
+      enabled: true,
+      mode: AbsenceDeductionMode.proportional,
+      freeDaysPerMonth: 0,
+    );
+
+    test('accumulates the whole month even in the first half', () {
+      // Semi-monthly, today in the first half, one absent day in each half.
+      // Payroll-frequency basis would only see the first-half day; end-of-month
+      // sees both, over the full-month 28-day divisor.
+      final records = [
+        _rec(day: 5, status: AttendanceStatus.absent),
+        _rec(day: 20, status: AttendanceStatus.absent),
+      ];
+
+      final perPeriod = computePeriodDeductions(
+        records: records,
+        monthlyBasicSalary: 400,
+        currency: SalaryCurrency.usd,
+        settings: _settings(absence: absenceProportional),
+        today: _augFirstHalf,
+      );
+      expect(perPeriod.unpaidDays, 1); // only day 5
+      expect(perPeriod.absence, closeTo(14.29, 0.01)); // 200 ÷ 14
+
+      final endOfMonth = computePeriodDeductions(
+        records: records,
+        monthlyBasicSalary: 400,
+        currency: SalaryCurrency.usd,
+        settings: _settings(
+          absence: absenceProportional,
+          basis: DeductionPeriodBasis.endOfMonth,
+        ),
+        today: _augFirstHalf,
+      );
+      expect(endOfMonth.unpaidDays, 2); // both days
+      expect(endOfMonth.absence, closeTo(28.57, 0.01)); // 2 × (400 ÷ 28)
+      expect(endOfMonth.period.frequency, PayrollFrequency.monthly);
+    });
+
+    test('late minutes accumulate across both halves', () {
+      final records = [
+        _rec(day: 10, status: AttendanceStatus.late, lateMinutes: 36),
+        _rec(day: 20, status: AttendanceStatus.late, lateMinutes: 24),
+      ];
+      final b = computePeriodDeductions(
+        records: records,
+        monthlyBasicSalary: 400,
+        currency: SalaryCurrency.usd,
+        settings: _settings(
+          late: const LateDeductionSettings(
+            enabled: true,
+            mode: LateDeductionMode.proportional,
+            workdayMinutes: 480,
+          ),
+          basis: DeductionPeriodBasis.endOfMonth,
+        ),
+        today: _augFirstHalf,
+      );
+      expect(b.lateMinutes, 60); // 36 + 24
+      expect(b.late, closeTo(1.79, 0.01)); // 60 × (400 ÷ 28 ÷ 480)
     });
   });
 }

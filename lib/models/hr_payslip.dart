@@ -23,6 +23,8 @@ class HRPayslip {
     required this.overtimePay,
     required this.bonuses,
     required this.allowances,
+    this.allowanceNote,
+    this.bonusNote,
     required this.tax,
     required this.leaveDeduction,
     required this.otherDeductions,
@@ -43,6 +45,11 @@ class HRPayslip {
   final double overtimePay;
   final double bonuses;
   final double allowances;
+
+  /// Optional notes explaining a manual allowance/bonus adjustment, set by the
+  /// owner in the POS Adjust Payslip dialog.
+  final String? allowanceNote;
+  final String? bonusNote;
 
   // Deductions
   final double tax;
@@ -84,6 +91,8 @@ class HRPayslip {
       overtimePay: toDouble(map['overtimePay']),
       bonuses: toDouble(map['bonuses']),
       allowances: toDouble(map['allowances']),
+      allowanceNote: (map['allowanceNote'] as String?)?.trim(),
+      bonusNote: (map['bonusNote'] as String?)?.trim(),
       tax: toDouble(map['tax']),
       leaveDeduction: toDouble(map['leaveDeduction']),
       otherDeductions: toDouble(map['otherDeductions']),
@@ -103,6 +112,9 @@ class HRPayslip {
         'overtimePay': overtimePay,
         'bonuses': bonuses,
         'allowances': allowances,
+        if (allowanceNote != null && allowanceNote!.isNotEmpty)
+          'allowanceNote': allowanceNote,
+        if (bonusNote != null && bonusNote!.isNotEmpty) 'bonusNote': bonusNote,
         'tax': tax,
         'leaveDeduction': leaveDeduction,
         'otherDeductions': otherDeductions,

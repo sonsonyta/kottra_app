@@ -17,6 +17,22 @@ enum PayrollFrequency {
       .firstWhere((f) => f.value == value, orElse: () => PayrollFrequency.monthly);
 }
 
+/// How the late/absence deduction period is derived.
+///  - `payrollFrequency` (default): deduct per pay period.
+///  - `endOfMonth`: accumulate the whole month; the preview shows the running
+///    full-month total (28-day divisor, full free-day allowance).
+enum DeductionPeriodBasis {
+  payrollFrequency('payrollFrequency'),
+  endOfMonth('endOfMonth');
+
+  const DeductionPeriodBasis(this.value);
+  final String value;
+
+  static DeductionPeriodBasis fromString(String? value) =>
+      DeductionPeriodBasis.values.firstWhere((b) => b.value == value,
+          orElse: () => DeductionPeriodBasis.payrollFrequency);
+}
+
 /// Late-arrival deduction mode.
 enum LateDeductionMode {
   perMinute('perMinute'),
@@ -122,11 +138,20 @@ class HrSettings {
     required this.payrollFrequency,
     required this.lateDeduction,
     required this.absenceDeduction,
+    required this.allowDisplayPreviewDeduction,
+    required this.deductionPeriodBasis,
   });
 
   final PayrollFrequency payrollFrequency;
   final LateDeductionSettings lateDeduction;
   final AbsenceDeductionSettings absenceDeduction;
+
+  /// Whether employees may see their live deduction preview. Defaults to true
+  /// (visible) when the store hasn't set it.
+  final bool allowDisplayPreviewDeduction;
+
+  /// How the deduction period is derived (see [DeductionPeriodBasis]).
+  final DeductionPeriodBasis deductionPeriodBasis;
 
   /// Parses the whole `settings/{storeId}` document. The HR config lives under
   /// the `hrSettings` key; a missing key falls back to sensible defaults.
@@ -147,6 +172,10 @@ class HrSettings {
       absenceDeduction: absence is Map
           ? AbsenceDeductionSettings.fromMap(absence.cast<String, dynamic>())
           : AbsenceDeductionSettings.legacyDefault,
+      allowDisplayPreviewDeduction:
+          hrMap['allowDisplayPreviewDeduction'] as bool? ?? true,
+      deductionPeriodBasis: DeductionPeriodBasis.fromString(
+          hrMap['deductionPeriodBasis'] as String?),
     );
   }
 
@@ -154,5 +183,7 @@ class HrSettings {
     payrollFrequency: PayrollFrequency.monthly,
     lateDeduction: LateDeductionSettings.disabled,
     absenceDeduction: AbsenceDeductionSettings.legacyDefault,
+    allowDisplayPreviewDeduction: true,
+    deductionPeriodBasis: DeductionPeriodBasis.payrollFrequency,
   );
 }

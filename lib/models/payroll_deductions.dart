@@ -141,7 +141,14 @@ DeductionBreakdown computePeriodDeductions({
   DateTime Function(DateTime date)? toStoreZone,
 }) {
   final zone = toStoreZone ?? (d) => d;
-  final period = PayPeriod.forDate(settings.payrollFrequency, today);
+  // 'endOfMonth' basis accumulates the whole month regardless of payroll
+  // frequency, so the preview shows the running full-month total (28-day
+  // divisor, full free-day allowance) that will be deducted at month end.
+  final effectiveFrequency =
+      settings.deductionPeriodBasis == DeductionPeriodBasis.endOfMonth
+          ? PayrollFrequency.monthly
+          : settings.payrollFrequency;
+  final period = PayPeriod.forDate(effectiveFrequency, today);
   final periodBasic = monthlyBasicSalary * period.factor;
 
   final inPeriod =
