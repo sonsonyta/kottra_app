@@ -560,6 +560,72 @@ abstract class AppLocalizations {
   /// **'Rejected'**
   String get statusRejected;
 
+  /// No description provided for @statusDeducted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deducted'**
+  String get statusDeducted;
+
+  /// No description provided for @myAdvances.
+  ///
+  /// In en, this message translates to:
+  /// **'My Advances'**
+  String get myAdvances;
+
+  /// No description provided for @requestAdvance.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Advance'**
+  String get requestAdvance;
+
+  /// No description provided for @noAdvancesRequestedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No advances requested yet.'**
+  String get noAdvancesRequestedYet;
+
+  /// No description provided for @outstandingAdvanceBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Outstanding advance balance'**
+  String get outstandingAdvanceBalance;
+
+  /// No description provided for @advanceAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance Amount'**
+  String get advanceAmount;
+
+  /// No description provided for @enterAdvanceAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter amount'**
+  String get enterAdvanceAmount;
+
+  /// No description provided for @pleaseEnterValidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid amount'**
+  String get pleaseEnterValidAmount;
+
+  /// No description provided for @enterAdvanceReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter reason for your advance...'**
+  String get enterAdvanceReason;
+
+  /// No description provided for @advanceDeductionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This advance will be deducted in full from your next payroll once approved.'**
+  String get advanceDeductionNote;
+
+  /// No description provided for @advanceRequestSubmittedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance request submitted successfully.'**
+  String get advanceRequestSubmittedSuccess;
+
   /// No description provided for @attendanceReminders.
   ///
   /// In en, this message translates to:

@@ -248,6 +248,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusRejected => 'Rejected';
 
   @override
+  String get statusDeducted => 'Deducted';
+
+  @override
+  String get myAdvances => 'My Advances';
+
+  @override
+  String get requestAdvance => 'Request Advance';
+
+  @override
+  String get noAdvancesRequestedYet => 'No advances requested yet.';
+
+  @override
+  String get outstandingAdvanceBalance => 'Outstanding advance balance';
+
+  @override
+  String get advanceAmount => 'Advance Amount';
+
+  @override
+  String get enterAdvanceAmount => 'Enter amount';
+
+  @override
+  String get pleaseEnterValidAmount => 'Please enter a valid amount';
+
+  @override
+  String get enterAdvanceReason => 'Enter reason for your advance...';
+
+  @override
+  String get advanceDeductionNote =>
+      'This advance will be deducted in full from your next payroll once approved.';
+
+  @override
+  String get advanceRequestSubmittedSuccess =>
+      'Advance request submitted successfully.';
+
+  @override
   String get attendanceReminders => 'Attendance Reminders';
 
   @override

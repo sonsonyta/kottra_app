@@ -147,6 +147,7 @@ class ProfileViewModel extends ChangeNotifier {
   String? get startWorkingTime => _employee?.startWorkingTime;
   String? get endWorkingTime => _employee?.endWorkingTime;
   int? get lateTime => _employee?.lateTime;
+  SalaryCurrency get currency => _employee?.currency ?? SalaryCurrency.usd;
   EmployeeStatus get employeeStatus => _employee?.status ?? EmployeeStatus.active;
   String? get profileImageUrl {
     final url = _employee?.profileImageThumbnail ?? _employee?.profileImage;

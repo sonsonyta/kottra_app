@@ -247,6 +247,41 @@ class AppLocalizationsKm extends AppLocalizations {
   String get statusRejected => 'បានបដិសេធ';
 
   @override
+  String get statusDeducted => 'បានកាត់';
+
+  @override
+  String get myAdvances => 'បុរេប្រទានរបស់ខ្ញុំ';
+
+  @override
+  String get requestAdvance => 'ស្នើសុំបុរេប្រទាន';
+
+  @override
+  String get noAdvancesRequestedYet => 'មិនទាន់មានការស្នើសុំបុរេប្រទានទេ។';
+
+  @override
+  String get outstandingAdvanceBalance => 'សមតុល្យបុរេប្រទាននៅសល់';
+
+  @override
+  String get advanceAmount => 'ចំនួនបុរេប្រទាន';
+
+  @override
+  String get enterAdvanceAmount => 'បញ្ចូលចំនួនទឹកប្រាក់';
+
+  @override
+  String get pleaseEnterValidAmount => 'សូមបញ្ចូលចំនួនទឹកប្រាក់ត្រឹមត្រូវ';
+
+  @override
+  String get enterAdvanceReason => 'បញ្ចូលមូលហេតុនៃការស្នើសុំបុរេប្រទាន...';
+
+  @override
+  String get advanceDeductionNote =>
+      'បុរេប្រទាននេះនឹងត្រូវកាត់ទាំងស្រុងពីប្រាក់ខែបន្ទាប់របស់អ្នក បន្ទាប់ពីត្រូវបានអនុម័ត។';
+
+  @override
+  String get advanceRequestSubmittedSuccess =>
+      'ការស្នើសុំបុរេប្រទានត្រូវបានដាក់ស្នើដោយជោគជ័យ។';
+
+  @override
   String get attendanceReminders => 'ការរំលឹកវត្តមាន';
 
   @override

@@ -7,8 +7,11 @@ import 'package:kottra_app/screens/login_screen.dart';
 import 'package:kottra_app/screens/main_screen.dart';
 import 'package:kottra_app/screens/leave/leave_list_screen.dart';
 import 'package:kottra_app/screens/leave/request_leave_screen.dart';
+import 'package:kottra_app/screens/advance/advance_list_screen.dart';
+import 'package:kottra_app/screens/advance/request_advance_screen.dart';
 import 'package:kottra_app/screens/schedule/schedule_screen.dart';
 import 'package:kottra_app/view_models/leave_view_model.dart';
+import 'package:kottra_app/view_models/salary_advance_view_model.dart';
 import 'package:kottra_app/view_models/profile_view_model.dart';
 
 class _GoRouterRefreshStream extends ChangeNotifier {
@@ -63,6 +66,24 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final viewModel = state.extra as LeaveViewModel;
         return RequestLeaveScreen(viewModel: viewModel);
+      },
+    ),
+    GoRoute(
+      path: '/advances',
+      redirect: (context, state) =>
+          state.extra is ProfileViewModel ? null : '/main',
+      builder: (context, state) {
+        final profileViewModel = state.extra as ProfileViewModel;
+        return AdvanceListScreen(profileViewModel: profileViewModel);
+      },
+    ),
+    GoRoute(
+      path: '/advances/request',
+      redirect: (context, state) =>
+          state.extra is SalaryAdvanceViewModel ? null : '/main',
+      builder: (context, state) {
+        final viewModel = state.extra as SalaryAdvanceViewModel;
+        return RequestAdvanceScreen(viewModel: viewModel);
       },
     ),
     GoRoute(
