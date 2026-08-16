@@ -113,6 +113,7 @@ class _BalanceCard extends StatelessWidget {
     final c = appColors(context);
     final l10n = AppLocalizations.of(context)!;
     return Container(
+      width: double.infinity,
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(

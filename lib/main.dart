@@ -17,7 +17,6 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'l10n/app_localizations.dart';
 
-import 'dart:ui';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 Future<void> main() async {
