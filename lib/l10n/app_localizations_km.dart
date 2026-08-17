@@ -377,4 +377,76 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get openSettings => 'បើកការកំណត់';
+
+  @override
+  String get payslipHistory => 'ប្រវត្តិប័ណ្ណប្រាក់ខែ';
+
+  @override
+  String get latestPayslip => 'ប័ណ្ណប្រាក់ខែចុងក្រោយ';
+
+  @override
+  String get currentDeductions => 'ការកាត់ប្រាក់បច្ចុប្បន្ន';
+
+  @override
+  String get payslipPaid => 'បានបង់ប្រាក់';
+
+  @override
+  String get payslipPending => 'រង់ចាំបង់ប្រាក់';
+
+  @override
+  String payrollRunNumber(String id) {
+    return 'លេខ #$id';
+  }
+
+  @override
+  String paidOnDate(String date) {
+    return 'បង់ប្រាក់នៅ $date';
+  }
+
+  @override
+  String get previewFinalizedNote => 'មើលជាមុន · បញ្ចប់នៅពេលដំណើរការប្រាក់ខែ';
+
+  @override
+  String get awaitingPayment => 'កំពុងរង់ចាំការបង់ប្រាក់';
+
+  @override
+  String get pendingPayment => 'រង់ចាំការបង់ប្រាក់';
+
+  @override
+  String get earnings => 'ប្រាក់ចំណូល';
+
+  @override
+  String get netPay => 'ប្រាក់សុទ្ធ';
+
+  @override
+  String get basicSalary => 'ប្រាក់ខែមូលដ្ឋាន';
+
+  @override
+  String get overtime => 'ម៉ោងបន្ថែម';
+
+  @override
+  String get bonuses => 'ប្រាក់រង្វាន់';
+
+  @override
+  String get allowances => 'ប្រាក់ឧបត្ថម្ភ';
+
+  @override
+  String get tax => 'ពន្ធ';
+
+  @override
+  String get leaveDeductionLabel => 'កាត់ប្រាក់ច្បាប់ឈប់សម្រាក';
+
+  @override
+  String get otherDeduction => 'ផ្សេងៗ';
+
+  @override
+  String get payslipProvisionalNote =>
+      'តួលេខទាំងនេះជាបណ្តោះអាសន្ន ហើយអាចផ្លាស់ប្តូរ រហូតដល់ការគណនាប្រាក់ខែត្រូវបានបញ្ចប់។';
+
+  @override
+  String get noPayslipsYet => 'មិនទាន់មានប័ណ្ណប្រាក់ខែ';
+
+  @override
+  String get payslipsWillAppearHere =>
+      'ប័ណ្ណប្រាក់ខែរបស់អ្នកនឹងបង្ហាញនៅទីនេះ បន្ទាប់ពីដំណើរការប្រាក់ខែ។';
 }

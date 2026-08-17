@@ -377,4 +377,76 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openSettings => 'Open Settings';
+
+  @override
+  String get payslipHistory => 'Payslip History';
+
+  @override
+  String get latestPayslip => 'Latest Payslip';
+
+  @override
+  String get currentDeductions => 'Current Deductions';
+
+  @override
+  String get payslipPaid => 'Paid';
+
+  @override
+  String get payslipPending => 'Pending';
+
+  @override
+  String payrollRunNumber(String id) {
+    return 'Run #$id';
+  }
+
+  @override
+  String paidOnDate(String date) {
+    return 'Paid on $date';
+  }
+
+  @override
+  String get previewFinalizedNote => 'Preview · finalized when payroll runs';
+
+  @override
+  String get awaitingPayment => 'Awaiting payment';
+
+  @override
+  String get pendingPayment => 'Pending payment';
+
+  @override
+  String get earnings => 'Earnings';
+
+  @override
+  String get netPay => 'Net Pay';
+
+  @override
+  String get basicSalary => 'Basic salary';
+
+  @override
+  String get overtime => 'Overtime';
+
+  @override
+  String get bonuses => 'Bonuses';
+
+  @override
+  String get allowances => 'Allowances';
+
+  @override
+  String get tax => 'Tax';
+
+  @override
+  String get leaveDeductionLabel => 'Leave deduction';
+
+  @override
+  String get otherDeduction => 'Other';
+
+  @override
+  String get payslipProvisionalNote =>
+      'These figures are provisional and may change until payroll is finalized.';
+
+  @override
+  String get noPayslipsYet => 'No payslips yet';
+
+  @override
+  String get payslipsWillAppearHere =>
+      'Your payslips will appear here once payroll runs.';
 }

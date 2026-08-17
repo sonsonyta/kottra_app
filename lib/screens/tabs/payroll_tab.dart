@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/screens/tabs/tab_helpers.dart';
@@ -11,6 +12,7 @@ class PayrollTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final payslips = viewModel.payslips;
     final latest = payslips.isNotEmpty ? payslips.first : null;
     final history = payslips.skip(latest != null ? 1 : 0).toList();
@@ -28,7 +30,7 @@ class PayrollTab extends StatelessWidget {
               ] else
                 const _EmptyPayslipState(),
               if (history.isNotEmpty) ...[
-                const SectionHeader(title: 'Payslip History'),
+                SectionHeader(title: l.payslipHistory),
                 const SizedBox(height: 12),
                 ...history.map(
                   (p) => Padding(
@@ -50,9 +52,9 @@ class PayrollTab extends StatelessWidget {
       pinned: true,
       backgroundColor: c.primary,
       elevation: 0,
-      title: const Text(
-        'Payroll',
-        style: TextStyle(
+      title: Text(
+        AppLocalizations.of(context)!.payroll,
+        style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w800,
           fontSize: 20,
@@ -79,6 +81,7 @@ class _LatestPayslipCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final l = AppLocalizations.of(context)!;
     final currency = payslip.currency.value;
     final isPaid = payslip.status == PayslipStatus.paid;
     final isPreview = payslip.status == PayslipStatus.pending;
@@ -106,7 +109,7 @@ class _LatestPayslipCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                isPreview ? 'Current Deductions' : 'Latest Payslip',
+                isPreview ? l.currentDeductions : l.latestPayslip,
                 style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 13,
@@ -122,7 +125,7 @@ class _LatestPayslipCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  payslip.status.value,
+                  isPaid ? l.payslipPaid : l.payslipPending,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -134,7 +137,7 @@ class _LatestPayslipCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Run #${payslip.payrollRunId}',
+            l.payrollRunNumber(payslip.payrollRunId),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -144,10 +147,10 @@ class _LatestPayslipCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             isPaid && payslip.paidDate != null
-                ? 'Paid on ${fmtDateFull(payslip.paidDate!)}'
+                ? l.paidOnDate(fmtDateFull(payslip.paidDate!))
                 : isPreview
-                    ? 'Preview · finalized when payroll runs'
-                    : 'Awaiting payment',
+                    ? l.previewFinalizedNote
+                    : l.awaitingPayment,
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 12,
@@ -159,20 +162,20 @@ class _LatestPayslipCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _PayslipFigure(
-                  label: 'Earnings',
+                  label: l.earnings,
                   value: fmtMoney(payslip.grossEarnings, currency),
                 ),
               ),
               if (!isPreview || payslip.totalDeductions > 0)
                 Expanded(
                   child: _PayslipFigure(
-                    label: 'Deductions',
+                    label: l.deductions,
                     value: fmtMoney(payslip.totalDeductions, currency),
                   ),
                 ),
               Expanded(
                 child: _PayslipFigure(
-                  label: 'Net Pay',
+                  label: l.netPay,
                   value: fmtMoney(payslip.netSalary, currency),
                   highlight: true,
                 ),
@@ -183,17 +186,17 @@ class _LatestPayslipCard extends StatelessWidget {
           const Divider(color: Colors.white24, height: 1),
           const SizedBox(height: 14),
           _BreakdownGroup(
-            title: 'Earnings',
+            title: l.earnings,
             rows: [
-              _BreakdownRow(label: 'Basic salary', value: payslip.basicSalary),
-              _BreakdownRow(label: 'Overtime', value: payslip.overtimePay),
+              _BreakdownRow(label: l.basicSalary, value: payslip.basicSalary),
+              _BreakdownRow(label: l.overtime, value: payslip.overtimePay),
               _BreakdownRow(
-                label: 'Bonuses',
+                label: l.bonuses,
                 value: payslip.bonuses,
                 note: payslip.bonusNote,
               ),
               _BreakdownRow(
-                label: 'Allowances',
+                label: l.allowances,
                 value: payslip.allowances,
                 note: payslip.allowanceNote,
               ),
@@ -203,15 +206,15 @@ class _LatestPayslipCard extends StatelessWidget {
           if (!isPreview || payslip.totalDeductions > 0) ...[
             const SizedBox(height: 12),
             _BreakdownGroup(
-              title: 'Deductions',
+              title: l.deductions,
               rows: [
-                _BreakdownRow(label: 'Tax', value: payslip.tax),
+                _BreakdownRow(label: l.tax, value: payslip.tax),
                 _BreakdownRow(
-                  label: 'Leave deduction',
+                  label: l.leaveDeductionLabel,
                   value: payslip.leaveDeduction,
                 ),
                 _BreakdownRow(
-                  label: 'Other',
+                  label: l.otherDeduction,
                   value: payslip.otherDeductions,
                 ),
               ],
@@ -229,11 +232,10 @@ class _LatestPayslipCard extends StatelessWidget {
                   size: 15,
                 ),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'These figures are provisional and may change until '
-                    'payroll is finalized.',
-                    style: TextStyle(
+                    l.payslipProvisionalNote,
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
@@ -379,6 +381,7 @@ class _PayslipListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final l = AppLocalizations.of(context)!;
     final isPaid = payslip.status == PayslipStatus.paid;
     final currency = payslip.currency.value;
 
@@ -413,7 +416,7 @@ class _PayslipListItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Run #${payslip.payrollRunId}',
+                  l.payrollRunNumber(payslip.payrollRunId),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -424,7 +427,7 @@ class _PayslipListItem extends StatelessWidget {
                 Text(
                   isPaid && payslip.paidDate != null
                       ? fmtDateShort(payslip.paidDate!)
-                      : 'Pending payment',
+                      : l.pendingPayment,
                   style: TextStyle(
                     fontSize: 12,
                     color: c.textSecondary,
@@ -454,7 +457,7 @@ class _PayslipListItem extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  payslip.status.value,
+                  isPaid ? l.payslipPaid : l.payslipPending,
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
@@ -476,6 +479,7 @@ class _EmptyPayslipState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
       decoration: BoxDecoration(
@@ -500,7 +504,7 @@ class _EmptyPayslipState extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            'No payslips yet',
+            l.noPayslipsYet,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -509,7 +513,7 @@ class _EmptyPayslipState extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Your payslips will appear here once payroll runs.',
+            l.payslipsWillAppearHere,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,

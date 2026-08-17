@@ -117,5 +117,41 @@
   "qrWrongStore": "កូដ QR នេះជាកម្មសិទ្ធិរបស់ហាងផ្សេង។",
   "qrInvalidCode": "នេះមិនមែនជាកូដ QR សម្រាប់ចុះវត្តមានត្រឹមត្រូវទេ។",
   "cameraPermissionRequired": "ត្រូវការការអនុញ្ញាតកាមេរ៉ាដើម្បីស្កេន។ សូមបើកវានៅក្នុងការកំណត់។",
-  "openSettings": "បើកការកំណត់"
+  "openSettings": "បើកការកំណត់",
+  "payslipHistory": "ប្រវត្តិប័ណ្ណប្រាក់ខែ",
+  "latestPayslip": "ប័ណ្ណប្រាក់ខែចុងក្រោយ",
+  "currentDeductions": "ការកាត់ប្រាក់បច្ចុប្បន្ន",
+  "payslipPaid": "បានបង់ប្រាក់",
+  "payslipPending": "រង់ចាំបង់ប្រាក់",
+  "payrollRunNumber": "លេខ #{id}",
+  "@payrollRunNumber": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "paidOnDate": "បង់ប្រាក់នៅ {date}",
+  "@paidOnDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "previewFinalizedNote": "មើលជាមុន · បញ្ចប់នៅពេលដំណើរការប្រាក់ខែ",
+  "awaitingPayment": "កំពុងរង់ចាំការបង់ប្រាក់",
+  "pendingPayment": "រង់ចាំការបង់ប្រាក់",
+  "earnings": "ប្រាក់ចំណូល",
+  "netPay": "ប្រាក់សុទ្ធ",
+  "basicSalary": "ប្រាក់ខែមូលដ្ឋាន",
+  "overtime": "ម៉ោងបន្ថែម",
+  "bonuses": "ប្រាក់រង្វាន់",
+  "allowances": "ប្រាក់ឧបត្ថម្ភ",
+  "tax": "ពន្ធ",
+  "leaveDeductionLabel": "កាត់ប្រាក់ច្បាប់ឈប់សម្រាក",
+  "otherDeduction": "ផ្សេងៗ",
+  "payslipProvisionalNote": "តួលេខទាំងនេះជាបណ្តោះអាសន្ន ហើយអាចផ្លាស់ប្តូរ រហូតដល់ការគណនាប្រាក់ខែត្រូវបានបញ្ចប់។",
+  "noPayslipsYet": "មិនទាន់មានប័ណ្ណប្រាក់ខែ",
+  "payslipsWillAppearHere": "ប័ណ្ណប្រាក់ខែរបស់អ្នកនឹងបង្ហាញនៅទីនេះ បន្ទាប់ពីដំណើរការប្រាក់ខែ។"
 }

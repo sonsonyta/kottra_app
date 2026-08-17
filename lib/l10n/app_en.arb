@@ -138,5 +138,41 @@
   "qrWrongStore": "This QR code belongs to a different store.",
   "qrInvalidCode": "That's not a valid check-in QR code.",
   "cameraPermissionRequired": "Camera access is needed to scan. Enable it in Settings.",
-  "openSettings": "Open Settings"
+  "openSettings": "Open Settings",
+  "payslipHistory": "Payslip History",
+  "latestPayslip": "Latest Payslip",
+  "currentDeductions": "Current Deductions",
+  "payslipPaid": "Paid",
+  "payslipPending": "Pending",
+  "payrollRunNumber": "Run #{id}",
+  "@payrollRunNumber": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "paidOnDate": "Paid on {date}",
+  "@paidOnDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "previewFinalizedNote": "Preview · finalized when payroll runs",
+  "awaitingPayment": "Awaiting payment",
+  "pendingPayment": "Pending payment",
+  "earnings": "Earnings",
+  "netPay": "Net Pay",
+  "basicSalary": "Basic salary",
+  "overtime": "Overtime",
+  "bonuses": "Bonuses",
+  "allowances": "Allowances",
+  "tax": "Tax",
+  "leaveDeductionLabel": "Leave deduction",
+  "otherDeduction": "Other",
+  "payslipProvisionalNote": "These figures are provisional and may change until payroll is finalized.",
+  "noPayslipsYet": "No payslips yet",
+  "payslipsWillAppearHere": "Your payslips will appear here once payroll runs."
 }

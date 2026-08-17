@@ -805,6 +805,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open Settings'**
   String get openSettings;
+
+  /// No description provided for @payslipHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Payslip History'**
+  String get payslipHistory;
+
+  /// No description provided for @latestPayslip.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest Payslip'**
+  String get latestPayslip;
+
+  /// No description provided for @currentDeductions.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Deductions'**
+  String get currentDeductions;
+
+  /// No description provided for @payslipPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get payslipPaid;
+
+  /// No description provided for @payslipPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get payslipPending;
+
+  /// No description provided for @payrollRunNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Run #{id}'**
+  String payrollRunNumber(String id);
+
+  /// No description provided for @paidOnDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid on {date}'**
+  String paidOnDate(String date);
+
+  /// No description provided for @previewFinalizedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview · finalized when payroll runs'**
+  String get previewFinalizedNote;
+
+  /// No description provided for @awaitingPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting payment'**
+  String get awaitingPayment;
+
+  /// No description provided for @pendingPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending payment'**
+  String get pendingPayment;
+
+  /// No description provided for @earnings.
+  ///
+  /// In en, this message translates to:
+  /// **'Earnings'**
+  String get earnings;
+
+  /// No description provided for @netPay.
+  ///
+  /// In en, this message translates to:
+  /// **'Net Pay'**
+  String get netPay;
+
+  /// No description provided for @basicSalary.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic salary'**
+  String get basicSalary;
+
+  /// No description provided for @overtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Overtime'**
+  String get overtime;
+
+  /// No description provided for @bonuses.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonuses'**
+  String get bonuses;
+
+  /// No description provided for @allowances.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowances'**
+  String get allowances;
+
+  /// No description provided for @tax.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax'**
+  String get tax;
+
+  /// No description provided for @leaveDeductionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave deduction'**
+  String get leaveDeductionLabel;
+
+  /// No description provided for @otherDeduction.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get otherDeduction;
+
+  /// No description provided for @payslipProvisionalNote.
+  ///
+  /// In en, this message translates to:
+  /// **'These figures are provisional and may change until payroll is finalized.'**
+  String get payslipProvisionalNote;
+
+  /// No description provided for @noPayslipsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No payslips yet'**
+  String get noPayslipsYet;
+
+  /// No description provided for @payslipsWillAppearHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payslips will appear here once payroll runs.'**
+  String get payslipsWillAppearHere;
 }
 
 class _AppLocalizationsDelegate
