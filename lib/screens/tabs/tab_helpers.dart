@@ -1,3 +1,6 @@
+import 'package:intl/intl.dart';
+import 'package:kottra_app/theme/locale_controller.dart';
+
 String fmtTime(DateTime? t) {
   if (t == null) return '--:--';
   final h = t.hour.toString().padLeft(2, '0');
@@ -11,25 +14,12 @@ String fmtDuration(Duration d) {
   return '${h}h ${m.toString().padLeft(2, '0')}m';
 }
 
-String fmtDateShort(DateTime d) {
-  const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  return '${days[d.weekday - 1]}, ${d.day} ${months[d.month - 1]}';
-}
+String fmtDateShort(DateTime d) =>
+    DateFormat.MMMEd(LocaleController.instance.locale.languageCode).format(d);
 
-String fmtDateFull(DateTime d) {
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
-  ];
-  const days = [
-    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
-  ];
-  return '${days[d.weekday - 1]}, ${d.day} ${months[d.month - 1]} ${d.year}';
-}
+String fmtDateFull(DateTime d) =>
+    DateFormat.yMMMMEEEEd(LocaleController.instance.locale.languageCode)
+        .format(d);
 
 String greeting() {
   final h = DateTime.now().hour;
