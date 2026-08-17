@@ -11,6 +11,7 @@ import 'package:kottra_app/services/employee_service.dart';
 import 'package:kottra_app/services/location_service.dart';
 import 'package:kottra_app/services/settings_service.dart';
 import 'package:kottra_app/services/store_service.dart';
+import 'package:kottra_app/config/feature_flags.dart';
 import 'package:kottra_app/view_models/employee_identity.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -261,6 +262,17 @@ class AttendanceViewModel extends ChangeNotifier {
     }
   }
 
+  /// The store this employee belongs to, or null before auth is ready. Used by
+  /// the QR scanner to check the scanned code targets the right store.
+  String? get storeId => _identity?.storeId;
+
+  /// Whether check-in/out should go through a QR scan of the store's posted
+  /// code. True only when the master feature flag is on and the store has
+  /// opted into [AttendanceMethod.qr]; otherwise the plain button is used.
+  bool get usesQrAttendance =>
+      FeatureFlags.enableQrAttendance &&
+      _hrSettings?.attendanceMethod == AttendanceMethod.qr;
+
   bool get isOnLeave => _todayRecord?.status == AttendanceStatus.leave;
   bool get isAbsent => _todayRecord?.status == AttendanceStatus.absent;
   bool get isDayOff => _todayRecord?.status == AttendanceStatus.dayOff;
@@ -332,6 +344,7 @@ class AttendanceViewModel extends ChangeNotifier {
     String? earlyCheckOutNote,
     String? leaveNote,
     String? absentNote,
+    String? qrToken,
   }) async {
     if (_isActionLoading) return null;
     final identity = _identity;
@@ -356,6 +369,7 @@ class AttendanceViewModel extends ChangeNotifier {
         earlyCheckOutNote: earlyCheckOutNote,
         leaveNote: leaveNote,
         absentNote: absentNote,
+        qrToken: qrToken,
       );
 
       if (result.success && !result.alreadyCheckedIn) {
@@ -383,6 +397,7 @@ class AttendanceViewModel extends ChangeNotifier {
     String? earlyCheckOutNote,
     String? leaveNote,
     String? absentNote,
+    String? qrToken,
   }) async {
     if (_isActionLoading) return null;
     final identity = _identity;
@@ -411,6 +426,7 @@ class AttendanceViewModel extends ChangeNotifier {
         earlyCheckOutNote: earlyCheckOutNote,
         leaveNote: leaveNote,
         absentNote: absentNote,
+        qrToken: qrToken,
       );
 
       if (result.success && !result.alreadyCheckedOut) {

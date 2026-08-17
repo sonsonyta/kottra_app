@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../view_models/attendance_view_model.dart';
 import '../../../view_models/main_view_model.dart';
+import '../../scan/scan_screen.dart';
 import '../tab_colors.dart';
 import '../tab_helpers.dart';
 
@@ -72,7 +73,27 @@ class CheckInCard extends StatelessWidget {
   }
 
 
+  /// When the store uses QR attendance, opens the scanner and returns the
+  /// scanned store payload to forward as `qrToken`. Returns null if the user
+  /// backed out of the scanner (caller should abort). For button-mode stores it
+  /// returns an empty string, meaning "proceed with no token".
+  Future<String?> _scanIfRequired(BuildContext context, String title) async {
+    if (!attendanceViewModel.usesQrAttendance) return '';
+    final storeId = attendanceViewModel.storeId;
+    if (storeId == null) return null;
+    return Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => ScanScreen(expectedStoreId: storeId, title: title),
+      ),
+    );
+  }
+
   Future<void> _handleCheckIn(BuildContext context) async {
+    final qrToken = await _scanIfRequired(
+      context, AppLocalizations.of(context)!.scanToCheckIn);
+    if (qrToken == null) return; // Scanner cancelled
+    if (!context.mounted) return;
+
     String? note;
     if (attendanceViewModel.isLateCheckIn(viewModel.startWorkingTime, viewModel.lateTime)) {
       note = await _promptForNote(context, AppLocalizations.of(context)!.checkIn);
@@ -83,7 +104,10 @@ class CheckInCard extends StatelessWidget {
     final localizations = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final result = await attendanceViewModel.checkIn(lateCheckInNote: note?.isEmpty ?? true ? null : note);
+      final result = await attendanceViewModel.checkIn(
+        lateCheckInNote: note?.isEmpty ?? true ? null : note,
+        qrToken: qrToken.isEmpty ? null : qrToken,
+      );
       if (result == null) return;
       final String message;
       if (result.alreadyCheckedIn) {
@@ -102,6 +126,11 @@ class CheckInCard extends StatelessWidget {
   }
 
   Future<void> _handleCheckOut(BuildContext context) async {
+    final qrToken = await _scanIfRequired(
+      context, AppLocalizations.of(context)!.scanToCheckOut);
+    if (qrToken == null) return; // Scanner cancelled
+    if (!context.mounted) return;
+
     String? note;
     if (attendanceViewModel.isEarlyCheckOut(viewModel.startWorkingTime, viewModel.endWorkingTime)) {
       note = await _promptForNote(context, AppLocalizations.of(context)!.checkOut);
@@ -112,7 +141,10 @@ class CheckInCard extends StatelessWidget {
     final localizations = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final result = await attendanceViewModel.checkOut(earlyCheckOutNote: note?.isEmpty ?? true ? null : note);
+      final result = await attendanceViewModel.checkOut(
+        earlyCheckOutNote: note?.isEmpty ?? true ? null : note,
+        qrToken: qrToken.isEmpty ? null : qrToken,
+      );
       if (result == null) return;
       final String message;
       if (result.alreadyCheckedOut) {
@@ -133,6 +165,7 @@ class CheckInCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final usesQr = attendanceViewModel.usesQrAttendance;
     final isCheckedIn = attendanceViewModel.isCheckedIn;
     final checkInTime = attendanceViewModel.checkInTime;
     final checkOutTime = attendanceViewModel.checkOutTime;
@@ -315,12 +348,22 @@ class CheckInCard extends StatelessWidget {
                     ),
                   )
                       : Icon(
-                    isCheckedOut ? Icons.check_circle_rounded : (isCheckedIn ? Icons.logout_rounded : Icons.login_rounded),
+                    isCheckedOut
+                        ? Icons.check_circle_rounded
+                        : (usesQr
+                            ? Icons.qr_code_scanner_rounded
+                            : (isCheckedIn ? Icons.logout_rounded : Icons.login_rounded)),
                     size: 20,
                   ),
                   label: Text(isCheckedOut
                       ? AppLocalizations.of(context)!.checkedOut
-                      : (isCheckedIn ? AppLocalizations.of(context)!.checkOut : AppLocalizations.of(context)!.checkIn)),
+                      : (isCheckedIn
+                          ? (usesQr
+                              ? AppLocalizations.of(context)!.scanToCheckOut
+                              : AppLocalizations.of(context)!.checkOut)
+                          : (usesQr
+                              ? AppLocalizations.of(context)!.scanToCheckIn
+                              : AppLocalizations.of(context)!.checkIn))),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     foregroundColor: isCheckedOut ? c.textSecondary : Colors.white,

@@ -354,4 +354,30 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get estimatedFromAttendance =>
       'Estimated from your attendance so far. Final amounts are set when payroll is run.';
+
+  @override
+  String get scanToCheckIn => 'Scan to Check In';
+
+  @override
+  String get scanToCheckOut => 'Scan to Check Out';
+
+  @override
+  String get scanQrTitle => 'Scan Store QR';
+
+  @override
+  String get scanQrInstruction =>
+      'Point your camera at the store\'s check-in QR code.';
+
+  @override
+  String get qrWrongStore => 'This QR code belongs to a different store.';
+
+  @override
+  String get qrInvalidCode => 'That\'s not a valid check-in QR code.';
+
+  @override
+  String get cameraPermissionRequired =>
+      'Camera access is needed to scan. Enable it in Settings.';
+
+  @override
+  String get openSettings => 'Open Settings';
 }

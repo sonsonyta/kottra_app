@@ -763,6 +763,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Estimated from your attendance so far. Final amounts are set when payroll is run.'**
   String get estimatedFromAttendance;
+
+  /// No description provided for @scanToCheckIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to Check In'**
+  String get scanToCheckIn;
+
+  /// No description provided for @scanToCheckOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan to Check Out'**
+  String get scanToCheckOut;
+
+  /// No description provided for @scanQrTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Store QR'**
+  String get scanQrTitle;
+
+  /// No description provided for @scanQrInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Point your camera at the store\'s check-in QR code.'**
+  String get scanQrInstruction;
+
+  /// No description provided for @qrWrongStore.
+  ///
+  /// In en, this message translates to:
+  /// **'This QR code belongs to a different store.'**
+  String get qrWrongStore;
+
+  /// No description provided for @qrInvalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s not a valid check-in QR code.'**
+  String get qrInvalidCode;
+
+  /// No description provided for @cameraPermissionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is needed to scan. Enable it in Settings.'**
+  String get cameraPermissionRequired;
+
+  /// No description provided for @openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get openSettings;
 }
 
 class _AppLocalizationsDelegate

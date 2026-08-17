@@ -101,6 +101,7 @@ class AttendanceService {
     String? earlyCheckOutNote,
     String? leaveNote,
     String? absentNote,
+    String? qrToken,
   }) async {
     final data = await _callable('employeeCheckInV1', <String, dynamic>{
       'storeId': storeId,
@@ -111,6 +112,10 @@ class AttendanceService {
       if (earlyCheckOutNote != null && earlyCheckOutNote.isNotEmpty) 'earlyCheckOutNote': earlyCheckOutNote,
       if (leaveNote != null && leaveNote.isNotEmpty) 'leaveNote': leaveNote,
       if (absentNote != null && absentNote.isNotEmpty) 'absentNote': absentNote,
+      // Raw scanned QR payload, sent when the store uses QR attendance. The
+      // backend can verify it (e.g. once tokens are signed/rotating); unknown
+      // to older functions, which safely ignore it.
+      if (qrToken != null && qrToken.isNotEmpty) 'qrToken': qrToken,
     });
 
     if (data is! Map) {
@@ -132,6 +137,7 @@ class AttendanceService {
     String? earlyCheckOutNote,
     String? leaveNote,
     String? absentNote,
+    String? qrToken,
   }) async {
     final data =  await _callable('employeeCheckOutV1', <String, dynamic>{
       'storeId': storeId,
@@ -143,6 +149,7 @@ class AttendanceService {
       if (earlyCheckOutNote != null && earlyCheckOutNote.isNotEmpty) 'earlyCheckOutNote': earlyCheckOutNote,
       if (leaveNote != null && leaveNote.isNotEmpty) 'leaveNote': leaveNote,
       if (absentNote != null && absentNote.isNotEmpty) 'absentNote': absentNote,
+      if (qrToken != null && qrToken.isNotEmpty) 'qrToken': qrToken,
     });
 
     if (data is! Map) {

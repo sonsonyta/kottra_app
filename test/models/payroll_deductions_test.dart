@@ -39,6 +39,7 @@ HrSettings _settings({
     absenceDeduction: absence ?? AbsenceDeductionSettings.legacyDefault,
     allowDisplayPreviewDeduction: true,
     deductionPeriodBasis: basis,
+    attendanceMethod: AttendanceMethod.button,
   );
 }
 

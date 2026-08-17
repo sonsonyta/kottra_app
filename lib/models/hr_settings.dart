@@ -47,6 +47,21 @@ enum LateDeductionMode {
           orElse: () => LateDeductionMode.perMinute);
 }
 
+/// How employees record attendance.
+///  - `button` (default): tap the check-in/out button directly.
+///  - `qr`: scan the store's posted QR code to check in/out. The scanned store
+///    id must match the employee's own store before the check-in proceeds.
+enum AttendanceMethod {
+  button('button'),
+  qr('qr');
+
+  const AttendanceMethod(this.value);
+  final String value;
+
+  static AttendanceMethod fromString(String? value) => AttendanceMethod.values
+      .firstWhere((m) => m.value == value, orElse: () => AttendanceMethod.button);
+}
+
 /// Absence deduction mode.
 enum AbsenceDeductionMode {
   proportional('proportional'),
@@ -140,11 +155,15 @@ class HrSettings {
     required this.absenceDeduction,
     required this.allowDisplayPreviewDeduction,
     required this.deductionPeriodBasis,
+    required this.attendanceMethod,
   });
 
   final PayrollFrequency payrollFrequency;
   final LateDeductionSettings lateDeduction;
   final AbsenceDeductionSettings absenceDeduction;
+
+  /// How employees check in/out for this store (button vs QR scan).
+  final AttendanceMethod attendanceMethod;
 
   /// Whether employees may see their live deduction preview. Defaults to true
   /// (visible) when the store hasn't set it.
@@ -176,6 +195,8 @@ class HrSettings {
           hrMap['allowDisplayPreviewDeduction'] as bool? ?? true,
       deductionPeriodBasis: DeductionPeriodBasis.fromString(
           hrMap['deductionPeriodBasis'] as String?),
+      attendanceMethod:
+          AttendanceMethod.fromString(hrMap['attendanceMethod'] as String?),
     );
   }
 
@@ -185,5 +206,6 @@ class HrSettings {
     absenceDeduction: AbsenceDeductionSettings.legacyDefault,
     allowDisplayPreviewDeduction: true,
     deductionPeriodBasis: DeductionPeriodBasis.payrollFrequency,
+    attendanceMethod: AttendanceMethod.button,
   );
 }

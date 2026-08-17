@@ -39,6 +39,7 @@ class FakeAttendanceService implements AttendanceService {
   String? lastAttendanceId;
   double? lastLatitude;
   double? lastLongitude;
+  String? lastQrToken;
   int checkInCalls = 0;
   int checkOutCalls = 0;
   Object? checkInError;
@@ -64,12 +65,14 @@ class FakeAttendanceService implements AttendanceService {
     String? earlyCheckOutNote,
     String? leaveNote,
     String? absentNote,
+    String? qrToken,
   }) async {
     checkInCalls++;
     lastStoreId = storeId;
     lastEmployeeId = employeeId;
     lastLatitude = latitude;
     lastLongitude = longitude;
+    lastQrToken = qrToken;
 
     if (checkInError != null) throw checkInError!;
     return checkInResult;
@@ -86,6 +89,7 @@ class FakeAttendanceService implements AttendanceService {
     String? earlyCheckOutNote,
     String? leaveNote,
     String? absentNote,
+    String? qrToken,
   }) async {
     checkOutCalls++;
     lastStoreId = storeId;
@@ -93,6 +97,7 @@ class FakeAttendanceService implements AttendanceService {
     lastAttendanceId = attendanceId;
     lastLatitude = latitude;
     lastLongitude = longitude;
+    lastQrToken = qrToken;
 
     return checkOutResult;
   }

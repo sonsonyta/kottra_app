@@ -353,4 +353,31 @@ class AppLocalizationsKm extends AppLocalizations {
   @override
   String get estimatedFromAttendance =>
       'បា៉ន់ស្មានតាមវត្តមានរបស់អ្នករហូតមកដល់ពេលនេះ។ ចំនួនចុងក្រោយត្រូវបានកំណត់នៅពេលដំណើរការប្រាក់ខែ។';
+
+  @override
+  String get scanToCheckIn => 'ស្កេនដើម្បីចូល';
+
+  @override
+  String get scanToCheckOut => 'ស្កេនដើម្បីចេញ';
+
+  @override
+  String get scanQrTitle => 'ស្កេន QR ហាង';
+
+  @override
+  String get scanQrInstruction =>
+      'តម្រង់កាមេរ៉ារបស់អ្នកទៅកាន់កូដ QR សម្រាប់ចុះវត្តមានរបស់ហាង។';
+
+  @override
+  String get qrWrongStore => 'កូដ QR នេះជាកម្មសិទ្ធិរបស់ហាងផ្សេង។';
+
+  @override
+  String get qrInvalidCode =>
+      'នេះមិនមែនជាកូដ QR សម្រាប់ចុះវត្តមានត្រឹមត្រូវទេ។';
+
+  @override
+  String get cameraPermissionRequired =>
+      'ត្រូវការការអនុញ្ញាតកាមេរ៉ាដើម្បីស្កេន។ សូមបើកវានៅក្នុងការកំណត់។';
+
+  @override
+  String get openSettings => 'បើកការកំណត់';
 }
