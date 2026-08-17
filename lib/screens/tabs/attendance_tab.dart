@@ -94,10 +94,13 @@ class _AttendanceTabState extends State<AttendanceTab> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              _DeductionCard(
-                breakdown: widget.attendanceViewModel.periodDeductions,
-              ),
+              if (widget.attendanceViewModel.periodDeductions?.hasDeductions ??
+                  false) ...[
+                const SizedBox(height: 16),
+                _DeductionCard(
+                  breakdown: widget.attendanceViewModel.periodDeductions,
+                ),
+              ],
               const SizedBox(height: 24),
               _buildCalendar(context),
               const SizedBox(height: 24),
@@ -330,63 +333,44 @@ class _DeductionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          if (!b.hasDeductions)
-            Row(
-              children: [
-                Icon(Icons.check_circle_rounded, size: 20, color: c.success),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    l.noDeductionsYet,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: c.textSecondary,
-                    ),
-                  ),
+          _DeductionRow(
+            label: l.late,
+            detail: b.lateMinutes > 0 ? '${b.lateMinutes} min' : null,
+            amount: _money(b.late, b.currency),
+            color: c.warning,
+          ),
+          const SizedBox(height: 10),
+          _DeductionRow(
+            label: l.absent,
+            detail: b.unpaidDays > 0 ? '${b.unpaidDays}d' : null,
+            amount: _money(b.absence, b.currency),
+            color: c.error,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1, color: c.textSecondary.withValues(alpha: 0.15)),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                l.total,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: c.textPrimary,
                 ),
-              ],
-            )
-          else ...[
-            _DeductionRow(
-              label: l.late,
-              detail: b.lateMinutes > 0 ? '${b.lateMinutes} min' : null,
-              amount: _money(b.late, b.currency),
-              color: c.warning,
-            ),
-            const SizedBox(height: 10),
-            _DeductionRow(
-              label: l.absent,
-              detail: b.unpaidDays > 0 ? '${b.unpaidDays}d' : null,
-              amount: _money(b.absence, b.currency),
-              color: c.error,
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Divider(height: 1, color: c.textSecondary.withValues(alpha: 0.15)),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  l.total,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: c.textPrimary,
-                  ),
+              ),
+              Text(
+                _money(b.total, b.currency),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: c.error,
                 ),
-                Text(
-                  _money(b.total, b.currency),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: c.error,
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           Text(
             l.estimatedFromAttendance,

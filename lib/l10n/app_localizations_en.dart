@@ -340,9 +340,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get total => 'Total';
 
   @override
-  String get noDeductionsYet => 'No deductions so far this period.';
-
-  @override
   String get periodFirstHalf => '1st–15th';
 
   @override

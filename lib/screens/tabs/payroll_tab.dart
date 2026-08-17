@@ -163,12 +163,13 @@ class _LatestPayslipCard extends StatelessWidget {
                   value: fmtMoney(payslip.grossEarnings, currency),
                 ),
               ),
-              Expanded(
-                child: _PayslipFigure(
-                  label: 'Deductions',
-                  value: fmtMoney(payslip.totalDeductions, currency),
+              if (!isPreview || payslip.totalDeductions > 0)
+                Expanded(
+                  child: _PayslipFigure(
+                    label: 'Deductions',
+                    value: fmtMoney(payslip.totalDeductions, currency),
+                  ),
                 ),
-              ),
               Expanded(
                 child: _PayslipFigure(
                   label: 'Net Pay',
@@ -199,22 +200,24 @@ class _LatestPayslipCard extends StatelessWidget {
             ],
             currency: currency,
           ),
-          const SizedBox(height: 12),
-          _BreakdownGroup(
-            title: 'Deductions',
-            rows: [
-              _BreakdownRow(label: 'Tax', value: payslip.tax),
-              _BreakdownRow(
-                label: 'Leave deduction',
-                value: payslip.leaveDeduction,
-              ),
-              _BreakdownRow(
-                label: 'Other',
-                value: payslip.otherDeductions,
-              ),
-            ],
-            currency: currency,
-          ),
+          if (!isPreview || payslip.totalDeductions > 0) ...[
+            const SizedBox(height: 12),
+            _BreakdownGroup(
+              title: 'Deductions',
+              rows: [
+                _BreakdownRow(label: 'Tax', value: payslip.tax),
+                _BreakdownRow(
+                  label: 'Leave deduction',
+                  value: payslip.leaveDeduction,
+                ),
+                _BreakdownRow(
+                  label: 'Other',
+                  value: payslip.otherDeductions,
+                ),
+              ],
+              currency: currency,
+            ),
+          ],
           if (isPreview) ...[
             const SizedBox(height: 14),
             Row(

@@ -51,7 +51,9 @@ class HomeTab extends StatelessWidget {
               const SizedBox(height: 20),
               _TodayStatsRow(attendanceViewModel: attendanceViewModel),
               const SizedBox(height: 20),
-              if (FeatureFlags.enablePayroll) ...[
+              if (FeatureFlags.enablePayroll &&
+                  (attendanceViewModel.periodDeductions?.hasDeductions ??
+                      false)) ...[
                 _MonthDeductionCard(
                   viewModel: viewModel,
                   attendanceViewModel: attendanceViewModel,

@@ -734,12 +734,6 @@ abstract class AppLocalizations {
   /// **'Total'**
   String get total;
 
-  /// No description provided for @noDeductionsYet.
-  ///
-  /// In en, this message translates to:
-  /// **'No deductions so far this period.'**
-  String get noDeductionsYet;
-
   /// No description provided for @periodFirstHalf.
   ///
   /// In en, this message translates to:

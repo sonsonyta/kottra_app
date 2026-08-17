@@ -339,9 +339,6 @@ class AppLocalizationsKm extends AppLocalizations {
   String get total => 'សរុប';
 
   @override
-  String get noDeductionsYet => 'មិនទាន់មានការកាត់ប្រាក់ក្នុងអំឡុងពេលនេះទេ។';
-
-  @override
   String get periodFirstHalf => 'ថ្ងៃ១–១៥';
 
   @override
