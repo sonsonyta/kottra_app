@@ -10,6 +10,7 @@ import 'package:kottra_app/services/auth_service.dart';
 import 'package:kottra_app/services/employee_service.dart';
 import 'package:kottra_app/services/payroll_run_service.dart';
 import 'package:kottra_app/services/payslip_service.dart';
+import 'package:kottra_app/services/store_service.dart';
 import 'package:kottra_app/view_models/employee_identity.dart';
 
 export 'package:kottra_app/models/hr_employee.dart';
@@ -22,14 +23,17 @@ class MainViewModel extends ChangeNotifier {
     EmployeeService? employeeService,
     PayslipService? payslipService,
     PayrollRunService? payrollRunService,
+    StoreService? storeService,
   })  : _authService = authService ?? AuthService(),
         _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
         _employeeService = employeeService ?? EmployeeService(),
         _payslipService = payslipService ?? PayslipService(),
-        _payrollRunService = payrollRunService ?? PayrollRunService() {
+        _payrollRunService = payrollRunService ?? PayrollRunService(),
+        _storeService = storeService ?? StoreService() {
     _subscribeToEmployee();
     _subscribeToPayslips();
     _subscribeToRuns();
+    _loadStore();
   }
 
   final AuthServiceBase _authService;
@@ -37,6 +41,7 @@ class MainViewModel extends ChangeNotifier {
   final EmployeeService _employeeService;
   final PayslipService _payslipService;
   final PayrollRunService _payrollRunService;
+  final StoreService _storeService;
 
   StreamSubscription<HREmployee?>? _employeeSub;
   StreamSubscription<List<HRPayslip>>? _payslipSub;
@@ -45,6 +50,7 @@ class MainViewModel extends ChangeNotifier {
   HREmployee? _employee;
   List<HRPayslip> _payslips = [];
   List<HRPayrollRun> _runs = [];
+  String? _storeName;
 
   // ── Navigation ──────────────────────────────────────────────────────────────
 
@@ -110,6 +116,18 @@ class MainViewModel extends ChangeNotifier {
         });
   }
 
+  Future<void> _loadStore() async {
+    final identity = _identity;
+    if (identity == null) return;
+    try {
+      final store = await _storeService.getStore(identity.storeId);
+      _storeName = store?.name;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading store: $e');
+    }
+  }
+
   void _subscribeToRuns() {
     final identity = _identity;
     if (identity == null) return;
@@ -150,6 +168,14 @@ class MainViewModel extends ChangeNotifier {
   // ── Employee info shared across tabs ───────────────────────────────────────────
 
   String get storeId => _identity?.storeId ?? '';
+
+  /// Human-readable store name, or null until the store document loads (or when
+  /// its document has no `name` field). Callers should hide the label when null.
+  String? get storeName {
+    final name = _storeName?.trim();
+    return (name != null && name.isNotEmpty) ? name : null;
+  }
+
   String get employeeId => _identity?.employeeId ?? '';
   String? get startWorkingTime => _employee?.startWorkingTime;
   String? get endWorkingTime => _employee?.endWorkingTime;

@@ -116,6 +116,32 @@ class HomeTab extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        if (viewModel.storeName != null) ...[
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.storefront_rounded,
+                                color: Colors.white70,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  viewModel.storeName!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                        ],
                         Text(
                           _getGreeting(context),
                           style: const TextStyle(
