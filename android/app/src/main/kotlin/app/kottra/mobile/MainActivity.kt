@@ -1,4 +1,4 @@
-package com.kottra.app
+package app.kottra.mobile
 
 import io.flutter.embedding.android.FlutterActivity
 
