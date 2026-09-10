@@ -374,6 +374,24 @@ abstract class AppLocalizations {
   /// **'Check-out failed. Please try again.'**
   String get checkOutFailed;
 
+  /// No description provided for @checkInQueuedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline — check-in saved and will sync automatically.'**
+  String get checkInQueuedOffline;
+
+  /// No description provided for @checkOutQueuedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline — check-out saved and will sync automatically.'**
+  String get checkOutQueuedOffline;
+
+  /// No description provided for @pendingSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending sync'**
+  String get pendingSync;
+
   /// No description provided for @onLeaveToday.
   ///
   /// In en, this message translates to:

@@ -149,6 +149,17 @@ class AppLocalizationsKm extends AppLocalizations {
   String get checkOutFailed => 'ការកត់វត្តមានចេញបានបរាជ័យ។ សូមព្យាយាមម្តងទៀត។';
 
   @override
+  String get checkInQueuedOffline =>
+      'អ្នកគ្មានអ៊ីនធឺណិត — ការកត់វត្តមានចូលត្រូវបានរក្សាទុក ហើយនឹងធ្វើសមកាលកម្មដោយស្វ័យប្រវត្តិ។';
+
+  @override
+  String get checkOutQueuedOffline =>
+      'អ្នកគ្មានអ៊ីនធឺណិត — ការកត់វត្តមានចេញត្រូវបានរក្សាទុក ហើយនឹងធ្វើសមកាលកម្មដោយស្វ័យប្រវត្តិ។';
+
+  @override
+  String get pendingSync => 'កំពុងរង់ចាំសមកាលកម្ម';
+
+  @override
   String get onLeaveToday => 'អ្នកឈប់សម្រាកនៅថ្ងៃនេះ';
 
   @override

@@ -8,6 +8,7 @@ class CheckInResult {
     required this.alreadyCheckedIn,
     required this.attendanceId,
     required this.status,
+    this.queuedOffline = false,
   });
 
   final bool success;
@@ -15,11 +16,24 @@ class CheckInResult {
   final String attendanceId;
   final AttendanceStatus status;
 
+  /// True when the device was offline and the check-in was saved to the local
+  /// queue for automatic sync rather than confirmed by the backend.
+  final bool queuedOffline;
+
   factory CheckInResult.fromMap(Map<Object?, Object?> map) => CheckInResult(
     success: map['success'] as bool? ?? false,
     alreadyCheckedIn: map['alreadyCheckedIn'] as bool? ?? false,
     attendanceId: map['attendanceId'] as String? ?? '',
     status: AttendanceStatus.fromString(map['status'] as String? ?? ''),
+  );
+
+  /// A synthetic result standing in for a check-in that was queued offline.
+  factory CheckInResult.queued() => const CheckInResult(
+    success: true,
+    alreadyCheckedIn: false,
+    attendanceId: '',
+    status: AttendanceStatus.present,
+    queuedOffline: true,
   );
 }
 
@@ -28,16 +42,29 @@ class CheckOutResult {
     required this.success,
     required this.alreadyCheckedOut,
     required this.attendanceId,
+    this.queuedOffline = false,
   });
 
   final bool success;
   final bool alreadyCheckedOut;
   final String attendanceId;
 
+  /// True when the device was offline and the check-out was saved to the local
+  /// queue for automatic sync rather than confirmed by the backend.
+  final bool queuedOffline;
+
   factory CheckOutResult.fromMap(Map<Object?, Object?> map) => CheckOutResult(
     success: map['success'] as bool? ?? false,
     alreadyCheckedOut: map['alreadyCheckedOut'] as bool? ?? false,
     attendanceId: map['attendanceId'] as String? ?? '',
+  );
+
+  /// A synthetic result standing in for a check-out that was queued offline.
+  factory CheckOutResult.queued() => const CheckOutResult(
+    success: true,
+    alreadyCheckedOut: false,
+    attendanceId: '',
+    queuedOffline: true,
   );
 }
 
@@ -55,7 +82,14 @@ class AttendanceService {
            callable ??
            ((name, params) async {
              final fn = (functions ?? FirebaseFunctions.instanceFor(region: 'asia-southeast1')).httpsCallable(
-               name,options: HttpsCallableOptions(limitedUseAppCheckToken: true)
+               name,
+               options: HttpsCallableOptions(
+                 limitedUseAppCheckToken: true,
+                 // Fail fast when the network is unreachable so an offline
+                 // check-in/out falls into the local queue promptly instead of
+                 // blocking on the default ~70s callable timeout.
+                 timeout: const Duration(seconds: 20),
+               ),
              );
              final result = await fn.call(params);
              return result.data;
@@ -102,12 +136,16 @@ class AttendanceService {
     String? leaveNote,
     String? absentNote,
     String? qrToken,
+    int? clientCheckInAt,
   }) async {
     final data = await _callable('employeeCheckInV1', <String, dynamic>{
       'storeId': storeId,
       'employeeId': employeeId,
       'latitude': ?latitude,
       'longitude': ?longitude,
+      // Epoch ms of the actual tap; sent so a queued offline check-in records
+      // when it happened, not when the queue drained. The backend clamps it.
+      'clientCheckInAt': ?clientCheckInAt,
       if (lateCheckInNote != null && lateCheckInNote.isNotEmpty) 'lateCheckInNote': lateCheckInNote,
       if (earlyCheckOutNote != null && earlyCheckOutNote.isNotEmpty) 'earlyCheckOutNote': earlyCheckOutNote,
       if (leaveNote != null && leaveNote.isNotEmpty) 'leaveNote': leaveNote,
@@ -138,6 +176,7 @@ class AttendanceService {
     String? leaveNote,
     String? absentNote,
     String? qrToken,
+    int? clientCheckOutAt,
   }) async {
     final data =  await _callable('employeeCheckOutV1', <String, dynamic>{
       'storeId': storeId,
@@ -145,6 +184,9 @@ class AttendanceService {
       'employeeId': employeeId,
       'latitude': ?latitude,
       'longitude': ?longitude,
+      // Epoch ms of the actual tap; sent so a queued offline check-out records
+      // when it happened, not when the queue drained. The backend clamps it.
+      'clientCheckOutAt': ?clientCheckOutAt,
       if (lateCheckInNote != null && lateCheckInNote.isNotEmpty) 'lateCheckInNote': lateCheckInNote,
       if (earlyCheckOutNote != null && earlyCheckOutNote.isNotEmpty) 'earlyCheckOutNote': earlyCheckOutNote,
       if (leaveNote != null && leaveNote.isNotEmpty) 'leaveNote': leaveNote,

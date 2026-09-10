@@ -150,6 +150,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkOutFailed => 'Check-out failed. Please try again.';
 
   @override
+  String get checkInQueuedOffline =>
+      'You\'re offline — check-in saved and will sync automatically.';
+
+  @override
+  String get checkOutQueuedOffline =>
+      'You\'re offline — check-out saved and will sync automatically.';
+
+  @override
+  String get pendingSync => 'Pending sync';
+
+  @override
   String get onLeaveToday => 'You are on leave today';
 
   @override

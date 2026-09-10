@@ -110,7 +110,9 @@ class CheckInCard extends StatelessWidget {
       );
       if (result == null) return;
       final String message;
-      if (result.alreadyCheckedIn) {
+      if (result.queuedOffline) {
+        message = localizations.checkInQueuedOffline;
+      } else if (result.alreadyCheckedIn) {
         message = localizations.alreadyCheckedIn;
       } else if (result.success) {
         message = localizations.checkInSuccess(result.status.value);
@@ -147,7 +149,9 @@ class CheckInCard extends StatelessWidget {
       );
       if (result == null) return;
       final String message;
-      if (result.alreadyCheckedOut) {
+      if (result.queuedOffline) {
+        message = localizations.checkOutQueuedOffline;
+      } else if (result.alreadyCheckedOut) {
         message = localizations.alreadyCheckedOut;
       } else if (result.success) {
         message = localizations.checkOutSuccess;
@@ -247,6 +251,40 @@ class CheckInCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (attendanceViewModel.hasPendingSync) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: c.warningLight,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 10,
+                        height: 10,
+                        child: attendanceViewModel.isSyncing
+                            ? CircularProgressIndicator(
+                                strokeWidth: 2, color: c.warning)
+                            : Icon(Icons.cloud_upload_outlined,
+                                size: 10, color: c.warning),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        localizations.pendingSync,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: c.warning,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const Spacer(),
               if (elapsed != null)
                 Text(
