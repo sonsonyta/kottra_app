@@ -135,6 +135,11 @@ class AttendanceViewModel extends ChangeNotifier {
   /// Whether the syncer is currently replaying queued actions.
   bool get isSyncing => _syncService.isSyncing;
 
+  /// Manually kicks a drain of the offline queue — e.g. when the user taps the
+  /// pending-sync badge. Safe to call anytime; it no-ops when nothing is queued
+  /// or the device is offline.
+  Future<void> retrySync() => _syncService.sync();
+
   String _newLocalId() =>
       '${DateTime.now().microsecondsSinceEpoch}-${Random().nextInt(1 << 32)}';
 

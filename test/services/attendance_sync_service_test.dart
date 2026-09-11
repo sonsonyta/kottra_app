@@ -136,6 +136,30 @@ void main() {
           reason: 'nothing dropped; ordering preserved');
     });
 
+    test('recovers via the periodic retry after a transient failure while '
+        'the device stays online', () async {
+      final queue = await _queueWith([_checkIn(1)]);
+      final service = ScriptedAttendanceService()
+        ..errorByClientTime[1] = TimeoutException('cold-start blip');
+      final sync = AttendanceSyncService(
+        queue: queue,
+        attendanceService: service,
+        connectivity: FakeConnectivityProbe(online: true),
+      );
+
+      // First attempt fails transiently; action stays queued.
+      await sync.sync();
+      expect(queue.isNotEmpty, isTrue);
+
+      // The blip clears; a later retry (what the periodic timer triggers)
+      // drains it without needing a connectivity transition.
+      service.errorByClientTime.remove(1);
+      await sync.sync();
+
+      expect(service.checkedInEvents, ['1']);
+      expect(queue.isEmpty, isTrue);
+    });
+
     test('drops a permanently-failing action and continues', () async {
       final queue = await _queueWith([_checkIn(1), _checkIn(2)]);
       final service = ScriptedAttendanceService()

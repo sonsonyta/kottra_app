@@ -91,7 +91,14 @@ class AttendanceSyncService extends ChangeNotifier {
   final AttendanceService _attendanceService;
   final ConnectivityProbe _connectivity;
 
+  /// How often to re-attempt a drain while actions remain queued. Guards
+  /// against a single transient failure (e.g. an App Check attestation race at
+  /// cold start) leaving the queue stuck when the device stays continuously
+  /// online and never fires an offline→online transition.
+  static const Duration retryInterval = Duration(seconds: 30);
+
   StreamSubscription<bool>? _connSub;
+  Timer? _retryTimer;
   bool _isSyncing = false;
   String? _lastError;
   bool _disposed = false;
@@ -99,14 +106,30 @@ class AttendanceSyncService extends ChangeNotifier {
   bool get isSyncing => _isSyncing;
   String? get lastError => _lastError;
 
-  /// Begins auto-syncing: kicks a sync now and on every connectivity change
-  /// that reports a usable link.
+  /// Begins auto-syncing: kicks a sync now, on every connectivity change that
+  /// reports a usable link, and on a periodic timer while the queue is
+  /// non-empty (so a transient failure eventually recovers on its own).
   void start() {
     _connSub ??= _connectivity.onOnline.listen(
       (_) => unawaited(sync()),
       onError: (Object e) => debugPrint('Connectivity stream error: $e'),
     );
+    _queue.addListener(_manageRetryTimer);
+    _manageRetryTimer();
     unawaited(sync());
+  }
+
+  /// Runs the retry timer only while something is queued; stops it once the
+  /// queue drains so we don't wake up on a fixed interval for no reason.
+  void _manageRetryTimer() {
+    if (_disposed) return;
+    if (_queue.isNotEmpty) {
+      _retryTimer ??=
+          Timer.periodic(retryInterval, (_) => unawaited(sync()));
+    } else {
+      _retryTimer?.cancel();
+      _retryTimer = null;
+    }
   }
 
   /// Whether the device currently reports a network link. This reflects link
@@ -209,6 +232,8 @@ class AttendanceSyncService extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _retryTimer?.cancel();
+    _queue.removeListener(_manageRetryTimer);
     _connSub?.cancel();
     super.dispose();
   }

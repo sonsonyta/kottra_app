@@ -253,35 +253,43 @@ class CheckInCard extends StatelessWidget {
               ),
               if (attendanceViewModel.hasPendingSync) ...[
                 const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: c.warningLight,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 10,
-                        height: 10,
-                        child: attendanceViewModel.isSyncing
-                            ? CircularProgressIndicator(
-                                strokeWidth: 2, color: c.warning)
-                            : Icon(Icons.cloud_upload_outlined,
-                                size: 10, color: c.warning),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        localizations.pendingSync,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: c.warning,
+                // Tap to force a sync attempt now, in case the automatic retry
+                // hasn't fired yet.
+                InkWell(
+                  onTap: attendanceViewModel.isSyncing
+                      ? null
+                      : () => attendanceViewModel.retrySync(),
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: c.warningLight,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 10,
+                          height: 10,
+                          child: attendanceViewModel.isSyncing
+                              ? CircularProgressIndicator(
+                                  strokeWidth: 2, color: c.warning)
+                              : Icon(Icons.cloud_upload_outlined,
+                                  size: 10, color: c.warning),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 6),
+                        Text(
+                          localizations.pendingSync,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: c.warning,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
