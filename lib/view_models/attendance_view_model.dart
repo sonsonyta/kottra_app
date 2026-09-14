@@ -8,6 +8,7 @@ import 'package:kottra_app/models/hr_employee.dart';
 import 'package:kottra_app/models/hr_settings.dart';
 import 'package:kottra_app/models/payroll_deductions.dart';
 import 'package:kottra_app/models/pending_attendance_action.dart';
+import 'package:kottra_app/services/attendance_photo_service.dart';
 import 'package:kottra_app/services/attendance_service.dart';
 import 'package:kottra_app/services/attendance_sync_service.dart';
 import 'package:kottra_app/services/employee_service.dart';
@@ -36,6 +37,7 @@ class AttendanceViewModel extends ChangeNotifier {
     StoreService? storeService,
     SettingsService? settingsService,
     EmployeeService? employeeService,
+    AttendancePhotoService? photoService,
     OfflineAttendanceQueue? offlineQueue,
     AttendanceSyncService? syncService,
     ConnectivityProbe? connectivity,
@@ -45,11 +47,13 @@ class AttendanceViewModel extends ChangeNotifier {
        _storeService = storeService ?? StoreService(),
        _settingsService = settingsService ?? SettingsService(),
        _employeeService = employeeService ?? EmployeeService(),
+       _photoService = photoService ?? AttendancePhotoService(),
        _queue = offlineQueue ?? OfflineAttendanceQueue() {
     _syncService = syncService ??
         AttendanceSyncService(
           queue: _queue,
           attendanceService: _attendanceService,
+          photoService: _photoService,
           connectivity: connectivity,
         );
     _subscribeToAttendance();
@@ -64,6 +68,7 @@ class AttendanceViewModel extends ChangeNotifier {
   final StoreService _storeService;
   final SettingsService _settingsService;
   final EmployeeService _employeeService;
+  final AttendancePhotoService _photoService;
   final OfflineAttendanceQueue _queue;
   late final AttendanceSyncService _syncService;
 
@@ -336,6 +341,18 @@ class AttendanceViewModel extends ChangeNotifier {
       FeatureFlags.enableQrAttendance &&
       _hrSettings?.attendanceMethod == AttendanceMethod.qr;
 
+  /// Whether the employee must attach a camera photo when checking in/out. True
+  /// only when the master feature flag is on and the store has opted into
+  /// [HrSettings.requirePhotoOnAttendance].
+  bool get requiresAttendancePhoto =>
+      FeatureFlags.enableAttendancePhoto &&
+      (_hrSettings?.requirePhotoOnAttendance ?? false);
+
+  /// Launches the camera and returns the captured photo bytes, or null if the
+  /// employee cancelled. Exposed so the check-in card can capture before
+  /// calling [checkIn]/[checkOut].
+  Future<Uint8List?> capturePhoto() => _photoService.capture();
+
   bool get isOnLeave => _todayRecord?.status == AttendanceStatus.leave;
   bool get isAbsent => _todayRecord?.status == AttendanceStatus.absent;
   bool get isDayOff => _todayRecord?.status == AttendanceStatus.dayOff;
@@ -427,6 +444,7 @@ class AttendanceViewModel extends ChangeNotifier {
     String? leaveNote,
     String? absentNote,
     String? qrToken,
+    Uint8List? photoBytes,
   }) async {
     if (_isActionLoading) return null;
     final identity = _identity;
@@ -438,51 +456,86 @@ class AttendanceViewModel extends ChangeNotifier {
       // Capture the real tap time up front so an offline replay records when
       // the employee actually checked in, not when the queue drains.
       final eventAt = DateTime.now();
+      // Reserve the queue id now so a captured photo is keyed to the same
+      // action whether it's sent immediately or replayed later from the queue.
+      final localId = _newLocalId();
       final coords = await _tryGetCoords('check-in');
+
+      // Persist the photo locally first so it survives an offline replay
+      // (and app restarts) and can be uploaded on sync.
+      final photoPath = await _savePhoto(localId, photoBytes);
 
       final online = await _syncService.isOnline();
       if (online) {
-        try {
-          final result = await _attendanceService.checkIn(
-            storeId: identity.storeId,
-            employeeId: identity.employeeId,
-            latitude: coords?.latitude,
-            longitude: coords?.longitude,
-            lateCheckInNote: lateCheckInNote,
-            earlyCheckOutNote: earlyCheckOutNote,
-            leaveNote: leaveNote,
-            absentNote: absentNote,
-            qrToken: qrToken,
-            clientCheckInAt: eventAt.millisecondsSinceEpoch,
-          );
-
-          if (result.success && !result.alreadyCheckedIn) {
-            _optimisticAttendanceId = result.attendanceId;
-            _optimisticCheckInAt = eventAt;
-            _optimisticTimer?.cancel();
-            _optimisticTimer = Timer(optimisticTimeout, () {
-              if (_optimisticCheckInAt != null &&
-                  _todayRecord?.checkIn == null) {
-                _optimisticCheckInAt = null;
-                _optimisticAttendanceId = null;
-                if (!_disposed) notifyListeners();
-              }
-            });
-            if (!_disposed) notifyListeners();
+        // Upload the photo before the check-in call so its URL can be recorded
+        // on the attendance document. A failed upload (usually network) falls
+        // back to the offline queue rather than surfacing as an error.
+        String? photoUrl;
+        var uploadFailed = false;
+        if (photoPath != null) {
+          try {
+            photoUrl = await _photoService.uploadFromPath(
+              storeId: identity.storeId,
+              employeeId: identity.employeeId,
+              path: photoPath,
+              isCheckIn: true,
+              eventAtMs: eventAt.millisecondsSinceEpoch,
+            );
+          } catch (e) {
+            uploadFailed = true;
+            debugPrint('Check-in photo upload failed, queuing offline: $e');
           }
-          return result;
-        } catch (e) {
-          // Permanent errors (geofence, scheduled-off, auth) must surface so
-          // the employee sees why; only transient/network failures fall back
-          // to the offline queue.
-          if (!isTransientAttendanceError(e)) rethrow;
-          debugPrint('Check-in call failed transiently, queuing offline: $e');
+        }
+
+        if (!uploadFailed) {
+          try {
+            final result = await _attendanceService.checkIn(
+              storeId: identity.storeId,
+              employeeId: identity.employeeId,
+              latitude: coords?.latitude,
+              longitude: coords?.longitude,
+              lateCheckInNote: lateCheckInNote,
+              earlyCheckOutNote: earlyCheckOutNote,
+              leaveNote: leaveNote,
+              absentNote: absentNote,
+              qrToken: qrToken,
+              checkInPhotoUrl: photoUrl,
+              clientCheckInAt: eventAt.millisecondsSinceEpoch,
+            );
+
+            if (result.success && !result.alreadyCheckedIn) {
+              _optimisticAttendanceId = result.attendanceId;
+              _optimisticCheckInAt = eventAt;
+              _optimisticTimer?.cancel();
+              _optimisticTimer = Timer(optimisticTimeout, () {
+                if (_optimisticCheckInAt != null &&
+                    _todayRecord?.checkIn == null) {
+                  _optimisticCheckInAt = null;
+                  _optimisticAttendanceId = null;
+                  if (!_disposed) notifyListeners();
+                }
+              });
+              if (!_disposed) notifyListeners();
+            }
+            // The photo is now uploaded and recorded; drop the local copy.
+            await _photoService.deletePending(photoPath);
+            return result;
+          } catch (e) {
+            // Permanent errors (geofence, scheduled-off, auth) must surface so
+            // the employee sees why; only transient/network failures fall back
+            // to the offline queue.
+            if (!isTransientAttendanceError(e)) {
+              await _photoService.deletePending(photoPath);
+              rethrow;
+            }
+            debugPrint('Check-in call failed transiently, queuing offline: $e');
+          }
         }
       }
 
       await _enqueueAction(
         PendingAttendanceAction(
-          localId: _newLocalId(),
+          localId: localId,
           kind: PendingAttendanceKind.checkIn,
           storeId: identity.storeId,
           employeeId: identity.employeeId,
@@ -494,6 +547,7 @@ class AttendanceViewModel extends ChangeNotifier {
           leaveNote: leaveNote,
           absentNote: absentNote,
           qrToken: qrToken,
+          photoPath: photoPath,
         ),
       );
       return CheckInResult.queued();
@@ -503,12 +557,25 @@ class AttendanceViewModel extends ChangeNotifier {
     }
   }
 
+  /// Persists a captured attendance photo to a local file keyed by [localId],
+  /// returning its path (null when there's no photo or persistence failed).
+  Future<String?> _savePhoto(String localId, Uint8List? bytes) async {
+    if (bytes == null) return null;
+    try {
+      return await _photoService.savePending(localId, bytes);
+    } catch (e) {
+      debugPrint('Could not persist attendance photo: $e');
+      return null;
+    }
+  }
+
   Future<CheckOutResult?> checkOut({
     String? lateCheckInNote,
     String? earlyCheckOutNote,
     String? leaveNote,
     String? absentNote,
     String? qrToken,
+    Uint8List? photoBytes,
   }) async {
     if (_isActionLoading) return null;
     final identity = _identity;
@@ -526,43 +593,70 @@ class AttendanceViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       final eventAt = DateTime.now();
+      final localId = _newLocalId();
       final coords = await _tryGetCoords('check-out');
+
+      final photoPath = await _savePhoto(localId, photoBytes);
 
       final online = await _syncService.isOnline();
       // Only call directly when online AND the record already has a server id;
       // otherwise queue it so the syncer replays check-in → check-out in order.
       if (online && attendanceId != null) {
-        try {
-          final result = await _attendanceService.checkOut(
-            storeId: identity.storeId,
-            attendanceId: attendanceId,
-            employeeId: identity.employeeId,
-            latitude: coords?.latitude,
-            longitude: coords?.longitude,
-            lateCheckInNote: lateCheckInNote,
-            earlyCheckOutNote: earlyCheckOutNote,
-            leaveNote: leaveNote,
-            absentNote: absentNote,
-            qrToken: qrToken,
-            clientCheckOutAt: eventAt.millisecondsSinceEpoch,
-          );
-
-          if (result.success && !result.alreadyCheckedOut) {
-            _optimisticAttendanceId = result.attendanceId;
-            _optimisticCheckInAt = null;
-            _optimisticTimer?.cancel();
-            if (!_disposed) notifyListeners();
+        String? photoUrl;
+        var uploadFailed = false;
+        if (photoPath != null) {
+          try {
+            photoUrl = await _photoService.uploadFromPath(
+              storeId: identity.storeId,
+              employeeId: identity.employeeId,
+              path: photoPath,
+              isCheckIn: false,
+              eventAtMs: eventAt.millisecondsSinceEpoch,
+            );
+          } catch (e) {
+            uploadFailed = true;
+            debugPrint('Check-out photo upload failed, queuing offline: $e');
           }
-          return result;
-        } catch (e) {
-          if (!isTransientAttendanceError(e)) rethrow;
-          debugPrint('Check-out call failed transiently, queuing offline: $e');
+        }
+
+        if (!uploadFailed) {
+          try {
+            final result = await _attendanceService.checkOut(
+              storeId: identity.storeId,
+              attendanceId: attendanceId,
+              employeeId: identity.employeeId,
+              latitude: coords?.latitude,
+              longitude: coords?.longitude,
+              lateCheckInNote: lateCheckInNote,
+              earlyCheckOutNote: earlyCheckOutNote,
+              leaveNote: leaveNote,
+              absentNote: absentNote,
+              qrToken: qrToken,
+              checkOutPhotoUrl: photoUrl,
+              clientCheckOutAt: eventAt.millisecondsSinceEpoch,
+            );
+
+            if (result.success && !result.alreadyCheckedOut) {
+              _optimisticAttendanceId = result.attendanceId;
+              _optimisticCheckInAt = null;
+              _optimisticTimer?.cancel();
+              if (!_disposed) notifyListeners();
+            }
+            await _photoService.deletePending(photoPath);
+            return result;
+          } catch (e) {
+            if (!isTransientAttendanceError(e)) {
+              await _photoService.deletePending(photoPath);
+              rethrow;
+            }
+            debugPrint('Check-out call failed transiently, queuing offline: $e');
+          }
         }
       }
 
       await _enqueueAction(
         PendingAttendanceAction(
-          localId: _newLocalId(),
+          localId: localId,
           kind: PendingAttendanceKind.checkOut,
           storeId: identity.storeId,
           employeeId: identity.employeeId,
@@ -575,6 +669,7 @@ class AttendanceViewModel extends ChangeNotifier {
           leaveNote: leaveNote,
           absentNote: absentNote,
           qrToken: qrToken,
+          photoPath: photoPath,
         ),
       );
       return CheckOutResult.queued();

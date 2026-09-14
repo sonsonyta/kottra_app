@@ -136,6 +136,7 @@ class AttendanceService {
     String? leaveNote,
     String? absentNote,
     String? qrToken,
+    String? checkInPhotoUrl,
     int? clientCheckInAt,
   }) async {
     final data = await _callable('employeeCheckInV1', <String, dynamic>{
@@ -154,6 +155,9 @@ class AttendanceService {
       // backend can verify it (e.g. once tokens are signed/rotating); unknown
       // to older functions, which safely ignore it.
       if (qrToken != null && qrToken.isNotEmpty) 'qrToken': qrToken,
+      // Storage download URL of the check-in photo, sent when the store
+      // requires a photo on attendance. Uploaded by the client before this call.
+      if (checkInPhotoUrl != null && checkInPhotoUrl.isNotEmpty) 'checkInPhotoUrl': checkInPhotoUrl,
     });
 
     if (data is! Map) {
@@ -176,6 +180,7 @@ class AttendanceService {
     String? leaveNote,
     String? absentNote,
     String? qrToken,
+    String? checkOutPhotoUrl,
     int? clientCheckOutAt,
   }) async {
     final data =  await _callable('employeeCheckOutV1', <String, dynamic>{
@@ -192,6 +197,9 @@ class AttendanceService {
       if (leaveNote != null && leaveNote.isNotEmpty) 'leaveNote': leaveNote,
       if (absentNote != null && absentNote.isNotEmpty) 'absentNote': absentNote,
       if (qrToken != null && qrToken.isNotEmpty) 'qrToken': qrToken,
+      // Storage download URL of the check-out photo, sent when the store
+      // requires a photo on attendance. Uploaded by the client before this call.
+      if (checkOutPhotoUrl != null && checkOutPhotoUrl.isNotEmpty) 'checkOutPhotoUrl': checkOutPhotoUrl,
     });
 
     if (data is! Map) {

@@ -40,6 +40,7 @@ HrSettings _settings({
     allowDisplayPreviewDeduction: true,
     deductionPeriodBasis: basis,
     attendanceMethod: AttendanceMethod.button,
+    requirePhotoOnAttendance: false,
   );
 }
 

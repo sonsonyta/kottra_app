@@ -40,6 +40,7 @@ class ScriptedAttendanceService implements AttendanceService {
     String? leaveNote,
     String? absentNote,
     String? qrToken,
+    String? checkInPhotoUrl,
     int? clientCheckInAt,
   }) async {
     final error = errorByClientTime[clientCheckInAt];

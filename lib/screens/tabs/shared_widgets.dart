@@ -187,6 +187,27 @@ class AttendanceListItem extends StatelessWidget {
                     ),
                   ),
                 ],
+                if (record.checkInPhotoUrl != null ||
+                    record.checkOutPhotoUrl != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      if (record.checkInPhotoUrl != null)
+                        _AttendancePhotoThumb(
+                          url: record.checkInPhotoUrl!,
+                          label: 'In',
+                        ),
+                      if (record.checkInPhotoUrl != null &&
+                          record.checkOutPhotoUrl != null)
+                        const SizedBox(width: 8),
+                      if (record.checkOutPhotoUrl != null)
+                        _AttendancePhotoThumb(
+                          url: record.checkOutPhotoUrl!,
+                          label: 'Out',
+                        ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -272,4 +293,104 @@ class StatusConfig {
   final String label;
   final Color color;
   final Color background;
+}
+
+// ── Attendance Photo Thumbnail ────────────────────────────────────────────────
+
+/// A small rounded thumbnail of a check-in/out photo. The [label] chip marks it
+/// as the "In" or "Out" photo; tapping opens a zoomable full-screen viewer.
+class _AttendancePhotoThumb extends StatelessWidget {
+  const _AttendancePhotoThumb({required this.url, required this.label});
+
+  final String url;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = appColors(context);
+    final resolved = resolveStorageUrl(url)!;
+
+    return GestureDetector(
+      onTap: () => _openViewer(context, resolved),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 44,
+              height: 44,
+              color: c.infoLight,
+              child: Image.network(
+                resolved,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) => progress == null
+                    ? child
+                    : Center(
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: c.primary,
+                          ),
+                        ),
+                      ),
+                errorBuilder: (_, _, _) => Icon(
+                  Icons.broken_image_outlined,
+                  size: 20,
+                  color: c.textSecondary,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: c.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openViewer(BuildContext context, String resolvedUrl) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (context) => GestureDetector(
+        onTap: () => Navigator.of(context).pop(),
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                child: Image.network(
+                  resolvedUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => const Icon(
+                    Icons.broken_image_outlined,
+                    size: 48,
+                    color: Colors.white54,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 16,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

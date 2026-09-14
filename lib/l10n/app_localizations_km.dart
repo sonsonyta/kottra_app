@@ -157,6 +157,9 @@ class AppLocalizationsKm extends AppLocalizations {
       'អ្នកគ្មានអ៊ីនធឺណិត — ការកត់វត្តមានចេញត្រូវបានរក្សាទុក ហើយនឹងធ្វើសមកាលកម្មដោយស្វ័យប្រវត្តិ។';
 
   @override
+  String get photoCaptureFailed => 'មិនអាចថតរូបបានទេ។ សូមព្យាយាមម្តងទៀត។';
+
+  @override
   String get pendingSync => 'កំពុងរង់ចាំសមកាលកម្ម';
 
   @override

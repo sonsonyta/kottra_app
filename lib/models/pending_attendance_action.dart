@@ -22,6 +22,7 @@ class PendingAttendanceAction {
     this.leaveNote,
     this.absentNote,
     this.qrToken,
+    this.photoPath,
     this.attempts = 0,
     this.lastError,
   });
@@ -47,6 +48,11 @@ class PendingAttendanceAction {
   final String? leaveNote;
   final String? absentNote;
   final String? qrToken;
+
+  /// Absolute path to the locally-persisted attendance photo captured for this
+  /// action, uploaded to Storage on replay. Null when the store doesn't require
+  /// a photo. See [AttendancePhotoService.savePending].
+  final String? photoPath;
 
   /// How many replay attempts have been made (for backoff/diagnostics).
   final int attempts;
@@ -74,6 +80,7 @@ class PendingAttendanceAction {
       leaveNote: leaveNote,
       absentNote: absentNote,
       qrToken: qrToken,
+      photoPath: photoPath,
       attempts: attempts ?? this.attempts,
       lastError: lastError ?? this.lastError,
     );
@@ -93,6 +100,7 @@ class PendingAttendanceAction {
         if (leaveNote != null) 'leaveNote': leaveNote,
         if (absentNote != null) 'absentNote': absentNote,
         if (qrToken != null) 'qrToken': qrToken,
+        if (photoPath != null) 'photoPath': photoPath,
         'attempts': attempts,
         if (lastError != null) 'lastError': lastError,
       };
@@ -115,6 +123,7 @@ class PendingAttendanceAction {
       leaveNote: json['leaveNote'] as String?,
       absentNote: json['absentNote'] as String?,
       qrToken: json['qrToken'] as String?,
+      photoPath: json['photoPath'] as String?,
       attempts: (json['attempts'] as num?)?.toInt() ?? 0,
       lastError: json['lastError'] as String?,
     );

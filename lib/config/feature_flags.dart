@@ -15,4 +15,9 @@ class FeatureFlags {
   /// the plain tap button regardless of the store's `attendanceMethod` setting.
   /// When true, the store's setting decides between the button and QR scanning.
   static const bool enableQrAttendance = true;
+
+  /// Master switch for requiring a photo on check-in/out. When false, no photo
+  /// is ever requested regardless of the store's `requirePhotoOnAttendance`
+  /// setting. When true, the store's setting decides.
+  static const bool enableAttendancePhoto = true;
 }

@@ -6,6 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kottra_app/models/hr_employee.dart';
 import 'package:kottra_app/models/hr_settings.dart';
 import 'package:kottra_app/models/store.dart';
+import 'dart:typed_data';
+
+import 'package:kottra_app/services/attendance_photo_service.dart';
 import 'package:kottra_app/services/attendance_service.dart';
 import 'package:kottra_app/services/attendance_sync_service.dart';
 import 'package:kottra_app/services/employee_service.dart';
@@ -44,6 +47,8 @@ class FakeAttendanceService implements AttendanceService {
   double? lastLatitude;
   double? lastLongitude;
   String? lastQrToken;
+  String? lastCheckInPhotoUrl;
+  String? lastCheckOutPhotoUrl;
   int checkInCalls = 0;
   int checkOutCalls = 0;
   Object? checkInError;
@@ -73,6 +78,7 @@ class FakeAttendanceService implements AttendanceService {
     String? leaveNote,
     String? absentNote,
     String? qrToken,
+    String? checkInPhotoUrl,
     int? clientCheckInAt,
   }) async {
     checkInCalls++;
@@ -81,6 +87,7 @@ class FakeAttendanceService implements AttendanceService {
     lastLatitude = latitude;
     lastLongitude = longitude;
     lastQrToken = qrToken;
+    lastCheckInPhotoUrl = checkInPhotoUrl;
     lastClientCheckInAt = clientCheckInAt;
 
     if (checkInError != null) throw checkInError!;
@@ -99,6 +106,7 @@ class FakeAttendanceService implements AttendanceService {
     String? leaveNote,
     String? absentNote,
     String? qrToken,
+    String? checkOutPhotoUrl,
     int? clientCheckOutAt,
   }) async {
     checkOutCalls++;
@@ -108,6 +116,7 @@ class FakeAttendanceService implements AttendanceService {
     lastLatitude = latitude;
     lastLongitude = longitude;
     lastQrToken = qrToken;
+    lastCheckOutPhotoUrl = checkOutPhotoUrl;
     lastClientCheckOutAt = clientCheckOutAt;
 
     return checkOutResult;
@@ -166,6 +175,50 @@ class FakeEmployeeService implements EmployeeService {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => null;
+}
+
+/// Records the photo lifecycle without touching the camera or Storage. The
+/// upload returns a canned URL so tests can assert it's forwarded to the
+/// backend; savePending returns a fake path so the offline queue can carry it.
+class FakeAttendancePhotoService implements AttendancePhotoService {
+  final List<String> savedIds = [];
+  final List<String> uploadedPaths = [];
+  final List<String?> deletedPaths = [];
+  String uploadUrl = 'https://example.com/photo.jpg';
+
+  @override
+  Future<Uint8List?> capture() async => Uint8List.fromList([1, 2, 3]);
+
+  @override
+  Future<String> savePending(String localId, Uint8List bytes) async {
+    savedIds.add(localId);
+    return '/tmp/$localId.jpg';
+  }
+
+  @override
+  Future<void> deletePending(String? path) async => deletedPaths.add(path);
+
+  @override
+  Future<String?> uploadFromPath({
+    required String storeId,
+    required String employeeId,
+    required String path,
+    required bool isCheckIn,
+    required int eventAtMs,
+  }) async {
+    uploadedPaths.add(path);
+    return uploadUrl;
+  }
+
+  @override
+  Future<String> uploadBytes({
+    required String storeId,
+    required String employeeId,
+    required Uint8List bytes,
+    required bool isCheckIn,
+    required int eventAtMs,
+  }) async =>
+      uploadUrl;
 }
 
 class FakeLocationService implements LocationServiceBase {
@@ -229,14 +282,17 @@ AttendanceViewModel buildViewModel({
   bool online = true,
   OfflineAttendanceQueue? queue,
   FakeConnectivityProbe? connectivity,
+  FakeAttendancePhotoService? photoService,
+  HrSettings? settings,
 }) {
   return AttendanceViewModel(
     firebaseAuth: FakeFirebaseAuth(user: FakeUser(uid: uid)),
     attendanceService: attendanceService,
     locationService: locationService,
     storeService: FakeStoreService(),
-    settingsService: FakeSettingsService(),
+    settingsService: FakeSettingsService(settings: settings),
     employeeService: FakeEmployeeService(),
+    photoService: photoService ?? FakeAttendancePhotoService(),
     offlineQueue: queue ?? OfflineAttendanceQueue(store: InMemoryPendingStore()),
     connectivity: connectivity ?? FakeConnectivityProbe(online: online),
   );
@@ -471,6 +527,73 @@ void main() {
 
       await expectLater(viewModel.checkIn(), throwsA(isA<StateError>()));
       expect(viewModel.hasPendingSync, isFalse, reason: 'not queued');
+
+      viewModel.dispose();
+    });
+  });
+
+  group('AttendanceViewModel attendance photo', () {
+    HrSettings settingsWithPhoto(bool required) => HrSettings(
+          payrollFrequency: PayrollFrequency.monthly,
+          lateDeduction: LateDeductionSettings.disabled,
+          absenceDeduction: AbsenceDeductionSettings.legacyDefault,
+          allowDisplayPreviewDeduction: true,
+          deductionPeriodBasis: DeductionPeriodBasis.payrollFrequency,
+          attendanceMethod: AttendanceMethod.button,
+          requirePhotoOnAttendance: required,
+        );
+
+    test('requiresAttendancePhoto reflects the store setting', () async {
+      final viewModel = buildViewModel(
+        attendanceService: FakeAttendanceService(),
+        locationService: FakeLocationService(),
+        settings: settingsWithPhoto(true),
+      );
+      await Future<void>.delayed(Duration.zero); // let settings stream emit
+
+      expect(viewModel.requiresAttendancePhoto, isTrue);
+
+      viewModel.dispose();
+    });
+
+    test('uploads the photo and forwards its url on an online check-in',
+        () async {
+      final attendanceService = FakeAttendanceService();
+      final photoService = FakeAttendancePhotoService();
+      final viewModel = buildViewModel(
+        attendanceService: attendanceService,
+        locationService: FakeLocationService(),
+        photoService: photoService,
+      );
+
+      await viewModel.checkIn(photoBytes: Uint8List.fromList([1, 2, 3]));
+
+      expect(photoService.savedIds, hasLength(1));
+      expect(photoService.uploadedPaths, hasLength(1));
+      expect(attendanceService.lastCheckInPhotoUrl, photoService.uploadUrl);
+      // The local copy is dropped once the photo is uploaded and recorded.
+      expect(photoService.deletedPaths, isNotEmpty);
+
+      viewModel.dispose();
+    });
+
+    test('queues the photo path when offline for later upload', () async {
+      final queue = OfflineAttendanceQueue(store: InMemoryPendingStore());
+      final photoService = FakeAttendancePhotoService();
+      final viewModel = buildViewModel(
+        attendanceService: FakeAttendanceService(),
+        locationService: FakeLocationService(),
+        online: false,
+        queue: queue,
+        photoService: photoService,
+      );
+
+      await viewModel.checkIn(photoBytes: Uint8List.fromList([1, 2, 3]));
+
+      expect(photoService.savedIds, hasLength(1));
+      expect(photoService.uploadedPaths, isEmpty, reason: 'no upload offline');
+      expect(queue.actions, hasLength(1));
+      expect(queue.actions.first.photoPath, isNotNull);
 
       viewModel.dispose();
     });

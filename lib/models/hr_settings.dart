@@ -156,6 +156,7 @@ class HrSettings {
     required this.allowDisplayPreviewDeduction,
     required this.deductionPeriodBasis,
     required this.attendanceMethod,
+    required this.requirePhotoOnAttendance,
   });
 
   final PayrollFrequency payrollFrequency;
@@ -164,6 +165,10 @@ class HrSettings {
 
   /// How employees check in/out for this store (button vs QR scan).
   final AttendanceMethod attendanceMethod;
+
+  /// Whether the employee must attach a photo (taken with the camera) when
+  /// checking in and out. Defaults to false when the store hasn't set it.
+  final bool requirePhotoOnAttendance;
 
   /// Whether employees may see their live deduction preview. Defaults to true
   /// (visible) when the store hasn't set it.
@@ -197,6 +202,8 @@ class HrSettings {
           hrMap['deductionPeriodBasis'] as String?),
       attendanceMethod:
           AttendanceMethod.fromString(hrMap['attendanceMethod'] as String?),
+      requirePhotoOnAttendance:
+          hrMap['requirePhotoOnAttendance'] as bool? ?? false,
     );
   }
 
@@ -207,5 +214,6 @@ class HrSettings {
     allowDisplayPreviewDeduction: true,
     deductionPeriodBasis: DeductionPeriodBasis.payrollFrequency,
     attendanceMethod: AttendanceMethod.button,
+    requirePhotoOnAttendance: false,
   );
 }

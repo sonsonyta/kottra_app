@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:kottra_app/theme/locale_controller.dart';
 
@@ -26,6 +27,21 @@ String greeting() {
   if (h < 12) return 'Good morning';
   if (h < 17) return 'Good afternoon';
   return 'Good evening';
+}
+
+/// Rewrites a stored Storage download URL for the current platform in debug.
+///
+/// Uploads canonicalize emulator URLs to the `localhost` host (see the upload
+/// services); the Android emulator can't reach `localhost`/`127.0.0.1` and must
+/// use `10.0.2.2`. A no-op in release and for null/real URLs.
+String? resolveStorageUrl(String? url) {
+  if (url == null) return null;
+  if (kDebugMode && defaultTargetPlatform == TargetPlatform.android) {
+    return url
+        .replaceFirst('localhost', '10.0.2.2')
+        .replaceFirst('127.0.0.1', '10.0.2.2');
+  }
+  return url;
 }
 
 String fmtMoney(double amount, String currency) {

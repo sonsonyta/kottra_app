@@ -6,6 +6,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:kottra_app/models/pending_attendance_action.dart';
+import 'package:kottra_app/services/attendance_photo_service.dart';
 import 'package:kottra_app/services/attendance_service.dart';
 import 'package:kottra_app/services/offline_attendance_queue.dart';
 
@@ -82,13 +83,16 @@ class AttendanceSyncService extends ChangeNotifier {
   AttendanceSyncService({
     required OfflineAttendanceQueue queue,
     required AttendanceService attendanceService,
+    AttendancePhotoService? photoService,
     ConnectivityProbe? connectivity,
   })  : _queue = queue,
         _attendanceService = attendanceService,
+        _photoService = photoService ?? AttendancePhotoService(),
         _connectivity = connectivity ?? ConnectivityPlusProbe();
 
   final OfflineAttendanceQueue _queue;
   final AttendanceService _attendanceService;
+  final AttendancePhotoService _photoService;
   final ConnectivityProbe _connectivity;
 
   /// How often to re-attempt a drain while actions remain queued. Guards
@@ -180,8 +184,27 @@ class AttendanceSyncService extends ChangeNotifier {
   }
 
   Future<void> _replay(PendingAttendanceAction action) async {
+    final isCheckIn = action.kind == PendingAttendanceKind.checkIn;
     try {
-      if (action.kind == PendingAttendanceKind.checkIn) {
+      // Upload the deferred photo first, if any, so its URL can be recorded on
+      // the attendance document. A failed upload keeps the whole action queued
+      // (treated as transient) so the photo and the check-in/out stay together.
+      String? photoUrl;
+      if (action.photoPath != null) {
+        try {
+          photoUrl = await _photoService.uploadFromPath(
+            storeId: action.storeId,
+            employeeId: action.employeeId,
+            path: action.photoPath!,
+            isCheckIn: isCheckIn,
+            eventAtMs: action.clientEventAt,
+          );
+        } catch (e) {
+          throw _TransientSyncError('Photo upload failed: ${_describe(e)}');
+        }
+      }
+
+      if (isCheckIn) {
         await _attendanceService.checkIn(
           storeId: action.storeId,
           employeeId: action.employeeId,
@@ -192,6 +215,7 @@ class AttendanceSyncService extends ChangeNotifier {
           leaveNote: action.leaveNote,
           absentNote: action.absentNote,
           qrToken: action.qrToken,
+          checkInPhotoUrl: photoUrl,
           clientCheckInAt: action.clientEventAt,
         );
       } else {
@@ -209,9 +233,15 @@ class AttendanceSyncService extends ChangeNotifier {
           leaveNote: action.leaveNote,
           absentNote: action.absentNote,
           qrToken: action.qrToken,
+          checkOutPhotoUrl: photoUrl,
           clientCheckOutAt: action.clientEventAt,
         );
       }
+
+      // Synced successfully — drop the local photo copy.
+      await _photoService.deletePending(action.photoPath);
+    } on _TransientSyncError {
+      rethrow;
     } catch (e) {
       if (isTransientAttendanceError(e)) {
         throw _TransientSyncError(_describe(e));

@@ -386,6 +386,12 @@ abstract class AppLocalizations {
   /// **'You\'re offline — check-out saved and will sync automatically.'**
   String get checkOutQueuedOffline;
 
+  /// No description provided for @photoCaptureFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t take the photo. Please try again.'**
+  String get photoCaptureFailed;
+
   /// No description provided for @pendingSync.
   ///
   /// In en, this message translates to:

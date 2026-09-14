@@ -158,6 +158,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You\'re offline — check-out saved and will sync automatically.';
 
   @override
+  String get photoCaptureFailed =>
+      'Couldn\'t take the photo. Please try again.';
+
+  @override
   String get pendingSync => 'Pending sync';
 
   @override

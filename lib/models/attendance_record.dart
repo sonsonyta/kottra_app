@@ -60,6 +60,8 @@ class AttendanceRecord {
     this.workingHours,
     this.overtimeHours,
     this.location,
+    this.checkInPhotoUrl,
+    this.checkOutPhotoUrl,
   });
 
   final String id;
@@ -85,6 +87,14 @@ class AttendanceRecord {
   final double? workingHours;
   final double? overtimeHours;
   final GeoPoint? location;
+
+  /// Download URL of the photo captured at check-in, when the store requires a
+  /// photo on attendance. Null when not required or not yet uploaded.
+  final String? checkInPhotoUrl;
+
+  /// Download URL of the photo captured at check-out. Null when not required or
+  /// not yet uploaded.
+  final String? checkOutPhotoUrl;
 
   Duration? get duration {
     if (checkIn == null || checkOut == null) return null;
@@ -123,6 +133,8 @@ class AttendanceRecord {
       workingHours: (map['workingHours'] as num?)?.toDouble(),
       overtimeHours: (map['overtimeHours'] as num?)?.toDouble(),
       location: map['location'] is GeoPoint ? map['location'] as GeoPoint : null,
+      checkInPhotoUrl: map['checkInPhotoUrl'] as String?,
+      checkOutPhotoUrl: map['checkOutPhotoUrl'] as String?,
     );
   }
 
@@ -143,5 +155,7 @@ class AttendanceRecord {
         if (workingHours != null) 'workingHours': workingHours,
         if (overtimeHours != null) 'overtimeHours': overtimeHours,
         if (location != null) 'location': location,
+        if (checkInPhotoUrl != null) 'checkInPhotoUrl': checkInPhotoUrl,
+        if (checkOutPhotoUrl != null) 'checkOutPhotoUrl': checkOutPhotoUrl,
       };
 }

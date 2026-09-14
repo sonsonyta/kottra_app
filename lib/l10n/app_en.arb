@@ -55,6 +55,7 @@
   "checkOutFailed": "Check-out failed. Please try again.",
   "checkInQueuedOffline": "You're offline — check-in saved and will sync automatically.",
   "checkOutQueuedOffline": "You're offline — check-out saved and will sync automatically.",
+  "photoCaptureFailed": "Couldn't take the photo. Please try again.",
   "pendingSync": "Pending sync",
   "onLeaveToday": "You are on leave today",
   "editProfile": "Edit Profile",

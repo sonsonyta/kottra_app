@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
@@ -73,6 +75,29 @@ class CheckInCard extends StatelessWidget {
   }
 
 
+  /// When the store requires a photo on attendance, opens the camera and
+  /// returns the captured bytes. `proceed` is false when the employee cancelled
+  /// or the capture failed (the caller should abort); when a photo isn't
+  /// required, returns `proceed: true` with null bytes.
+  Future<({bool proceed, Uint8List? bytes})> _captureIfRequired(
+      BuildContext context) async {
+    if (!attendanceViewModel.requiresAttendancePhoto) {
+      return (proceed: true, bytes: null);
+    }
+    try {
+      final bytes = await attendanceViewModel.capturePhoto();
+      if (bytes == null) return (proceed: false, bytes: null); // cancelled
+      return (proceed: true, bytes: bytes);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.photoCaptureFailed)),
+        );
+      }
+      return (proceed: false, bytes: null);
+    }
+  }
+
   /// When the store uses QR attendance, opens the scanner and returns the
   /// scanned store payload to forward as `qrToken`. Returns null if the user
   /// backed out of the scanner (caller should abort). For button-mode stores it
@@ -101,12 +126,17 @@ class CheckInCard extends StatelessWidget {
       if (!context.mounted) return;
     }
 
+    final photo = await _captureIfRequired(context);
+    if (!photo.proceed) return; // Photo required but cancelled/failed
+    if (!context.mounted) return;
+
     final localizations = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     try {
       final result = await attendanceViewModel.checkIn(
         lateCheckInNote: note?.isEmpty ?? true ? null : note,
         qrToken: qrToken.isEmpty ? null : qrToken,
+        photoBytes: photo.bytes,
       );
       if (result == null) return;
       final String message;
@@ -140,12 +170,17 @@ class CheckInCard extends StatelessWidget {
       if (!context.mounted) return;
     }
 
+    final photo = await _captureIfRequired(context);
+    if (!photo.proceed) return; // Photo required but cancelled/failed
+    if (!context.mounted) return;
+
     final localizations = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     try {
       final result = await attendanceViewModel.checkOut(
         earlyCheckOutNote: note?.isEmpty ?? true ? null : note,
         qrToken: qrToken.isEmpty ? null : qrToken,
+        photoBytes: photo.bytes,
       );
       if (result == null) return;
       final String message;
