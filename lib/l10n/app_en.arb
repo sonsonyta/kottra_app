@@ -178,5 +178,21 @@
   "otherDeduction": "Other",
   "payslipProvisionalNote": "These figures are provisional and may change until payroll is finalized.",
   "noPayslipsYet": "No payslips yet",
-  "payslipsWillAppearHere": "Your payslips will appear here once payroll runs."
+  "payslipsWillAppearHere": "Your payslips will appear here once payroll runs.",
+  "lateExcusesTitle": "Late Excuses",
+  "requestLateExcuse": "Request Excuse",
+  "noLateExcusesYet": "No late excuse requests yet.",
+  "selectLateDay": "Select a late day",
+  "noExcusableLateDays": "You have no late days to request an excuse for.",
+  "lateExcuseReasonHint": "Why should this lateness be excused?",
+  "lateExcuseSubmittedSuccess": "Late excuse request submitted.",
+  "lateExcuseDeductionNote": "If approved, this day's lateness won't be deducted from your pay.",
+  "minutesLate": "{minutes} min late",
+  "@minutesLate": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  }
 }

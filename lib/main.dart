@@ -39,13 +39,20 @@ Future<void> main() async {
 
     final String localHostString = defaultTargetPlatform == TargetPlatform.android ? '10.0.2.2' : 'localhost';
 
+    // Clear persistence to prevent emulator cache issues where data does not
+    // update. This must run before the Firestore client starts (i.e. before
+    // useFirestoreEmulator or any other Firestore usage); on a hot restart the
+    // client is already running, so ignore the failed-precondition it throws.
+    try {
+      await FirebaseFirestore.instance.clearPersistence();
+    } catch (_) {
+      // Client already started — safe to ignore.
+    }
+
     await FirebaseAuth.instance.useAuthEmulator(localHostString, 9099);
     FirebaseFunctions.instance.useFunctionsEmulator(localHostString, 5001);
     FirebaseFunctions.instanceFor(region: 'asia-southeast1').useFunctionsEmulator(localHostString, 5001);
     FirebaseFirestore.instance.useFirestoreEmulator(localHostString, 8080);
-    
-    // Clear persistence to prevent emulator cache issues where data does not update
-    await FirebaseFirestore.instance.clearPersistence();
 
     await FirebaseStorage.instance.useStorageEmulator(localHostString, 9199);
 

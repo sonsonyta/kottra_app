@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:kottra_app/models/attendance_record.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
@@ -11,16 +13,35 @@ class TabAvatar extends StatelessWidget {
     required this.initials,
     this.size = 44,
     this.imageUrl,
+    this.imageBytes,
     this.useGradient = false,
   });
 
   final String initials;
   final double size;
   final String? imageUrl;
+
+  /// Inline image bytes (e.g. a base64 photo decoded from a `users/{uid}` doc).
+  /// Takes precedence over [imageUrl] when both are provided.
+  final Uint8List? imageBytes;
   final bool useGradient;
 
   @override
   Widget build(BuildContext context) {
+    final bytes = imageBytes;
+    if (bytes != null && bytes.isNotEmpty) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: const BoxDecoration(shape: BoxShape.circle),
+        clipBehavior: Clip.antiAlias,
+        child: Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => _initialsWidget(context),
+        ),
+      );
+    }
     if (imageUrl != null) {
       return Container(
         width: size,

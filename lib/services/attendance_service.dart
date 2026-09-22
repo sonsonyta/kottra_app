@@ -123,6 +123,31 @@ class AttendanceService {
         );
   }
 
+  /// Streams every employee's attendance record for a single calendar [day]
+  /// across the whole store, ordered by check-in time then name. Used by the
+  /// manager/owner attendance view. Records are matched on the `date` field,
+  /// which is stored at the start of the store's calendar day.
+  Stream<List<AttendanceRecord>> streamStoreAttendanceByDate(
+    String storeId,
+    DateTime day,
+  ) {
+    final start = DateTime(day.year, day.month, day.day);
+    final end = start.add(const Duration(days: 1));
+    return _col(storeId)
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+        .where('date', isLessThan: Timestamp.fromDate(end))
+        .snapshots()
+        .map((snap) {
+      final records = snap.docs
+          .map((doc) => AttendanceRecord.fromMap(doc.id, doc.data()))
+          .toList()
+        ..sort((a, b) => a.employeeName
+            .toLowerCase()
+            .compareTo(b.employeeName.toLowerCase()));
+      return records;
+    });
+  }
+
   // ── Mutations ─────────────────────────────────────────────────────────────────
 
   /// Records a check-in via the `employeeCheckIn` Cloud Function.

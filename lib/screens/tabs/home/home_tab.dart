@@ -548,6 +548,16 @@ class _QuickActionsRow extends StatelessWidget {
                   onTap: () =>
                       context.push('/advances', extra: profileViewModel),
                 ),
+              if (FeatureFlags.enableLateExcuse)
+                _quickActionCard(
+                  context,
+                  icon: Icons.schedule_outlined,
+                  iconColor: c.error,
+                  bgColor: c.errorLight,
+                  label: AppLocalizations.of(context)!.lateExcusesTitle,
+                  onTap: () =>
+                      context.push('/late-excuses', extra: profileViewModel),
+                ),
             ],
           ),
         ),

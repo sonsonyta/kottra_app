@@ -6,3 +6,10 @@
   return (storeId: parts[1], employeeId: parts[2]);
 }
 
+/// Whether [uid] belongs to an employee-token login (`hr_employee:...`).
+///
+/// Employee-token users get the employee UI; everyone else (email/password
+/// sign-ins whose role comes from the store's `userRoles`) gets the store-user
+/// UI.
+bool isEmployeeUid(String uid) => parseEmployeeUid(uid) != null;
+

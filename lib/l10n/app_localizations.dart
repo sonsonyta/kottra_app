@@ -961,6 +961,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your payslips will appear here once payroll runs.'**
   String get payslipsWillAppearHere;
+
+  /// No description provided for @lateExcusesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Late Excuses'**
+  String get lateExcusesTitle;
+
+  /// No description provided for @requestLateExcuse.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Excuse'**
+  String get requestLateExcuse;
+
+  /// No description provided for @noLateExcusesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No late excuse requests yet.'**
+  String get noLateExcusesYet;
+
+  /// No description provided for @selectLateDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a late day'**
+  String get selectLateDay;
+
+  /// No description provided for @noExcusableLateDays.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no late days to request an excuse for.'**
+  String get noExcusableLateDays;
+
+  /// No description provided for @lateExcuseReasonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Why should this lateness be excused?'**
+  String get lateExcuseReasonHint;
+
+  /// No description provided for @lateExcuseSubmittedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Late excuse request submitted.'**
+  String get lateExcuseSubmittedSuccess;
+
+  /// No description provided for @lateExcuseDeductionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'If approved, this day\'s lateness won\'t be deducted from your pay.'**
+  String get lateExcuseDeductionNote;
+
+  /// No description provided for @minutesLate.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min late'**
+  String minutesLate(int minutes);
 }
 
 class _AppLocalizationsDelegate

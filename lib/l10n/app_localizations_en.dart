@@ -464,4 +464,35 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get payslipsWillAppearHere =>
       'Your payslips will appear here once payroll runs.';
+
+  @override
+  String get lateExcusesTitle => 'Late Excuses';
+
+  @override
+  String get requestLateExcuse => 'Request Excuse';
+
+  @override
+  String get noLateExcusesYet => 'No late excuse requests yet.';
+
+  @override
+  String get selectLateDay => 'Select a late day';
+
+  @override
+  String get noExcusableLateDays =>
+      'You have no late days to request an excuse for.';
+
+  @override
+  String get lateExcuseReasonHint => 'Why should this lateness be excused?';
+
+  @override
+  String get lateExcuseSubmittedSuccess => 'Late excuse request submitted.';
+
+  @override
+  String get lateExcuseDeductionNote =>
+      'If approved, this day\'s lateness won\'t be deducted from your pay.';
+
+  @override
+  String minutesLate(int minutes) {
+    return '$minutes min late';
+  }
 }

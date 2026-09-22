@@ -463,4 +463,35 @@ class AppLocalizationsKm extends AppLocalizations {
   @override
   String get payslipsWillAppearHere =>
       'ប័ណ្ណប្រាក់ខែរបស់អ្នកនឹងបង្ហាញនៅទីនេះ បន្ទាប់ពីដំណើរការប្រាក់ខែ។';
+
+  @override
+  String get lateExcusesTitle => 'សុំលើកលែងការមកយឺត';
+
+  @override
+  String get requestLateExcuse => 'ស្នើសុំលើកលែង';
+
+  @override
+  String get noLateExcusesYet => 'មិនទាន់មានការស្នើសុំលើកលែងការមកយឺតទេ។';
+
+  @override
+  String get selectLateDay => 'ជ្រើសរើសថ្ងៃមកយឺត';
+
+  @override
+  String get noExcusableLateDays =>
+      'អ្នកមិនមានថ្ងៃមកយឺតសម្រាប់ស្នើសុំលើកលែងទេ។';
+
+  @override
+  String get lateExcuseReasonHint => 'ហេតុអ្វីបានជាគួរលើកលែងការមកយឺតនេះ?';
+
+  @override
+  String get lateExcuseSubmittedSuccess => 'បានបញ្ជូនការស្នើសុំលើកលែងការមកយឺត។';
+
+  @override
+  String get lateExcuseDeductionNote =>
+      'ប្រសិនបើត្រូវបានអនុម័ត ការមកយឺតនៃថ្ងៃនេះនឹងមិនត្រូវកាត់ប្រាក់ទេ។';
+
+  @override
+  String minutesLate(int minutes) {
+    return 'យឺត $minutes នាទី';
+  }
 }

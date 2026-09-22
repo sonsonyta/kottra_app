@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -31,18 +32,35 @@ class AttendancePhotoService {
   static const String _pendingDir = 'attendance_photos';
 
   /// Launches the device camera and returns the captured JPEG bytes, or null if
-  /// the employee cancelled. The image is downscaled and compressed by
-  /// image_picker so uploads stay small on mobile connections.
+  /// the employee cancelled. The raw capture is compressed with
+  /// flutter_image_compress (the same library used for profile images) so
+  /// uploads stay small on mobile connections.
   Future<Uint8List?> capture() async {
     final file = await _picker.pickImage(
       source: ImageSource.camera,
       preferredCameraDevice: CameraDevice.front,
-      imageQuality: 60,
-      maxWidth: 1080,
-      maxHeight: 1080,
+      // Bound the in-memory raw image before the compression pass below.
+      maxWidth: 1920,
+      maxHeight: 1920,
     );
     if (file == null) return null;
-    return file.readAsBytes();
+    return _compress(await file.readAsBytes());
+  }
+
+  /// Compresses [source] to a JPEG downscaled to ~1080px, matching how the app
+  /// compresses profile images. JPEG (rather than WebP) is used so the stored
+  /// photo renders reliably in the Telegram check-in/out notification and via
+  /// the `.jpg`/`image/jpeg` upload path. Falls back to the original bytes if
+  /// compression yields nothing, so a photo is never silently lost.
+  Future<Uint8List> _compress(Uint8List source) async {
+    final jpeg = await FlutterImageCompress.compressWithList(
+      source,
+      minWidth: 1080,
+      minHeight: 1080,
+      quality: 60,
+      format: CompressFormat.jpeg,
+    );
+    return jpeg.isNotEmpty ? jpeg : source;
   }
 
   /// Persists [bytes] to a stable local file keyed by [localId] so an offline

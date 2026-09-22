@@ -8,6 +8,10 @@ class FeatureFlags {
   /// Toggle this to enable or disable the Salary Advance request feature.
   static const bool enableSalaryAdvance = true;
 
+  /// Toggle this to enable or disable the Late Excuse request feature, where an
+  /// employee asks HR to forgive a late arrival so it isn't deducted from pay.
+  static const bool enableLateExcuse = true;
+
   /// Toggle this to enable or disable the Schedule (days off & holidays) screen.
   static const bool enableSchedule = true;
 

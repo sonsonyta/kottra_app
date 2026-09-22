@@ -36,4 +36,32 @@ class LeaveService {
             .map((doc) => LeaveRequest.fromMap(doc.id, doc.data()))
             .toList());
   }
+
+  /// Streams every leave request for the store, newest first. Used by the
+  /// manager/owner to review and action requests across all employees.
+  Stream<List<LeaveRequest>> streamStoreLeaves(String storeId) {
+    return _col(storeId)
+        .orderBy('requestedAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => LeaveRequest.fromMap(doc.id, doc.data()))
+            .toList());
+  }
+
+  /// Approves or rejects a leave request, recording who actioned it and why.
+  Future<void> setLeaveStatus({
+    required String storeId,
+    required String requestId,
+    required LeaveStatus status,
+    required String actionedBy,
+    String? actionReason,
+  }) async {
+    await _col(storeId).doc(requestId).update({
+      'status': status.value,
+      'actionedBy': actionedBy,
+      'actionedAt': FieldValue.serverTimestamp(),
+      if (actionReason != null && actionReason.isNotEmpty)
+        'actionReason': actionReason,
+    });
+  }
 }

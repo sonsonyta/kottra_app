@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kottra_app/config/feature_flags.dart';
+import 'package:kottra_app/screens/tabs/settings_sections.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
-import 'package:kottra_app/theme/theme_controller.dart';
-import 'package:kottra_app/theme/locale_controller.dart';
 import 'package:kottra_app/view_models/profile_view_model.dart';
 
 import '../../../l10n/app_localizations.dart';
@@ -78,9 +77,9 @@ class ProfileTab extends StatelessWidget {
               const SizedBox(height: 16),
               _NotificationSettingsSection(viewModel: viewModel),
               const SizedBox(height: 16),
-              const _AppearanceSection(),
+              const AppearanceSettingSection(),
               const SizedBox(height: 16),
-              const _LanguageSection(),
+              const LanguageSettingSection(),
               const SizedBox(height: 24),
               _LogoutButton(onLogout: onLogout),
             ]),
@@ -387,171 +386,6 @@ class _NotificationSettingsSection extends StatelessWidget {
   }
 }
 
-class _AppearanceSection extends StatelessWidget {
-  const _AppearanceSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final c = appColors(context);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: c.shadowSubtle,
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.dark_mode_outlined, color: c.primary, size: 20),
-              const SizedBox(width: 14),
-              Text(
-                AppLocalizations.of(context)!.appearance,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: c.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ListenableBuilder(
-            listenable: ThemeController.instance,
-            builder: (context, _) {
-              final selected = ThemeController.instance.mode;
-              return _ThemeModeSelector(
-                selected: selected,
-                onChanged: ThemeController.instance.setMode,
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ThemeModeSelector extends StatelessWidget {
-  const _ThemeModeSelector({
-    required this.selected,
-    required this.onChanged,
-  });
-
-  final ThemeMode selected;
-  final ValueChanged<ThemeMode> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = appColors(context);
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: c.surfaceMuted,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _ThemeModeOption(
-              icon: Icons.brightness_auto_outlined,
-              label: AppLocalizations.of(context)!.themeAuto,
-              isSelected: selected == ThemeMode.system,
-              onTap: () => onChanged(ThemeMode.system),
-            ),
-          ),
-          Expanded(
-            child: _ThemeModeOption(
-              icon: Icons.light_mode_outlined,
-              label: AppLocalizations.of(context)!.themeLight,
-              isSelected: selected == ThemeMode.light,
-              onTap: () => onChanged(ThemeMode.light),
-            ),
-          ),
-          Expanded(
-            child: _ThemeModeOption(
-              icon: Icons.dark_mode_outlined,
-              label: AppLocalizations.of(context)!.themeDark,
-              isSelected: selected == ThemeMode.dark,
-              onTap: () => onChanged(ThemeMode.dark),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ThemeModeOption extends StatelessWidget {
-  const _ThemeModeOption({
-    required this.icon,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = appColors(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? c.surface : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: c.shadowSubtle,
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                size: 20,
-                color: isSelected ? c.primary : c.textSecondary,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: isSelected ? c.textPrimary : c.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _LogoutButton extends StatelessWidget {
   const _LogoutButton({required this.onLogout});
 
@@ -614,81 +448,5 @@ class _LogoutButton extends StatelessWidget {
   }
 }
 
-class _LanguageSection extends StatelessWidget {
-  const _LanguageSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final c = appColors(context);
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: c.shadowSubtle,
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.language_outlined, color: c.primary, size: 20),
-              const SizedBox(width: 14),
-              Text(
-                l10n.language,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: c.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ListenableBuilder(
-            listenable: LocaleController.instance,
-            builder: (context, _) {
-              final selected = LocaleController.instance.locale.languageCode;
-              return Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: c.surfaceMuted,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _ThemeModeOption(
-                        icon: Icons.translate,
-                        label: 'English',
-                        isSelected: selected == 'en',
-                        onTap: () => LocaleController.instance.setLocale(const Locale('en')),
-                      ),
-                    ),
-                    Expanded(
-                      child: _ThemeModeOption(
-                        icon: Icons.translate,
-                        label: 'ភាសាខ្មែរ',
-                        isSelected: selected == 'km',
-                        onTap: () => LocaleController.instance.setLocale(const Locale('km')),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 
