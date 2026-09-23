@@ -166,5 +166,8 @@
   "lateExcuseReasonHint": "ហេតុអ្វីបានជាគួរលើកលែងការមកយឺតនេះ?",
   "lateExcuseSubmittedSuccess": "បានបញ្ជូនការស្នើសុំលើកលែងការមកយឺត។",
   "lateExcuseDeductionNote": "ប្រសិនបើត្រូវបានអនុម័ត ការមកយឺតនៃថ្ងៃនេះនឹងមិនត្រូវកាត់ប្រាក់ទេ។",
-  "minutesLate": "យឺត {minutes} នាទី"
+  "minutesLate": "យឺត {minutes} នាទី",
+  "lateExcusePastDay": "ថ្ងៃដែលបានមកយឺត",
+  "lateExcuseUpcomingDay": "ថ្ងៃខាងមុខ",
+  "selectUpcomingLateDay": "ជ្រើសរើសថ្ងៃដែលអ្នកនឹងមកយឺត"
 }

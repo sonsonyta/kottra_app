@@ -494,4 +494,13 @@ class AppLocalizationsKm extends AppLocalizations {
   String minutesLate(int minutes) {
     return 'យឺត $minutes នាទី';
   }
+
+  @override
+  String get lateExcusePastDay => 'ថ្ងៃដែលបានមកយឺត';
+
+  @override
+  String get lateExcuseUpcomingDay => 'ថ្ងៃខាងមុខ';
+
+  @override
+  String get selectUpcomingLateDay => 'ជ្រើសរើសថ្ងៃដែលអ្នកនឹងមកយឺត';
 }

@@ -16,10 +16,14 @@ class RequestLateExcuseScreen extends StatefulWidget {
       _RequestLateExcuseScreenState();
 }
 
+enum _ExcuseFor { pastDay, upcomingDay }
+
 class _RequestLateExcuseScreenState extends State<RequestLateExcuseScreen> {
   final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
   AttendanceRecord? _selectedDay;
+  DateTime? _selectedUpcomingDay;
+  _ExcuseFor? _excuseFor;
 
   @override
   void dispose() {
@@ -27,21 +31,51 @@ class _RequestLateExcuseScreenState extends State<RequestLateExcuseScreen> {
     super.dispose();
   }
 
+  Future<void> _pickUpcomingDay() async {
+    final vm = widget.viewModel;
+    final initial =
+        _selectedUpcomingDay ??
+        List.generate(
+          LateExcuseViewModel.upcomingWindowDays + 1,
+          (i) => vm.firstUpcomingDay.add(Duration(days: i)),
+        ).where(vm.isUpcomingDaySelectable).firstOrNull;
+    if (initial == null) return;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: vm.firstUpcomingDay,
+      lastDate: vm.lastUpcomingDay,
+      selectableDayPredicate: vm.isUpcomingDaySelectable,
+    );
+    if (picked != null) setState(() => _selectedUpcomingDay = picked);
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    final day = _selectedDay;
-    if (day == null) return;
 
     try {
-      await widget.viewModel.submitRequest(
-        record: day,
-        reason: _reasonController.text,
-      );
+      if (_excuseFor == _ExcuseFor.upcomingDay) {
+        final day = _selectedUpcomingDay;
+        if (day == null) return;
+        await widget.viewModel.submitUpcomingRequest(
+          day: day,
+          reason: _reasonController.text,
+        );
+      } else {
+        final day = _selectedDay;
+        if (day == null) return;
+        await widget.viewModel.submitRequest(
+          record: day,
+          reason: _reasonController.text,
+        );
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              Text(AppLocalizations.of(context)!.lateExcuseSubmittedSuccess),
+          content: Text(
+            AppLocalizations.of(context)!.lateExcuseSubmittedSuccess,
+          ),
         ),
       );
       context.pop();
@@ -49,8 +83,9 @@ class _RequestLateExcuseScreenState extends State<RequestLateExcuseScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              Text(AppLocalizations.of(context)!.errorPrefix(e.toString())),
+          content: Text(
+            AppLocalizations.of(context)!.errorPrefix(e.toString()),
+          ),
         ),
       );
     }
@@ -79,25 +114,22 @@ class _RequestLateExcuseScreenState extends State<RequestLateExcuseScreen> {
       body: ListenableBuilder(
         listenable: widget.viewModel,
         builder: (context, _) {
-          final lateDays = widget.viewModel.excusableLateDays;
+          final vm = widget.viewModel;
+          final lateDays = vm.excusableLateDays;
+          // Default to a past late day when there is one to excuse.
+          final excuseFor =
+              _excuseFor ??
+              (lateDays.isEmpty ? _ExcuseFor.upcomingDay : _ExcuseFor.pastDay);
+          _excuseFor = excuseFor;
 
-          if (lateDays.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  l10n.noExcusableLateDays,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: c.textSecondary),
-                ),
-              ),
-            );
-          }
-
-          // Keep the current selection valid as the stream refreshes.
+          // Keep the current selections valid as the streams refresh.
           if (_selectedDay != null &&
               !lateDays.any((d) => d.id == _selectedDay!.id)) {
             _selectedDay = null;
+          }
+          if (_selectedUpcomingDay != null &&
+              !vm.isUpcomingDaySelectable(_selectedUpcomingDay!)) {
+            _selectedUpcomingDay = null;
           }
 
           return Form(
@@ -105,32 +137,59 @@ class _RequestLateExcuseScreenState extends State<RequestLateExcuseScreen> {
             child: ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                _buildSectionHeader(context, l10n.selectLateDay),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<AttendanceRecord>(
-                  initialValue: _selectedDay,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: c.surface,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                SegmentedButton<_ExcuseFor>(
+                  segments: [
+                    ButtonSegment(
+                      value: _ExcuseFor.pastDay,
+                      label: Text(l10n.lateExcusePastDay),
+                      icon: const Icon(Icons.history),
                     ),
-                  ),
-                  items: lateDays.map((day) {
-                    final label =
-                        '${DateFormat('E, d MMM', locale).format(day.date.toDate())}'
-                        ' · ${l10n.minutesLate(day.lateMinutes)}';
-                    return DropdownMenuItem<AttendanceRecord>(
-                      value: day,
-                      child: Text(label, overflow: TextOverflow.ellipsis),
-                    );
-                  }).toList(),
-                  onChanged: (value) => setState(() => _selectedDay = value),
-                  validator: (value) =>
-                      value == null ? l10n.selectLateDay : null,
+                    ButtonSegment(
+                      value: _ExcuseFor.upcomingDay,
+                      label: Text(l10n.lateExcuseUpcomingDay),
+                      icon: const Icon(Icons.event),
+                    ),
+                  ],
+                  selected: {excuseFor},
+                  onSelectionChanged: (selection) =>
+                      setState(() => _excuseFor = selection.first),
                 ),
+                const SizedBox(height: 24),
+                if (excuseFor == _ExcuseFor.upcomingDay)
+                  ..._buildUpcomingDayField(context, l10n, locale)
+                else if (lateDays.isEmpty)
+                  Text(
+                    l10n.noExcusableLateDays,
+                    style: TextStyle(color: c.textSecondary),
+                  )
+                else ...[
+                  _buildSectionHeader(context, l10n.selectLateDay),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<AttendanceRecord>(
+                    initialValue: _selectedDay,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: c.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    items: lateDays.map((day) {
+                      final label =
+                          '${DateFormat('E, d MMM', locale).format(day.date.toDate())}'
+                          ' · ${l10n.minutesLate(day.lateMinutes)}';
+                      return DropdownMenuItem<AttendanceRecord>(
+                        value: day,
+                        child: Text(label, overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
+                    onChanged: (value) => setState(() => _selectedDay = value),
+                    validator: (value) =>
+                        value == null ? l10n.selectLateDay : null,
+                  ),
+                ],
                 const SizedBox(height: 24),
                 _buildSectionHeader(context, l10n.reason),
                 const SizedBox(height: 12),
@@ -157,7 +216,11 @@ class _RequestLateExcuseScreenState extends State<RequestLateExcuseScreen> {
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: widget.viewModel.isLoading ? null : _submit,
+                  onPressed:
+                      vm.isLoading ||
+                          (excuseFor == _ExcuseFor.pastDay && lateDays.isEmpty)
+                      ? null
+                      : _submit,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: c.primary,
                     minimumSize: const Size.fromHeight(56),
@@ -182,6 +245,51 @@ class _RequestLateExcuseScreenState extends State<RequestLateExcuseScreen> {
         },
       ),
     );
+  }
+
+  List<Widget> _buildUpcomingDayField(
+    BuildContext context,
+    AppLocalizations l10n,
+    String locale,
+  ) {
+    final c = appColors(context);
+    final day = _selectedUpcomingDay;
+    return [
+      _buildSectionHeader(context, l10n.selectUpcomingLateDay),
+      const SizedBox(height: 12),
+      FormField<DateTime>(
+        // Validate against the state field; the picker writes it directly.
+        validator: (_) =>
+            _selectedUpcomingDay == null ? l10n.selectUpcomingLateDay : null,
+        builder: (field) => InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () async {
+            await _pickUpcomingDay();
+            field.didChange(_selectedUpcomingDay);
+          },
+          child: InputDecorator(
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: c.surface,
+              errorText: field.errorText,
+              suffixIcon: const Icon(Icons.calendar_today_outlined),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            child: Text(
+              day == null
+                  ? l10n.selectUpcomingLateDay
+                  : DateFormat('E, d MMM yyyy', locale).format(day),
+              style: TextStyle(
+                color: day == null ? c.textSecondary : c.textPrimary,
+              ),
+            ),
+          ),
+        ),
+      ),
+    ];
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {

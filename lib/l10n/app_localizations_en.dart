@@ -495,4 +495,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String minutesLate(int minutes) {
     return '$minutes min late';
   }
+
+  @override
+  String get lateExcusePastDay => 'Past late day';
+
+  @override
+  String get lateExcuseUpcomingDay => 'Upcoming day';
+
+  @override
+  String get selectUpcomingLateDay => 'Select the day you\'ll be late';
 }

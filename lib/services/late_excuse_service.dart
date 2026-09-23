@@ -39,8 +39,8 @@ class LateExcuseService {
             .toList());
   }
 
-  /// Approves or rejects a late-excuse request. On approval the referenced
-  /// attendance record (when known) is flagged `lateExcused` so that day's
+  /// Approves or rejects a late-excuse request. On approval the day's
+  /// attendance record (when it exists) is flagged `lateExcused` so that day's
   /// lateness is excluded from the late-arrival deduction — the same effect the
   /// POS produces when HR approves.
   Future<void> setStatus({
@@ -57,14 +57,32 @@ class LateExcuseService {
         'actionReason': actionReason,
     });
 
-    final attendanceId = request.attendanceId;
-    if (status == LateExcuseStatus.approved &&
-        attendanceId != null &&
-        attendanceId.isNotEmpty) {
-      await _db
-          .collection('stores/${request.storeId}/hr_attendance')
-          .doc(attendanceId)
-          .update({'lateExcused': true});
+    if (status != LateExcuseStatus.approved) return;
+
+    final attendance = _db.collection('stores/${request.storeId}/hr_attendance');
+    var attendanceId = request.attendanceId;
+
+    // Requests made in advance carry no attendance id. Look the day's record
+    // up by date instead (as the POS does); if the employee hasn't checked in
+    // yet, the check-in function applies the approved excuse itself.
+    if (attendanceId == null || attendanceId.isEmpty) {
+      final dayStart = request.date;
+      final snapshot = await attendance
+          .where('employeeId', isEqualTo: request.employeeId)
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(dayStart))
+          .where('date',
+              isLessThan:
+                  Timestamp.fromDate(dayStart.add(const Duration(days: 1))))
+          .limit(1)
+          .get();
+      if (snapshot.docs.isEmpty) return;
+      attendanceId = snapshot.docs.first.id;
     }
+
+    await attendance.doc(attendanceId).update({
+      'lateExcused': true,
+      'lateExcuseReason':
+          request.reason.isNotEmpty ? request.reason : 'Late excuse approved',
+    });
   }
 }

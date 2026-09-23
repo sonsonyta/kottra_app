@@ -194,5 +194,8 @@
         "type": "int"
       }
     }
-  }
+  },
+  "lateExcusePastDay": "Past late day",
+  "lateExcuseUpcomingDay": "Upcoming day",
+  "selectUpcomingLateDay": "Select the day you'll be late"
 }

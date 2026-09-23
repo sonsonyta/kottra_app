@@ -1015,6 +1015,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{minutes} min late'**
   String minutesLate(int minutes);
+
+  /// No description provided for @lateExcusePastDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Past late day'**
+  String get lateExcusePastDay;
+
+  /// No description provided for @lateExcuseUpcomingDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming day'**
+  String get lateExcuseUpcomingDay;
+
+  /// No description provided for @selectUpcomingLateDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the day you\'ll be late'**
+  String get selectUpcomingLateDay;
 }
 
 class _AppLocalizationsDelegate
