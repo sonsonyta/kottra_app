@@ -36,8 +36,10 @@ Future<void> main() async {
   await LocaleController.instance.load();
 
   if (kDebugMode) {
-
-    final String localHostString = defaultTargetPlatform == TargetPlatform.android ? '10.0.2.2' : 'localhost';
+    final String localHostString =
+        defaultTargetPlatform == TargetPlatform.android
+        ? '10.0.2.2'
+        : 'localhost';
 
     // Clear persistence to prevent emulator cache issues where data does not
     // update. This must run before the Firestore client starts (i.e. before
@@ -51,7 +53,9 @@ Future<void> main() async {
 
     await FirebaseAuth.instance.useAuthEmulator(localHostString, 9099);
     FirebaseFunctions.instance.useFunctionsEmulator(localHostString, 5001);
-    FirebaseFunctions.instanceFor(region: 'asia-southeast1').useFunctionsEmulator(localHostString, 5001);
+    FirebaseFunctions.instanceFor(
+      region: 'asia-southeast1',
+    ).useFunctionsEmulator(localHostString, 5001);
     FirebaseFirestore.instance.useFirestoreEmulator(localHostString, 8080);
 
     await FirebaseStorage.instance.useStorageEmulator(localHostString, 9199);
@@ -60,7 +64,13 @@ Future<void> main() async {
       providerAndroid: const AndroidDebugProvider(),
       providerApple: const AppleDebugProvider()
     );*/
-  }else{
+  } else if (kProfileMode) {
+
+    await FirebaseAppCheck.instance.activate(
+      providerAndroid: const AndroidDebugProvider(),
+      providerApple: const AppleDebugProvider(),
+    );
+  } else {
     await FirebaseAppCheck.instance.activate(
       providerAndroid: const AndroidPlayIntegrityProvider(),
       providerApple: const AppleAppAttestProvider(),
@@ -76,7 +86,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([ThemeController.instance, LocaleController.instance]),
+      listenable: Listenable.merge([
+        ThemeController.instance,
+        LocaleController.instance,
+      ]),
       builder: (context, _) {
         return MaterialApp.router(
           title: 'Kottra App',

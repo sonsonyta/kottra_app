@@ -46,10 +46,15 @@ class LeaveViewModel extends ChangeNotifier {
   void _subscribeToLeaves() {
     if (employeeId.isEmpty) return;
     _leaveSub?.cancel();
-    _leaveSub = _leaveService.streamEmployeeLeaves(storeId, employeeId).listen((data) {
-      _leaves = data;
-      notifyListeners();
-    });
+    _leaveSub = _leaveService.streamEmployeeLeaves(storeId, employeeId).listen(
+      (data) {
+        _leaves = data;
+        if (!_disposed) notifyListeners();
+      },
+      // The listener stops for good after an error (e.g. a missing index),
+      // leaving the list frozen — log it so the cause is visible.
+      onError: (Object e) => debugPrint('Leave stream error: $e'),
+    );
   }
 
   Future<void> _loadStoreTimezone() async {

@@ -61,18 +61,26 @@ class LateExcuseViewModel extends ChangeNotifier {
     _requestSub?.cancel();
     _requestSub = _lateExcuseService
         .streamEmployeeRequests(storeId, employeeId)
-        .listen((data) {
-      _requests = data;
-      if (!_disposed) notifyListeners();
-    });
+        .listen(
+      (data) {
+        _requests = data;
+        if (!_disposed) notifyListeners();
+      },
+      // The listener stops for good after an error (e.g. a missing index),
+      // leaving the list frozen — log it so the cause is visible.
+      onError: (Object e) => debugPrint('Late excuse stream error: $e'),
+    );
 
     _attendanceSub?.cancel();
     _attendanceSub = _attendanceService
         .streamHistory(storeId, employeeId, limit: 60)
-        .listen((data) {
-      _history = data;
-      if (!_disposed) notifyListeners();
-    });
+        .listen(
+      (data) {
+        _history = data;
+        if (!_disposed) notifyListeners();
+      },
+      onError: (Object e) => debugPrint('Attendance history stream error: $e'),
+    );
   }
 
   Future<void> submitRequest({
