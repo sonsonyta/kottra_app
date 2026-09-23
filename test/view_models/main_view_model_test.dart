@@ -1,9 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kottra_app/models/hr_payroll_run.dart';
+import 'package:kottra_app/models/store.dart';
 import 'package:kottra_app/services/auth_service.dart';
 import 'package:kottra_app/services/employee_service.dart';
+import 'package:kottra_app/services/payroll_run_service.dart';
 import 'package:kottra_app/services/payslip_service.dart';
+import 'package:kottra_app/services/store_service.dart';
 import 'package:kottra_app/view_models/employee_identity.dart';
 import 'package:kottra_app/view_models/main_view_model.dart';
 
@@ -82,6 +86,23 @@ class FakePayslipService implements PayslipService {
   dynamic noSuchMethod(Invocation invocation) => null;
 }
 
+class FakePayrollRunService implements PayrollRunService {
+  @override
+  Stream<List<HRPayrollRun>> streamStoreRuns(String storeId) =>
+      Stream.value(const []);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
+class FakeStoreService implements StoreService {
+  @override
+  Future<Store?> getStore(String storeId) async => null;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -108,6 +129,8 @@ void main() {
         firebaseAuth: FakeFirebaseAuth(user: FakeUser(uid: 'hr_employee:s:e')),
         employeeService: FakeEmployeeService(),
         payslipService: FakePayslipService(),
+        payrollRunService: FakePayrollRunService(),
+        storeService: FakeStoreService(),
       );
       var notifications = 0;
       viewModel.addListener(() => notifications++);
@@ -132,6 +155,8 @@ void main() {
         ),
         employeeService: FakeEmployeeService(),
         payslipService: FakePayslipService(),
+        payrollRunService: FakePayrollRunService(),
+        storeService: FakeStoreService(),
       );
 
       expect(viewModel.userName, 'alex');
