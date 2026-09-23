@@ -214,7 +214,7 @@ class AttendanceListItem extends StatelessWidget {
                   Row(
                     children: [
                       if (record.checkInPhotoUrl != null)
-                        _AttendancePhotoThumb(
+                        AttendancePhotoThumb(
                           url: record.checkInPhotoUrl!,
                           label: 'In',
                         ),
@@ -222,7 +222,7 @@ class AttendanceListItem extends StatelessWidget {
                           record.checkOutPhotoUrl != null)
                         const SizedBox(width: 8),
                       if (record.checkOutPhotoUrl != null)
-                        _AttendancePhotoThumb(
+                        AttendancePhotoThumb(
                           url: record.checkOutPhotoUrl!,
                           label: 'Out',
                         ),
@@ -320,8 +320,12 @@ class StatusConfig {
 
 /// A small rounded thumbnail of a check-in/out photo. The [label] chip marks it
 /// as the "In" or "Out" photo; tapping opens a zoomable full-screen viewer.
-class _AttendancePhotoThumb extends StatelessWidget {
-  const _AttendancePhotoThumb({required this.url, required this.label});
+class AttendancePhotoThumb extends StatelessWidget {
+  const AttendancePhotoThumb({
+    super.key,
+    required this.url,
+    required this.label,
+  });
 
   final String url;
   final String label;

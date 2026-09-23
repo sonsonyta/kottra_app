@@ -61,6 +61,8 @@ class AttendanceRecord {
     this.workingHours,
     this.overtimeHours,
     this.location,
+    this.checkInLocation,
+    this.checkOutLocation,
     this.checkInPhotoUrl,
     this.checkOutPhotoUrl,
   });
@@ -92,6 +94,14 @@ class AttendanceRecord {
   final double? workingHours;
   final double? overtimeHours;
   final GeoPoint? location;
+
+  /// Where the employee was when checking in, written server-side as
+  /// `checkinLocation`. Null when no coordinates were sent.
+  final GeoPoint? checkInLocation;
+
+  /// Where the employee was when checking out, written server-side as
+  /// `checkoutLocation`. Null when no coordinates were sent.
+  final GeoPoint? checkOutLocation;
 
   /// Download URL of the photo captured at check-in, when the store requires a
   /// photo on attendance. Null when not required or not yet uploaded.
@@ -139,6 +149,12 @@ class AttendanceRecord {
       workingHours: (map['workingHours'] as num?)?.toDouble(),
       overtimeHours: (map['overtimeHours'] as num?)?.toDouble(),
       location: map['location'] is GeoPoint ? map['location'] as GeoPoint : null,
+      checkInLocation: map['checkinLocation'] is GeoPoint
+          ? map['checkinLocation'] as GeoPoint
+          : null,
+      checkOutLocation: map['checkoutLocation'] is GeoPoint
+          ? map['checkoutLocation'] as GeoPoint
+          : null,
       checkInPhotoUrl: map['checkInPhotoUrl'] as String?,
       checkOutPhotoUrl: map['checkOutPhotoUrl'] as String?,
     );
@@ -162,6 +178,8 @@ class AttendanceRecord {
         if (workingHours != null) 'workingHours': workingHours,
         if (overtimeHours != null) 'overtimeHours': overtimeHours,
         if (location != null) 'location': location,
+        if (checkInLocation != null) 'checkinLocation': checkInLocation,
+        if (checkOutLocation != null) 'checkoutLocation': checkOutLocation,
         if (checkInPhotoUrl != null) 'checkInPhotoUrl': checkInPhotoUrl,
         if (checkOutPhotoUrl != null) 'checkOutPhotoUrl': checkOutPhotoUrl,
       };
