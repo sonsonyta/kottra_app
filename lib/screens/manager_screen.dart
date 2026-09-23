@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kottra_app/l10n/app_localizations.dart';
-import 'package:kottra_app/screens/store_management_screen.dart';
+import 'package:kottra_app/screens/management/store_management_screen.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/services/store_service.dart';
 import 'package:kottra_app/view_models/manager_view_model.dart';
