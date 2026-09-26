@@ -48,7 +48,9 @@ class AttendanceViewModel extends ChangeNotifier {
     AttendanceSyncService? syncService,
     ConnectivityProbe? connectivity,
     Duration checkOutLockDuration = defaultCheckOutLockDuration,
+    ({String storeId, String employeeId})? identity,
   }) : _checkOutLockDuration = checkOutLockDuration,
+       _explicitIdentity = identity,
        _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
        _attendanceService = attendanceService ?? AttendanceService(),
        _locationService = locationService ?? const LocationService(),
@@ -71,6 +73,11 @@ class AttendanceViewModel extends ChangeNotifier {
   }
 
   final Duration _checkOutLockDuration;
+
+  /// The employee to act as, when not an employee-token login — e.g. a manager
+  /// whose store user account is linked to their own employee record. Null
+  /// means the identity is parsed from the signed-in UID.
+  final ({String storeId, String employeeId})? _explicitIdentity;
   final FirebaseAuth _firebaseAuth;
   final AttendanceService _attendanceService;
   final LocationServiceBase _locationService;
@@ -129,6 +136,7 @@ class AttendanceViewModel extends ChangeNotifier {
   bool _disposed = false;
 
   ({String storeId, String employeeId})? get _identity {
+    if (_explicitIdentity != null) return _explicitIdentity;
     final uid = _firebaseAuth.currentUser?.uid;
     if (uid == null) return null;
     return parseEmployeeUid(uid);
@@ -365,6 +373,15 @@ class AttendanceViewModel extends ChangeNotifier {
   /// The store this employee belongs to, or null before auth is ready. Used by
   /// the QR scanner to check the scanned code targets the right store.
   String? get storeId => _identity?.storeId;
+
+  /// The employee's shift start (`HH:mm`), used to flag a late check-in.
+  String? get startWorkingTime => _employee?.startWorkingTime;
+
+  /// The employee's shift end (`HH:mm`), used to flag an early check-out.
+  String? get endWorkingTime => _employee?.endWorkingTime;
+
+  /// Grace minutes after [startWorkingTime] before a check-in counts as late.
+  int? get lateTime => _employee?.lateTime;
 
   /// Whether check-in/out should go through a QR scan of the store's posted
   /// code. True only when the master feature flag is on and the store has

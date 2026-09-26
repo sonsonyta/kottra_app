@@ -41,6 +41,25 @@ class EmployeeService {
     });
   }
 
+  /// Streams the employee record linked to the store user [userId] (see
+  /// [HREmployee.userId]), or null when none is linked. Prefers an active
+  /// record if the user is somehow linked to more than one.
+  Stream<HREmployee?> streamEmployeeByUserId(String storeId, String userId) {
+    return _col(storeId)
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .map((snap) {
+      final employees = snap.docs
+          .map((doc) => HREmployee.fromMap(doc.id, doc.data()))
+          .toList();
+      if (employees.isEmpty) return null;
+      return employees.firstWhere(
+        (e) => e.status == EmployeeStatus.active,
+        orElse: () => employees.first,
+      );
+    });
+  }
+
   // ── Queries ──────────────────────────────────────────────────────────────────
 
   /// Fetches a single employee by ID.

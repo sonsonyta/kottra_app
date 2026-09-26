@@ -286,6 +286,7 @@ AttendanceViewModel buildViewModel({
   HrSettings? settings,
   Duration checkOutLockDuration =
       AttendanceViewModel.defaultCheckOutLockDuration,
+  ({String storeId, String employeeId})? identity,
 }) {
   return AttendanceViewModel(
     firebaseAuth: FakeFirebaseAuth(user: FakeUser(uid: uid)),
@@ -298,6 +299,7 @@ AttendanceViewModel buildViewModel({
     offlineQueue: queue ?? OfflineAttendanceQueue(store: InMemoryPendingStore()),
     connectivity: connectivity ?? FakeConnectivityProbe(online: online),
     checkOutLockDuration: checkOutLockDuration,
+    identity: identity,
   );
 }
 
@@ -325,6 +327,41 @@ void main() {
       expect(attendanceService.lastLongitude, 104.9282);
       expect(viewModel.isCheckedIn, isTrue);
       expect(viewModel.isActionLoading, isFalse);
+
+      viewModel.dispose();
+    });
+
+    test('uses an explicit identity for a linked store-user login', () async {
+      final attendanceService = FakeAttendanceService();
+      final viewModel = buildViewModel(
+        attendanceService: attendanceService,
+        locationService: FakeLocationService(),
+        uid: 'manager-uid',
+        identity: (storeId: 'store-2', employeeId: 'emp-9'),
+      );
+
+      await viewModel.checkIn();
+
+      expect(viewModel.storeId, 'store-2');
+      expect(attendanceService.lastStoreId, 'store-2');
+      expect(attendanceService.lastEmployeeId, 'emp-9');
+
+      viewModel.dispose();
+    });
+
+    test('does nothing for a store-user login without an explicit identity',
+        () async {
+      final attendanceService = FakeAttendanceService();
+      final viewModel = buildViewModel(
+        attendanceService: attendanceService,
+        locationService: FakeLocationService(),
+        uid: 'manager-uid',
+      );
+
+      await viewModel.checkIn();
+
+      expect(viewModel.storeId, isNull);
+      expect(attendanceService.checkInCalls, 0);
 
       viewModel.dispose();
     });

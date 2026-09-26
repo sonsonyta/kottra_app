@@ -1039,6 +1039,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select the day you\'ll be late'**
   String get selectUpcomingLateDay;
+
+  /// No description provided for @approvedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved by {name}'**
+  String approvedBy(String name);
+
+  /// No description provided for @rejectedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected by {name}'**
+  String rejectedBy(String name);
 }
 
 class _AppLocalizationsDelegate

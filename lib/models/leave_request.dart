@@ -53,6 +53,7 @@ class LeaveRequest {
     this.actionedAt,
     this.actionReason,
     this.attachmentUrl,
+    this.requestedType,
     DateTime? requestedAt,
   }) : requestedAt = requestedAt ?? DateTime.now();
 
@@ -63,6 +64,10 @@ class LeaveRequest {
   final DateTime startDate;
   final DateTime endDate;
   final LeaveType type;
+
+  /// The type the employee originally asked for, set when an approver changed
+  /// it (POS/app write `requestedLeaveType`). Null when never overridden.
+  final LeaveType? requestedType;
   final LeaveStatus status;
   final String reason;
   final String? attachmentUrl;
@@ -72,7 +77,6 @@ class LeaveRequest {
   final String? actionReason;
 
   factory LeaveRequest.fromMap(String id, Map<String, dynamic> map) {
-
     DateTime toDateTime(dynamic ts) {
       if (ts is DateTime) return ts;
       try {
@@ -87,6 +91,12 @@ class LeaveRequest {
       return toDateTime(ts);
     }
 
+    // The POS writes `leaveType`, this app historically only `type`; both are
+    // kept in sync on write, prefer `leaveType` on read.
+    String? nonEmpty(dynamic v) =>
+        v is String && v.trim().isNotEmpty ? v : null;
+    final requested = nonEmpty(map['requestedLeaveType']);
+
     return LeaveRequest(
       id: id,
       storeId: map['storeId'] as String? ?? '',
@@ -94,12 +104,15 @@ class LeaveRequest {
       employeeName: map['employeeName'] as String? ?? '',
       startDate: toDateTime(map['startDate']),
       endDate: toDateTime(map['endDate']),
-      type: LeaveType.fromString(map['type'] as String? ?? ''),
+      type: LeaveType.fromString(
+        nonEmpty(map['leaveType']) ?? nonEmpty(map['type']) ?? '',
+      ),
+      requestedType: requested == null ? null : LeaveType.fromString(requested),
       status: LeaveStatus.fromString(map['status'] as String? ?? ''),
       reason: map['reason'] as String? ?? '',
       actionedBy: map['actionedBy'] as String?,
       actionedAt: toDateTimeNullable(map['actionedAt']),
-      actionReason:map['actionReason'] as String? ?? '',
+      actionReason: map['actionReason'] as String? ?? '',
       attachmentUrl: map['attachmentUrl'] as String?,
       requestedAt: toDateTime(map['requestedAt']),
     );
@@ -113,6 +126,7 @@ class LeaveRequest {
       'startDate': startDate,
       'endDate': endDate,
       'type': type.value,
+      'leaveType': type.value,
       'status': status.value,
       'reason': reason,
       if (attachmentUrl != null) 'attachmentUrl': attachmentUrl,
@@ -122,8 +136,6 @@ class LeaveRequest {
 
   /// Useful for updates where you might only want to update `updatedAt` server timestamp.
   Map<String, dynamic> toUpdateMap() {
-    return {
-      'status': status.value
-    };
+    return {'status': status.value};
   }
 }

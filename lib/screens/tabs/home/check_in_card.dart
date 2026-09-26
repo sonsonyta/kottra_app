@@ -5,15 +5,13 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../view_models/attendance_view_model.dart';
-import '../../../view_models/main_view_model.dart';
 import '../../scan/scan_screen.dart';
 import '../tab_colors.dart';
 import '../tab_helpers.dart';
 
 class CheckInCard extends StatelessWidget {
-  const CheckInCard({super.key, required this.viewModel, required this.attendanceViewModel});
+  const CheckInCard({super.key, required this.attendanceViewModel});
 
-  final MainViewModel viewModel;
   final AttendanceViewModel attendanceViewModel;
 
   String _formatCheckInError(Object error) {
@@ -120,7 +118,7 @@ class CheckInCard extends StatelessWidget {
     if (!context.mounted) return;
 
     String? note;
-    if (attendanceViewModel.isLateCheckIn(viewModel.startWorkingTime, viewModel.lateTime)) {
+    if (attendanceViewModel.isLateCheckIn(attendanceViewModel.startWorkingTime, attendanceViewModel.lateTime)) {
       note = await _promptForNote(context, AppLocalizations.of(context)!.checkIn);
       if (note == null) return; // User cancelled
       if (!context.mounted) return;
@@ -164,7 +162,7 @@ class CheckInCard extends StatelessWidget {
     if (!context.mounted) return;
 
     String? note;
-    if (attendanceViewModel.isEarlyCheckOut(viewModel.startWorkingTime, viewModel.endWorkingTime)) {
+    if (attendanceViewModel.isEarlyCheckOut(attendanceViewModel.startWorkingTime, attendanceViewModel.endWorkingTime)) {
       note = await _promptForNote(context, AppLocalizations.of(context)!.checkOut);
       if (note == null) return; // User cancelled
       if (!context.mounted) return;

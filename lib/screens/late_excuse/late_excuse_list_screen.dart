@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/models/late_excuse_request.dart';
+import 'package:kottra_app/screens/tabs/approval_info.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/view_models/late_excuse_view_model.dart';
 import 'package:kottra_app/view_models/profile_view_model.dart';
@@ -164,8 +165,10 @@ class _RequestCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: statusBg,
                   borderRadius: BorderRadius.circular(999),
@@ -202,18 +205,13 @@ class _RequestCard extends StatelessWidget {
             ),
             style: TextStyle(fontSize: 11, color: c.textSecondary),
           ),
-          if (request.status == LateExcuseStatus.rejected &&
-              (request.actionReason ?? '').isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              request.actionReason!,
-              style: TextStyle(
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
-                color: c.error,
-              ),
+          if (request.status != LateExcuseStatus.pending)
+            ApprovalInfo(
+              rejected: request.status == LateExcuseStatus.rejected,
+              actionedBy: request.actionedBy,
+              actionedAt: request.actionedAt,
+              note: request.actionReason,
             ),
-          ],
         ],
       ),
     );

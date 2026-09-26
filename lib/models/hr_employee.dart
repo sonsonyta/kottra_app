@@ -105,6 +105,7 @@ class HREmployee {
     this.notes,
     this.allowCheckinRemote,
     this.fcmToken,
+    this.userId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -189,6 +190,11 @@ class HREmployee {
   // Messaging
   final String? fcmToken;
 
+  // Linked login
+  /// Firebase Auth UID of a store user (e.g. a manager) who is also this
+  /// employee, letting them check in/out from the management screen.
+  final String? userId;
+
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -263,6 +269,7 @@ class HREmployee {
       notes: map['notes'] as String?,
       allowCheckinRemote: map['allowCheckinRemote'] as bool?,
       fcmToken: map['fcmToken'] as String?,
+      userId: map['userId'] as String?,
       createdAt: toDateTime(map['createdAt']),
       updatedAt: toDateTime(map['updatedAt']),
     );
@@ -329,6 +336,7 @@ class HREmployee {
         if (notes != null) 'notes': notes,
         if (allowCheckinRemote != null) 'allowCheckinRemote': allowCheckinRemote,
         if (fcmToken != null) 'fcmToken': fcmToken,
+        if (userId != null) 'userId': userId,
         'createdAt': Timestamp.fromDate(createdAt),
         'updatedAt': Timestamp.fromDate(updatedAt),
       };

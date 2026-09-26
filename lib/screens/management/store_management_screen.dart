@@ -10,8 +10,9 @@ import 'package:kottra_app/view_models/store_management_view_model.dart';
 
 /// Management "app" for one store, shown after the manager/owner picks a store.
 /// It deliberately reuses the employee UI's look — a bottom-nav shell with the
-/// same cards and colors — but there is no check-in/out and none of the
-/// employee self-service actions (request leave/advance/late, payslips). The
+/// same cards and colors — but none of the employee self-service actions
+/// (request leave/advance/late, payslips). Check-in/out appears on Home only
+/// when the user is linked to their own employee record in this store. The
 /// tabs are Home, Attendance, Requests (leave + late approvals) and Profile.
 class StoreManagementScreen extends StatefulWidget {
   const StoreManagementScreen({

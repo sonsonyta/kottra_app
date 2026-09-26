@@ -508,4 +508,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectUpcomingLateDay => 'Select the day you\'ll be late';
+
+  @override
+  String approvedBy(String name) {
+    return 'Approved by $name';
+  }
+
+  @override
+  String rejectedBy(String name) {
+    return 'Rejected by $name';
+  }
 }

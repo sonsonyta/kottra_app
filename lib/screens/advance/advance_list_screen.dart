@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/models/salary_advance.dart';
+import 'package:kottra_app/screens/tabs/approval_info.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/screens/tabs/tab_helpers.dart';
 import 'package:kottra_app/view_models/profile_view_model.dart';
@@ -236,8 +237,10 @@ class _AdvanceCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: statusBg,
                   borderRadius: BorderRadius.circular(999),
@@ -267,18 +270,13 @@ class _AdvanceCard extends StatelessWidget {
             ),
             style: TextStyle(fontSize: 11, color: c.textSecondary),
           ),
-          if (advance.status == AdvanceStatus.rejected &&
-              (advance.actionReason ?? '').isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              advance.actionReason!,
-              style: TextStyle(
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
-                color: c.error,
-              ),
+          if (advance.status != AdvanceStatus.pending)
+            ApprovalInfo(
+              rejected: advance.status == AdvanceStatus.rejected,
+              actionedBy: advance.actionedBy,
+              actionedAt: advance.actionedAt,
+              note: advance.actionReason,
             ),
-          ],
         ],
       ),
     );

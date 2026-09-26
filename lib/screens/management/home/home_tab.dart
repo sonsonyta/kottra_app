@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kottra_app/config/feature_flags.dart';
 import 'package:kottra_app/screens/management/management_widgets.dart';
+import 'package:kottra_app/screens/tabs/home/check_in_card.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/view_models/store_management_view_model.dart';
@@ -26,6 +27,7 @@ class ManagementHomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final selfAttendance = viewModel.selfAttendance;
     return CustomScrollView(
       slivers: [
         _buildHeader(context, c),
@@ -33,6 +35,16 @@ class ManagementHomeTab extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
+              // The manager's own check-in/out, when their account is linked
+              // to an employee record in this store.
+              if (selfAttendance != null) ...[
+                ListenableBuilder(
+                  listenable: selfAttendance,
+                  builder: (context, _) =>
+                      CheckInCard(attendanceViewModel: selfAttendance),
+                ),
+                const SizedBox(height: 24),
+              ],
               Text(
                 DateFormat('EEE, d MMM yyyy').format(viewModel.selectedDate),
                 style: TextStyle(

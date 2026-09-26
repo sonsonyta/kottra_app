@@ -31,6 +31,9 @@ class LeaveRequestsView extends StatelessWidget {
               ? req.employeeName
               : req.employeeId,
           subtitle: req.type.value,
+          detail: req.requestedType != null && req.requestedType != req.type
+              ? 'Requested as ${req.requestedType!.value}'
+              : null,
           dateLine:
               '${DateFormat('d MMM').format(req.startDate)} – ${DateFormat('d MMM yyyy').format(req.endDate)}',
           reason: req.reason,
@@ -38,6 +41,9 @@ class LeaveRequestsView extends StatelessWidget {
           isPending: req.status == LeaveStatus.pending,
           onApprove: () => _action(context, req, LeaveStatus.approved),
           onReject: () => _action(context, req, LeaveStatus.rejected),
+          actionedBy: viewModel.actorName(req.actionedBy),
+          actionedAt: req.actionedAt,
+          actionNote: req.actionReason,
         );
       },
     );
@@ -49,18 +55,83 @@ class LeaveRequestsView extends StatelessWidget {
     LeaveStatus status,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
-    final reason = await promptDecision(
-      context,
-      status == LeaveStatus.approved ? 'Approve leave?' : 'Reject leave?',
-    );
-    if (reason == null) return;
+    String? reason;
+    LeaveType? leaveType;
+    if (status == LeaveStatus.approved) {
+      final decision = await _promptLeaveApproval(context, req.type);
+      if (decision == null) return;
+      reason = decision.note;
+      leaveType = decision.type;
+    } else {
+      reason = await promptDecision(context, 'Reject leave?');
+      if (reason == null) return;
+    }
     try {
-      await viewModel.actionLeave(req, status, reason: reason);
+      await viewModel.actionLeave(
+        req,
+        status,
+        reason: reason,
+        leaveType: leaveType,
+      );
       messenger.showSnackBar(
         SnackBar(content: Text('Leave ${status.value.toLowerCase()}.')),
       );
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('Could not update: $e')));
     }
+  }
+
+  /// Approve dialog with a leave-type picker (pre-set to the requested type)
+  /// and an optional note. Returns null when dismissed.
+  Future<({LeaveType type, String note})?> _promptLeaveApproval(
+    BuildContext context,
+    LeaveType current,
+  ) {
+    final controller = TextEditingController();
+    var selected = current;
+    return showDialog<({LeaveType type, String note})>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Approve leave?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DropdownButtonFormField<LeaveType>(
+              initialValue: current,
+              decoration: const InputDecoration(labelText: 'Leave type'),
+              items: [
+                for (final t in LeaveType.values)
+                  DropdownMenuItem(value: t, child: Text(t.value)),
+              ],
+              onChanged: (t) {
+                if (t != null) selected = t;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'Note (optional)',
+                hintText: 'Reason shown to the employee',
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, (
+              type: selected,
+              note: controller.text.trim(),
+            )),
+            child: const Text('Approve'),
+          ),
+        ],
+      ),
+    );
   }
 }

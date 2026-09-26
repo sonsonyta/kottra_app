@@ -43,10 +43,7 @@ class HomeTab extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              CheckInCard(
-                viewModel: viewModel,
-                attendanceViewModel: attendanceViewModel,
-              ),
+              CheckInCard(attendanceViewModel: attendanceViewModel),
               const SizedBox(height: 20),
               _TodayStatsRow(attendanceViewModel: attendanceViewModel),
               const SizedBox(height: 20),

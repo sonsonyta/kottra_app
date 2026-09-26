@@ -40,6 +40,9 @@ class AdvanceRequestsView extends StatelessWidget {
           isPending: advance.status == AdvanceStatus.pending,
           onApprove: () => _action(context, advance, AdvanceStatus.approved),
           onReject: () => _action(context, advance, AdvanceStatus.rejected),
+          actionedBy: viewModel.actorName(advance.actionedBy),
+          actionedAt: advance.actionedAt,
+          actionNote: advance.actionReason,
         );
       },
     );

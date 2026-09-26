@@ -198,5 +198,21 @@
   },
   "lateExcusePastDay": "Past late day",
   "lateExcuseUpcomingDay": "Upcoming day",
-  "selectUpcomingLateDay": "Select the day you'll be late"
+  "selectUpcomingLateDay": "Select the day you'll be late",
+  "approvedBy": "Approved by {name}",
+  "@approvedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rejectedBy": "Rejected by {name}",
+  "@rejectedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

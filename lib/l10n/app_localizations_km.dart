@@ -507,4 +507,14 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get selectUpcomingLateDay => 'ជ្រើសរើសថ្ងៃដែលអ្នកនឹងមកយឺត';
+
+  @override
+  String approvedBy(String name) {
+    return 'អនុម័តដោយ $name';
+  }
+
+  @override
+  String rejectedBy(String name) {
+    return 'បដិសេធដោយ $name';
+  }
 }

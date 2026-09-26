@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 
 // Widgets and helpers shared by the store-management tabs.
@@ -72,6 +73,10 @@ class RequestCard extends StatelessWidget {
     required this.isPending,
     required this.onApprove,
     required this.onReject,
+    this.detail,
+    this.actionedBy,
+    this.actionedAt,
+    this.actionNote,
   });
 
   final String title;
@@ -83,9 +88,21 @@ class RequestCard extends StatelessWidget {
   final VoidCallback onApprove;
   final VoidCallback onReject;
 
+  /// Optional extra line under the date (e.g. the originally requested type).
+  final String? detail;
+
+  /// Approver's display name, or null while it's still being resolved.
+  final String? actionedBy;
+  final DateTime? actionedAt;
+  final String? actionNote;
+
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final note = actionNote?.trim() ?? '';
+    final showDecision =
+        !isPending &&
+        (actionedBy != null || actionedAt != null || note.isNotEmpty);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -132,9 +149,43 @@ class RequestCard extends StatelessWidget {
               Text(dateLine, style: TextStyle(color: c.textSecondary)),
             ],
           ),
+          if (detail != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              detail!,
+              style: TextStyle(fontSize: 13, color: c.textSecondary),
+            ),
+          ],
           if (reason.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(reason, style: TextStyle(fontSize: 14, color: c.textPrimary)),
+          ],
+          if (showDecision) ...[
+            const SizedBox(height: 12),
+            Divider(height: 1, color: c.textSecondary.withValues(alpha: 0.2)),
+            const SizedBox(height: 10),
+            _DecisionLine(
+              icon: Icons.person_outline_rounded,
+              text: '$statusLabel by ${actionedBy ?? '…'}',
+              color: c,
+            ),
+            if (actionedAt != null) ...[
+              const SizedBox(height: 4),
+              _DecisionLine(
+                icon: Icons.schedule_rounded,
+                text: DateFormat('EEE, d MMM yyyy · HH:mm').format(actionedAt!),
+                color: c,
+              ),
+            ],
+            if (note.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              _DecisionLine(
+                icon: Icons.notes_rounded,
+                text: note,
+                color: c,
+                italic: true,
+              ),
+            ],
           ],
           if (isPending) ...[
             const SizedBox(height: 12),
@@ -161,6 +212,41 @@ class RequestCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _DecisionLine extends StatelessWidget {
+  const _DecisionLine({
+    required this.icon,
+    required this.text,
+    required this.color,
+    this.italic = false,
+  });
+
+  final IconData icon;
+  final String text;
+  final AppColors color;
+  final bool italic;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: color.textSecondary),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 13,
+              color: color.textSecondary,
+              fontStyle: italic ? FontStyle.italic : FontStyle.normal,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

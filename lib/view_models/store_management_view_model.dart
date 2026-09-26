@@ -6,23 +6,29 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:kottra_app/models/app_user.dart';
-import 'package:kottra_app/models/attendance_record.dart';
+import 'package:kottra_app/models/hr_employee.dart';
 import 'package:kottra_app/models/late_excuse_request.dart';
 import 'package:kottra_app/models/leave_request.dart';
 import 'package:kottra_app/models/salary_advance.dart';
+import 'package:kottra_app/services/actor_name_service.dart';
 import 'package:kottra_app/services/attendance_service.dart';
+import 'package:kottra_app/services/employee_service.dart';
 import 'package:kottra_app/services/late_excuse_service.dart';
 import 'package:kottra_app/services/leave_service.dart';
 import 'package:kottra_app/services/notification_service.dart';
 import 'package:kottra_app/services/salary_advance_service.dart';
 import 'package:kottra_app/services/store_service.dart';
 import 'package:kottra_app/services/user_service.dart';
+import 'package:kottra_app/view_models/attendance_view_model.dart'
+    hide LeaveType;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Backs the management dashboard for a single store the manager/owner selected.
 /// Streams that store's attendance (for a chosen day), leave requests,
 /// late-excuse requests and salary advances, and exposes the approve/reject
-/// actions.
+/// actions. When the signed-in user is linked to an employee record in this
+/// store (`hr_employees.userId`), also exposes [selfAttendance] so they can
+/// check in/out as themself.
 class StoreManagementViewModel extends ChangeNotifier {
   StoreManagementViewModel({
     required this.membership,
@@ -32,12 +38,21 @@ class StoreManagementViewModel extends ChangeNotifier {
     LateExcuseService? lateExcuseService,
     SalaryAdvanceService? advanceService,
     UserService? userService,
-  })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-        _attendanceService = attendanceService ?? AttendanceService(),
-        _leaveService = leaveService ?? LeaveService(),
-        _lateExcuseService = lateExcuseService ?? LateExcuseService(),
-        _advanceService = advanceService ?? SalaryAdvanceService(),
-        _userService = userService ?? UserService() {
+    EmployeeService? employeeService,
+    ActorNameService? actorNameService,
+    AttendanceViewModel Function(({String storeId, String employeeId}))?
+    selfAttendanceFactory,
+  }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
+       _attendanceService = attendanceService ?? AttendanceService(),
+       _leaveService = leaveService ?? LeaveService(),
+       _lateExcuseService = lateExcuseService ?? LateExcuseService(),
+       _advanceService = advanceService ?? SalaryAdvanceService(),
+       _userService = userService ?? UserService(),
+       _employeeService = employeeService ?? EmployeeService(),
+       _actorNames = actorNameService ?? ActorNameService.instance,
+       _selfAttendanceFactory =
+           selfAttendanceFactory ??
+           ((identity) => AttendanceViewModel(identity: identity)) {
     _selectedDate = _startOfToday();
     _displayName = _firebaseAuth.currentUser?.displayName;
     _loadNotificationPref();
@@ -46,6 +61,7 @@ class StoreManagementViewModel extends ChangeNotifier {
     _subscribeLeaves();
     _subscribeLateExcuses();
     _subscribeAdvances();
+    _subscribeLinkedEmployee();
   }
 
   final StoreMembership membership;
@@ -55,6 +71,10 @@ class StoreManagementViewModel extends ChangeNotifier {
   final LateExcuseService _lateExcuseService;
   final SalaryAdvanceService _advanceService;
   final UserService _userService;
+  final EmployeeService _employeeService;
+  final ActorNameService _actorNames;
+  final AttendanceViewModel Function(({String storeId, String employeeId}))
+  _selfAttendanceFactory;
 
   String get storeId => membership.storeId;
   String? get storeName => membership.storeName;
@@ -91,8 +111,7 @@ class StoreManagementViewModel extends ChangeNotifier {
     return email.isNotEmpty ? email.split('@').first : 'User';
   }
 
-  String get managerEmail =>
-      _email ?? _firebaseAuth.currentUser?.email ?? '';
+  String get managerEmail => _email ?? _firebaseAuth.currentUser?.email ?? '';
 
   /// Streams the signed-in manager's root `users/{uid}` document for their name
   /// and profile photo.
@@ -254,6 +273,47 @@ class StoreManagementViewModel extends ChangeNotifier {
     return url;
   }
 
+  // ── Own attendance ────────────────────────────────────────────────────────
+
+  StreamSubscription<HREmployee?>? _linkedEmployeeSub;
+  AttendanceViewModel? _selfAttendance;
+
+  /// Check-in/out state for the signed-in user's own employee record, or null
+  /// when they aren't linked to an active employee in this store.
+  AttendanceViewModel? get selfAttendance => _selfAttendance;
+
+  /// Watches for an active employee record linked to the signed-in user and
+  /// (re)creates [selfAttendance] for it, so linking/unlinking in the admin app
+  /// shows or hides the check-in card live.
+  void _subscribeLinkedEmployee() {
+    final uid = _uid;
+    if (uid == null) return;
+    _linkedEmployeeSub = _employeeService
+        .streamEmployeeByUserId(storeId, uid)
+        .listen(
+          (employee) {
+            final employeeId =
+                employee != null && employee.status == EmployeeStatus.active
+                ? employee.id
+                : null;
+            if (employeeId == _selfAttendanceEmployeeId) return;
+            _selfAttendance?.dispose();
+            _selfAttendance = employeeId == null
+                ? null
+                : _selfAttendanceFactory((
+                    storeId: storeId,
+                    employeeId: employeeId,
+                  ));
+            _selfAttendanceEmployeeId = employeeId;
+            notifyListeners();
+          },
+          onError: (Object e) =>
+              debugPrint('Error streaming linked employee: $e'),
+        );
+  }
+
+  String? _selfAttendanceEmployeeId;
+
   // ── Bottom-nav ────────────────────────────────────────────────────────────
 
   int _navIndex = 0;
@@ -278,9 +338,11 @@ class StoreManagementViewModel extends ChangeNotifier {
   // Summary counts for the currently loaded day (drives the Home stat row).
   // A late arrival still counts as showing up, so present includes late.
   int get presentCount => _attendance
-      .where((r) =>
-          r.status == AttendanceStatus.present ||
-          r.status == AttendanceStatus.late)
+      .where(
+        (r) =>
+            r.status == AttendanceStatus.present ||
+            r.status == AttendanceStatus.late,
+      )
       .length;
   int get lateCount =>
       _attendance.where((r) => r.status == AttendanceStatus.late).length;
@@ -302,15 +364,18 @@ class StoreManagementViewModel extends ChangeNotifier {
     notifyListeners();
     _attendanceSub = _attendanceService
         .streamStoreAttendanceByDate(storeId, _selectedDate)
-        .listen((records) {
-      _attendance = records;
-      _attendanceLoading = false;
-      notifyListeners();
-    }, onError: (Object e) {
-      debugPrint('Error streaming store attendance: $e');
-      _attendanceLoading = false;
-      notifyListeners();
-    });
+        .listen(
+          (records) {
+            _attendance = records;
+            _attendanceLoading = false;
+            notifyListeners();
+          },
+          onError: (Object e) {
+            debugPrint('Error streaming store attendance: $e');
+            _attendanceLoading = false;
+            notifyListeners();
+          },
+        );
   }
 
   // ── Leave requests ──────────────────────────────────────────────────────────
@@ -326,28 +391,44 @@ class StoreManagementViewModel extends ChangeNotifier {
 
   void _subscribeLeaves() {
     _leaveSub?.cancel();
-    _leaveSub = _leaveService.streamStoreLeaves(storeId).listen((leaves) {
-      _leaves = leaves;
-      _leavesLoading = false;
-      notifyListeners();
-    }, onError: (Object e) {
-      debugPrint('Error streaming store leaves: $e');
-      _leavesLoading = false;
-      notifyListeners();
-    });
+    _leaveSub = _leaveService
+        .streamStoreLeaves(storeId)
+        .listen(
+          (leaves) {
+            _leaves = leaves;
+            _leavesLoading = false;
+            notifyListeners();
+          },
+          onError: (Object e) {
+            debugPrint('Error streaming store leaves: $e');
+            _leavesLoading = false;
+            notifyListeners();
+          },
+        );
   }
 
+  /// Approves or rejects [request]. When approving with a [leaveType] that
+  /// differs from the requested one, the type is changed in the same write.
   Future<void> actionLeave(
     LeaveRequest request,
     LeaveStatus status, {
     String? reason,
+    LeaveType? leaveType,
   }) async {
+    final changeType =
+        status == LeaveStatus.approved &&
+        leaveType != null &&
+        leaveType != request.type;
     await _leaveService.setLeaveStatus(
       storeId: storeId,
       requestId: request.id,
       status: status,
       actionedBy: _actorId,
       actionReason: reason,
+      leaveType: changeType ? leaveType : null,
+      requestedLeaveType: changeType
+          ? (request.requestedType ?? request.type)
+          : null,
     );
   }
 
@@ -364,16 +445,20 @@ class StoreManagementViewModel extends ChangeNotifier {
 
   void _subscribeLateExcuses() {
     _lateSub?.cancel();
-    _lateSub =
-        _lateExcuseService.streamStoreRequests(storeId).listen((requests) {
-      _lateExcuses = requests;
-      _lateExcusesLoading = false;
-      notifyListeners();
-    }, onError: (Object e) {
-      debugPrint('Error streaming store late excuses: $e');
-      _lateExcusesLoading = false;
-      notifyListeners();
-    });
+    _lateSub = _lateExcuseService
+        .streamStoreRequests(storeId)
+        .listen(
+          (requests) {
+            _lateExcuses = requests;
+            _lateExcusesLoading = false;
+            notifyListeners();
+          },
+          onError: (Object e) {
+            debugPrint('Error streaming store late excuses: $e');
+            _lateExcusesLoading = false;
+            notifyListeners();
+          },
+        );
   }
 
   Future<void> actionLateExcuse(
@@ -402,16 +487,20 @@ class StoreManagementViewModel extends ChangeNotifier {
 
   void _subscribeAdvances() {
     _advanceSub?.cancel();
-    _advanceSub =
-        _advanceService.streamStoreAdvances(storeId).listen((advances) {
-      _advances = advances;
-      _advancesLoading = false;
-      notifyListeners();
-    }, onError: (Object e) {
-      debugPrint('Error streaming store salary advances: $e');
-      _advancesLoading = false;
-      notifyListeners();
-    });
+    _advanceSub = _advanceService
+        .streamStoreAdvances(storeId)
+        .listen(
+          (advances) {
+            _advances = advances;
+            _advancesLoading = false;
+            notifyListeners();
+          },
+          onError: (Object e) {
+            debugPrint('Error streaming store salary advances: $e');
+            _advancesLoading = false;
+            notifyListeners();
+          },
+        );
   }
 
   Future<void> actionAdvance(
@@ -432,6 +521,24 @@ class StoreManagementViewModel extends ChangeNotifier {
   int get pendingRequestCount =>
       pendingLeaveCount + pendingLateExcuseCount + pendingAdvanceCount;
 
+  // ── Approver names ───────────────────────────────────────────────────────────
+
+  bool _disposed = false;
+
+  /// Readable name for a request's `actionedBy` (see [ActorNameService]).
+  /// Returns null until a UID's name is resolved; listeners are notified then.
+  String? actorName(String? actionedBy) {
+    final id = actionedBy?.trim();
+    if (id == null || id.isEmpty) return null;
+    if (id == _uid) return managerName;
+    final cached = _actorNames.cachedName(id);
+    if (cached != null) return cached;
+    _actorNames.resolve(id).then((_) {
+      if (!_disposed) notifyListeners();
+    });
+    return null;
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   String get _actorId => _firebaseAuth.currentUser?.uid ?? 'unknown';
@@ -443,11 +550,14 @@ class StoreManagementViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _userSub?.cancel();
     _attendanceSub?.cancel();
     _leaveSub?.cancel();
     _lateSub?.cancel();
     _advanceSub?.cancel();
+    _linkedEmployeeSub?.cancel();
+    _selfAttendance?.dispose();
     super.dispose();
   }
 }

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/models/leave_request.dart';
 import 'package:intl/intl.dart';
+import 'package:kottra_app/screens/tabs/approval_info.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 import 'package:kottra_app/view_models/leave_view_model.dart';
 import 'package:kottra_app/view_models/profile_view_model.dart';
@@ -223,6 +224,13 @@ class _LeaveCard extends StatelessWidget {
               color: c.textSecondary,
             ),
           ),
+          if (leave.status != LeaveStatus.pending)
+            ApprovalInfo(
+              rejected: leave.status == LeaveStatus.rejected,
+              actionedBy: leave.actionedBy,
+              actionedAt: leave.actionedAt,
+              note: leave.actionReason,
+            ),
         ],
       ),
     );

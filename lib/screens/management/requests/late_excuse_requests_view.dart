@@ -40,6 +40,9 @@ class LateExcuseRequestsView extends StatelessWidget {
           isPending: req.status == LateExcuseStatus.pending,
           onApprove: () => _action(context, req, LateExcuseStatus.approved),
           onReject: () => _action(context, req, LateExcuseStatus.rejected),
+          actionedBy: viewModel.actorName(req.actionedBy),
+          actionedAt: req.actionedAt,
+          actionNote: req.actionReason,
         );
       },
     );
