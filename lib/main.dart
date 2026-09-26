@@ -41,10 +41,15 @@ Future<void> main() async {
         ? '10.0.2.2'
         : 'localhost';
 
+    // Point Firestore at the emulator BEFORE any other Firestore call. The
+    // plugin snapshots settings (incl. host) into its native instance on first
+    // use, so calling clearPersistence() first would lock the client to
+    // production while Auth talks to the emulator (-> permission-denied).
+    FirebaseFirestore.instance.useFirestoreEmulator(localHostString, 8080);
+
     // Clear persistence to prevent emulator cache issues where data does not
-    // update. This must run before the Firestore client starts (i.e. before
-    // useFirestoreEmulator or any other Firestore usage); on a hot restart the
-    // client is already running, so ignore the failed-precondition it throws.
+    // update. On a hot restart the client is already running, so ignore the
+    // failed-precondition it throws.
     try {
       await FirebaseFirestore.instance.clearPersistence();
     } catch (_) {
@@ -56,7 +61,6 @@ Future<void> main() async {
     FirebaseFunctions.instanceFor(
       region: 'asia-southeast1',
     ).useFunctionsEmulator(localHostString, 5001);
-    FirebaseFirestore.instance.useFirestoreEmulator(localHostString, 8080);
 
     await FirebaseStorage.instance.useStorageEmulator(localHostString, 9199);
 
