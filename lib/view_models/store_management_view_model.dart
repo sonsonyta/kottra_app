@@ -9,17 +9,20 @@ import 'package:kottra_app/models/app_user.dart';
 import 'package:kottra_app/models/attendance_record.dart';
 import 'package:kottra_app/models/late_excuse_request.dart';
 import 'package:kottra_app/models/leave_request.dart';
+import 'package:kottra_app/models/salary_advance.dart';
 import 'package:kottra_app/services/attendance_service.dart';
 import 'package:kottra_app/services/late_excuse_service.dart';
 import 'package:kottra_app/services/leave_service.dart';
 import 'package:kottra_app/services/notification_service.dart';
+import 'package:kottra_app/services/salary_advance_service.dart';
 import 'package:kottra_app/services/store_service.dart';
 import 'package:kottra_app/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Backs the management dashboard for a single store the manager/owner selected.
-/// Streams that store's attendance (for a chosen day), leave requests and
-/// late-excuse requests, and exposes the approve/reject actions.
+/// Streams that store's attendance (for a chosen day), leave requests,
+/// late-excuse requests and salary advances, and exposes the approve/reject
+/// actions.
 class StoreManagementViewModel extends ChangeNotifier {
   StoreManagementViewModel({
     required this.membership,
@@ -27,11 +30,13 @@ class StoreManagementViewModel extends ChangeNotifier {
     AttendanceService? attendanceService,
     LeaveService? leaveService,
     LateExcuseService? lateExcuseService,
+    SalaryAdvanceService? advanceService,
     UserService? userService,
   })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
         _attendanceService = attendanceService ?? AttendanceService(),
         _leaveService = leaveService ?? LeaveService(),
         _lateExcuseService = lateExcuseService ?? LateExcuseService(),
+        _advanceService = advanceService ?? SalaryAdvanceService(),
         _userService = userService ?? UserService() {
     _selectedDate = _startOfToday();
     _displayName = _firebaseAuth.currentUser?.displayName;
@@ -40,6 +45,7 @@ class StoreManagementViewModel extends ChangeNotifier {
     _subscribeAttendance();
     _subscribeLeaves();
     _subscribeLateExcuses();
+    _subscribeAdvances();
   }
 
   final StoreMembership membership;
@@ -47,6 +53,7 @@ class StoreManagementViewModel extends ChangeNotifier {
   final AttendanceService _attendanceService;
   final LeaveService _leaveService;
   final LateExcuseService _lateExcuseService;
+  final SalaryAdvanceService _advanceService;
   final UserService _userService;
 
   String get storeId => membership.storeId;
@@ -382,6 +389,49 @@ class StoreManagementViewModel extends ChangeNotifier {
     );
   }
 
+  // ── Salary advances ─────────────────────────────────────────────────────────
+
+  StreamSubscription<List<SalaryAdvance>>? _advanceSub;
+  List<SalaryAdvance> _advances = const [];
+  bool _advancesLoading = true;
+
+  List<SalaryAdvance> get advances => _advances;
+  bool get advancesLoading => _advancesLoading;
+  int get pendingAdvanceCount =>
+      _advances.where((a) => a.status == AdvanceStatus.pending).length;
+
+  void _subscribeAdvances() {
+    _advanceSub?.cancel();
+    _advanceSub =
+        _advanceService.streamStoreAdvances(storeId).listen((advances) {
+      _advances = advances;
+      _advancesLoading = false;
+      notifyListeners();
+    }, onError: (Object e) {
+      debugPrint('Error streaming store salary advances: $e');
+      _advancesLoading = false;
+      notifyListeners();
+    });
+  }
+
+  Future<void> actionAdvance(
+    SalaryAdvance advance,
+    AdvanceStatus status, {
+    String? reason,
+  }) async {
+    await _advanceService.setAdvanceStatus(
+      storeId: storeId,
+      advanceId: advance.id,
+      status: status,
+      actionedBy: _actorId,
+      actionReason: reason,
+    );
+  }
+
+  /// Pending requests of every kind, for the Requests nav badge.
+  int get pendingRequestCount =>
+      pendingLeaveCount + pendingLateExcuseCount + pendingAdvanceCount;
+
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   String get _actorId => _firebaseAuth.currentUser?.uid ?? 'unknown';
@@ -397,6 +447,7 @@ class StoreManagementViewModel extends ChangeNotifier {
     _attendanceSub?.cancel();
     _leaveSub?.cancel();
     _lateSub?.cancel();
+    _advanceSub?.cancel();
     super.dispose();
   }
 }

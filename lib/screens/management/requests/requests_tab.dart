@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:kottra_app/config/feature_flags.dart';
 import 'package:kottra_app/screens/management/management_widgets.dart';
+import 'package:kottra_app/screens/management/requests/advance_requests_view.dart';
 import 'package:kottra_app/screens/management/requests/late_excuse_requests_view.dart';
 import 'package:kottra_app/screens/management/requests/leave_requests_view.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
@@ -13,9 +15,10 @@ class ManagementRequestsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    const showAdvances = FeatureFlags.enableSalaryAdvance;
     return SafeArea(
       child: DefaultTabController(
-        length: 2,
+        length: showAdvances ? 3 : 2,
         child: Column(
           children: [
             Padding(
@@ -47,6 +50,12 @@ class ManagementRequestsTab extends StatelessWidget {
                   count: viewModel.pendingLateExcuseCount,
                   color: c,
                 ),
+                if (showAdvances)
+                  TabWithBadge(
+                    label: 'Advance',
+                    count: viewModel.pendingAdvanceCount,
+                    color: c,
+                  ),
               ],
             ),
             Expanded(
@@ -54,6 +63,7 @@ class ManagementRequestsTab extends StatelessWidget {
                 children: [
                   LeaveRequestsView(viewModel: viewModel),
                   LateExcuseRequestsView(viewModel: viewModel),
+                  if (showAdvances) AdvanceRequestsView(viewModel: viewModel),
                 ],
               ),
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:kottra_app/config/feature_flags.dart';
 import 'package:kottra_app/screens/management/management_widgets.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
@@ -66,6 +67,19 @@ class ManagementHomeTab extends StatelessWidget {
                 color: c,
                 onTap: () => viewModel.setNavIndex(2),
               ),
+              if (FeatureFlags.enableSalaryAdvance) ...[
+                const SizedBox(height: 12),
+                _ManageActionCard(
+                  icon: Icons.payments_rounded,
+                  iconColor: c.success,
+                  iconBackground: c.successLight,
+                  title: 'Salary advances',
+                  subtitle: 'Review advance requests',
+                  badge: viewModel.pendingAdvanceCount,
+                  color: c,
+                  onTap: () => viewModel.setNavIndex(2),
+                ),
+              ],
               const SizedBox(height: 12),
               _ManageActionCard(
                 icon: Icons.calendar_month_rounded,

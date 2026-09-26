@@ -75,9 +75,7 @@ class _StoreManagementScreenState extends State<StoreManagementScreen> {
           bottomNavigationBar: ManagementBottomNav(
             currentIndex: _viewModel.navIndex,
             onTap: _viewModel.setNavIndex,
-            pendingRequests:
-                _viewModel.pendingLeaveCount +
-                _viewModel.pendingLateExcuseCount,
+            pendingRequests: _viewModel.pendingRequestCount,
           ),
         );
       },
