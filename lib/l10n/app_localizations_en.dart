@@ -60,6 +60,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkOut => 'Check Out';
 
   @override
+  String get checkOutAvailableAfterMinShift =>
+      'You can check out 1 minute after checking in.';
+
+  @override
   String get checkedIn => 'Checked In';
 
   @override

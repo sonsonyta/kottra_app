@@ -17,6 +17,7 @@
   "viewAllAttendance": "មើលវត្តមានទាំងអស់",
   "checkIn": "កត់វត្តមានចូល",
   "checkOut": "កត់វត្តមានចេញ",
+  "checkOutAvailableAfterMinShift": "អ្នកអាចកត់វត្តមានចេញបាន ១ នាទីបន្ទាប់ពីកត់វត្តមានចូល។",
   "checkedIn": "បានកត់វត្តមានចូល",
   "notCheckedIn": "មិនទាន់កត់វត្តមានចូល",
   "checkedOut": "បានកត់វត្តមានចេញ",

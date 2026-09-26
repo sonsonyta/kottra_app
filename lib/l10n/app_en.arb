@@ -17,6 +17,7 @@
   "viewAllAttendance": "View all attendance",
   "checkIn": "Check In",
   "checkOut": "Check Out",
+  "checkOutAvailableAfterMinShift": "You can check out 1 minute after checking in.",
   "checkedIn": "Checked In",
   "notCheckedIn": "Not Checked In",
   "checkedOut": "Checked Out",

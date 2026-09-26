@@ -60,6 +60,10 @@ class AppLocalizationsKm extends AppLocalizations {
   String get checkOut => 'កត់វត្តមានចេញ';
 
   @override
+  String get checkOutAvailableAfterMinShift =>
+      'អ្នកអាចកត់វត្តមានចេញបាន ១ នាទីបន្ទាប់ពីកត់វត្តមានចូល។';
+
+  @override
   String get checkedIn => 'បានកត់វត្តមានចូល';
 
   @override

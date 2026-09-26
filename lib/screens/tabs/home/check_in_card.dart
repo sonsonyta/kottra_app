@@ -414,7 +414,9 @@ class CheckInCard extends StatelessWidget {
                   ],
                 ),
                 child: ElevatedButton.icon(
-                  onPressed: (attendanceViewModel.isActionLoading || isCheckedOut)
+                  onPressed: (attendanceViewModel.isActionLoading ||
+                          isCheckedOut ||
+                          (isCheckedIn && attendanceViewModel.isCheckOutLocked))
                       ? null
                       : isCheckedIn
                       ? () => _handleCheckOut(context)
@@ -458,6 +460,15 @@ class CheckInCard extends StatelessWidget {
                     ),
                   ),
                 ),
+              ),
+            ),
+          if (isCheckedIn && attendanceViewModel.isCheckOutLocked)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(
+                localizations.checkOutAvailableAfterMinShift,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: c.textSecondary, fontSize: 13),
               ),
             ),
         ],

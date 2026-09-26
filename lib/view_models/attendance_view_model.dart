@@ -30,6 +30,12 @@ class AttendanceViewModel extends ChangeNotifier {
   static const int minHoursBeforeNewCheckIn = 8;
   static const Duration optimisticTimeout = Duration(seconds: 10);
 
+  /// How long after check-in the employee must wait before checking out.
+  /// The check-in button turns into the check-out button in place, so without
+  /// this a double tap checks the employee in and straight back out. Matches
+  /// `MIN_EMPLOYEE_SHIFT_MS` in the `employeeCheckOutV1` Cloud Function.
+  static const Duration defaultCheckOutLockDuration = Duration(minutes: 1);
+
   AttendanceViewModel({
     FirebaseAuth? firebaseAuth,
     AttendanceService? attendanceService,
@@ -41,7 +47,9 @@ class AttendanceViewModel extends ChangeNotifier {
     OfflineAttendanceQueue? offlineQueue,
     AttendanceSyncService? syncService,
     ConnectivityProbe? connectivity,
-  }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
+    Duration checkOutLockDuration = defaultCheckOutLockDuration,
+  }) : _checkOutLockDuration = checkOutLockDuration,
+       _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
        _attendanceService = attendanceService ?? AttendanceService(),
        _locationService = locationService ?? const LocationService(),
        _storeService = storeService ?? StoreService(),
@@ -62,6 +70,7 @@ class AttendanceViewModel extends ChangeNotifier {
     _initOfflineQueue();
   }
 
+  final Duration _checkOutLockDuration;
   final FirebaseAuth _firebaseAuth;
   final AttendanceService _attendanceService;
   final LocationServiceBase _locationService;
@@ -91,9 +100,31 @@ class AttendanceViewModel extends ChangeNotifier {
   String? _optimisticAttendanceId;
   DateTime? _optimisticCheckInAt;
   Timer? _optimisticTimer;
+  Timer? _checkOutLockTimer;
 
   bool _isActionLoading = false;
   bool get isActionLoading => _isActionLoading;
+
+  /// True until [defaultCheckOutLockDuration] has passed since check-in;
+  /// [checkOut] is a no-op and the check-out button is disabled meanwhile.
+  bool get isCheckOutLocked => _checkOutLockTimer?.isActive ?? false;
+
+  /// Starts the check-out lock for whatever is left of the minimum shift,
+  /// measured from the current check-in time. Also runs when today's record
+  /// arrives, so reopening the app right after checking in stays locked.
+  /// Clamped to the full duration so a device clock behind the server's
+  /// check-in timestamp can't lock the button for longer.
+  void _lockCheckOut() {
+    if (isCheckOutLocked || !isCheckedIn) return;
+    final at = checkInTime;
+    if (at == null) return;
+    var remaining = _checkOutLockDuration - DateTime.now().difference(at);
+    if (remaining > _checkOutLockDuration) remaining = _checkOutLockDuration;
+    if (remaining <= Duration.zero) return;
+    _checkOutLockTimer = Timer(remaining, () {
+      if (!_disposed) notifyListeners();
+    });
+  }
 
   bool _disposed = false;
 
@@ -328,6 +359,7 @@ class AttendanceViewModel extends ChangeNotifier {
       _optimisticAttendanceId = null;
       _optimisticCheckInAt = null;
     }
+    _lockCheckOut();
   }
 
   /// The store this employee belongs to, or null before auth is ready. Used by
@@ -517,6 +549,7 @@ class AttendanceViewModel extends ChangeNotifier {
               });
               if (!_disposed) notifyListeners();
             }
+            if (result.success) _lockCheckOut();
             // The photo is now uploaded and recorded; drop the local copy.
             await _photoService.deletePending(photoPath);
             return result;
@@ -550,6 +583,7 @@ class AttendanceViewModel extends ChangeNotifier {
           photoPath: photoPath,
         ),
       );
+      _lockCheckOut();
       return CheckInResult.queued();
     } finally {
       _isActionLoading = false;
@@ -577,7 +611,7 @@ class AttendanceViewModel extends ChangeNotifier {
     String? qrToken,
     Uint8List? photoBytes,
   }) async {
-    if (_isActionLoading) return null;
+    if (_isActionLoading || isCheckOutLocked) return null;
     final identity = _identity;
     if (identity == null) return null;
 
@@ -699,6 +733,7 @@ class AttendanceViewModel extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _optimisticTimer?.cancel();
+    _checkOutLockTimer?.cancel();
     _historySub?.cancel();
     _settingsSub?.cancel();
     _employeeSub?.cancel();

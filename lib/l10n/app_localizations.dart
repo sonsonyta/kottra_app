@@ -200,6 +200,12 @@ abstract class AppLocalizations {
   /// **'Check Out'**
   String get checkOut;
 
+  /// No description provided for @checkOutAvailableAfterMinShift.
+  ///
+  /// In en, this message translates to:
+  /// **'You can check out 1 minute after checking in.'**
+  String get checkOutAvailableAfterMinShift;
+
   /// No description provided for @checkedIn.
   ///
   /// In en, this message translates to:

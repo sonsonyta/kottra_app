@@ -284,6 +284,8 @@ AttendanceViewModel buildViewModel({
   FakeConnectivityProbe? connectivity,
   FakeAttendancePhotoService? photoService,
   HrSettings? settings,
+  Duration checkOutLockDuration =
+      AttendanceViewModel.defaultCheckOutLockDuration,
 }) {
   return AttendanceViewModel(
     firebaseAuth: FakeFirebaseAuth(user: FakeUser(uid: uid)),
@@ -295,6 +297,7 @@ AttendanceViewModel buildViewModel({
     photoService: photoService ?? FakeAttendancePhotoService(),
     offlineQueue: queue ?? OfflineAttendanceQueue(store: InMemoryPendingStore()),
     connectivity: connectivity ?? FakeConnectivityProbe(online: online),
+    checkOutLockDuration: checkOutLockDuration,
   );
 }
 
@@ -368,6 +371,64 @@ void main() {
         viewModel.dispose();
       },
     );
+  });
+
+  group('AttendanceViewModel check-out lock', () {
+    test('ignores a check-out right after check-in (double tap)', () async {
+      final attendanceService = FakeAttendanceService();
+      final viewModel = buildViewModel(
+        attendanceService: attendanceService,
+        locationService: FakeLocationService(),
+      );
+
+      await viewModel.checkIn();
+      expect(viewModel.isCheckedIn, isTrue);
+      expect(viewModel.isCheckOutLocked, isTrue);
+
+      final result = await viewModel.checkOut();
+
+      expect(result, isNull);
+      expect(attendanceService.checkOutCalls, 0);
+      expect(viewModel.isCheckedIn, isTrue);
+
+      viewModel.dispose();
+    });
+
+    test('allows check-out once the lock expires', () async {
+      final attendanceService = FakeAttendanceService();
+      final viewModel = buildViewModel(
+        attendanceService: attendanceService,
+        locationService: FakeLocationService(),
+        checkOutLockDuration: const Duration(milliseconds: 20),
+      );
+
+      await viewModel.checkIn();
+      expect(viewModel.isCheckOutLocked, isTrue);
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      expect(viewModel.isCheckOutLocked, isFalse);
+
+      await viewModel.checkOut();
+
+      expect(attendanceService.checkOutCalls, 1);
+
+      viewModel.dispose();
+    });
+
+    test('locks check-out after a check-in queued offline', () async {
+      final attendanceService = FakeAttendanceService();
+      final viewModel = buildViewModel(
+        attendanceService: attendanceService,
+        locationService: FakeLocationService(),
+        online: false,
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      await viewModel.checkIn();
+      expect(await viewModel.checkOut(), isNull);
+      expect(viewModel.isCheckedIn, isTrue);
+
+      viewModel.dispose();
+    });
   });
 
   group('AttendanceViewModel.todayRecord', () {
@@ -478,6 +539,7 @@ void main() {
         attendanceService: attendanceService,
         locationService: FakeLocationService(),
         connectivity: connectivity,
+        checkOutLockDuration: Duration.zero,
       );
       await Future<void>.delayed(Duration.zero);
 
