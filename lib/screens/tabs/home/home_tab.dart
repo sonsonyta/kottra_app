@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -69,9 +68,13 @@ class HomeTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
               ],
-              SectionHeader(title: AppLocalizations.of(context)!.recentAttendance),
+              SectionHeader(
+                title: AppLocalizations.of(context)!.recentAttendance,
+              ),
               const SizedBox(height: 12),
-              ...attendanceViewModel.attendanceRecords.take(4).map(
+              ...attendanceViewModel.attendanceRecords
+                  .take(4)
+                  .map(
                     (r) => Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: AttendanceListItem(record: r),
@@ -89,22 +92,91 @@ class HomeTab extends StatelessWidget {
     );
   }
 
+  static const double _expandedHeight = 160;
+
   Widget _buildAppBar(BuildContext context) {
     final c = appColors(context);
     return SliverAppBar(
-      expandedHeight: 160,
+      expandedHeight: _expandedHeight,
       pinned: true,
       elevation: 0,
       backgroundColor: c.primary,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [c.primaryDark, c.primary],
+      flexibleSpace: LayoutBuilder(
+        builder: (context, constraints) {
+          // 1.0 = fully expanded, 0.0 = collapsed to the toolbar.
+          final topPadding = MediaQuery.paddingOf(context).top;
+          final minHeight = kToolbarHeight + topPadding;
+          final maxHeight = _expandedHeight + topPadding;
+          final t =
+              ((constraints.maxHeight - minHeight) / (maxHeight - minHeight))
+                  .clamp(0.0, 1.0);
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              _buildExpandedHeader(context, opacity: t),
+              _buildCollapsedHeader(opacity: (1 - t * 3).clamp(0.0, 1.0)),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Compact toolbar shown once the header is scrolled away: small
+  /// thumbnail and the user's name only.
+  Widget _buildCollapsedHeader({required double opacity}) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: IgnorePointer(
+        ignoring: opacity == 0,
+        child: Opacity(
+          opacity: opacity,
+          child: SizedBox(
+            height: kToolbarHeight,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  TabAvatar(
+                    initials: viewModel.userInitials,
+                    imageUrl: viewModel.profileImageUrl,
+                    size: 32,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      viewModel.userName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpandedHeader(BuildContext context, {required double opacity}) {
+    final c = appColors(context);
+    return FlexibleSpaceBar(
+      background: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [c.primaryDark, c.primary],
+          ),
+        ),
+        child: Opacity(
+          opacity: opacity,
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
@@ -161,7 +233,9 @@ class HomeTab extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          DateFormat.yMMMMEEEEd(AppLocalizations.of(context)!.localeName).format(DateTime.now()),
+                          DateFormat.yMMMMEEEEd(
+                            AppLocalizations.of(context)!.localeName,
+                          ).format(DateTime.now()),
                           style: const TextStyle(
                             color: Colors.white60,
                             fontSize: 12,
@@ -187,10 +261,6 @@ class HomeTab extends StatelessWidget {
   }
 }
 
-
-
-
-
 class _TodayStatsRow extends StatelessWidget {
   const _TodayStatsRow({required this.attendanceViewModel});
 
@@ -206,16 +276,21 @@ class _TodayStatsRow extends StatelessWidget {
     });
     // A late arrival still counts as showing up, so Present includes Late.
     final presentCount = records
-        .where((r) =>
-            r.status == AttendanceStatus.present ||
-            r.status == AttendanceStatus.late)
+        .where(
+          (r) =>
+              r.status == AttendanceStatus.present ||
+              r.status == AttendanceStatus.late,
+        )
         .length;
-    final lateCount =
-        records.where((r) => r.status == AttendanceStatus.late).length;
-    final absentCount =
-        records.where((r) => r.status == AttendanceStatus.absent).length;
-    final leaveCount =
-        records.where((r) => r.status == AttendanceStatus.leave).length;
+    final lateCount = records
+        .where((r) => r.status == AttendanceStatus.late)
+        .length;
+    final absentCount = records
+        .where((r) => r.status == AttendanceStatus.absent)
+        .length;
+    final leaveCount = records
+        .where((r) => r.status == AttendanceStatus.leave)
+        .length;
 
     return Row(
       children: [
@@ -354,7 +429,9 @@ class _MonthDeductionCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: c.warningLight,
                           borderRadius: BorderRadius.circular(999),
@@ -377,7 +454,9 @@ class _MonthDeductionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  has ? '-${fmtMoney(b.total, currency)}' : fmtMoney(0, currency),
+                  has
+                      ? '-${fmtMoney(b.total, currency)}'
+                      : fmtMoney(0, currency),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -522,57 +601,54 @@ class _QuickActionsRow extends StatelessWidget {
             final tileWidth =
                 (constraints.maxWidth - _tileSpacing * (perRow - 1)) / perRow;
             final tiles = [
-        if (FeatureFlags.enableLeaveRequest)
-          _quickActionCard(
-            context,
-            icon: Icons.calendar_month_outlined,
-            iconColor: c.primary,
-            bgColor: c.infoLight,
-            label: AppLocalizations.of(context)!.requestLeave,
-            onTap: () =>
-                context.push('/leaves', extra: profileViewModel),
-          ),
-        if (FeatureFlags.enablePayroll)
-          _quickActionCard(
-            context,
-            icon: Icons.receipt_long_outlined,
-            iconColor: c.success,
-            bgColor: c.successLight,
-            label: AppLocalizations.of(context)!.myPayslips,
-            onTap: () => viewModel.setTabIndex(2), // Payroll tab
-          ),
-        if (FeatureFlags.enableSchedule)
-          _quickActionCard(
-            context,
-            icon: Icons.event_available_outlined,
-            iconColor: c.holiday,
-            bgColor: c.holidayLight,
-            label: AppLocalizations.of(context)!.scheduleTitle,
-            onTap: () =>
-                context.push('/schedule', extra: profileViewModel),
-          ),
-        if (FeatureFlags.enableSalaryAdvance)
-          _quickActionCard(
-            context,
-            icon: Icons.account_balance_wallet_outlined,
-            iconColor: c.warning,
-            bgColor: c.warningLight,
-            label: AppLocalizations.of(context)!.requestAdvance,
-            onTap: () =>
-                context.push('/advances', extra: profileViewModel),
-          ),
-        if (FeatureFlags.enableLateExcuse)
-          _quickActionCard(
-            context,
-            icon: Icons.schedule_outlined,
-            iconColor: c.error,
-            bgColor: c.errorLight,
-            label: AppLocalizations.of(context)!.lateExcusesTitle,
-            onTap: () => context.push(
-              '/late-excuses',
-              extra: profileViewModel,
-            ),
-          ),
+              if (FeatureFlags.enableLeaveRequest)
+                _quickActionCard(
+                  context,
+                  icon: Icons.calendar_month_outlined,
+                  iconColor: c.primary,
+                  bgColor: c.infoLight,
+                  label: AppLocalizations.of(context)!.requestLeave,
+                  onTap: () => context.push('/leaves', extra: profileViewModel),
+                ),
+              if (FeatureFlags.enablePayroll)
+                _quickActionCard(
+                  context,
+                  icon: Icons.receipt_long_outlined,
+                  iconColor: c.success,
+                  bgColor: c.successLight,
+                  label: AppLocalizations.of(context)!.myPayslips,
+                  onTap: () => viewModel.setTabIndex(2), // Payroll tab
+                ),
+              if (FeatureFlags.enableSchedule)
+                _quickActionCard(
+                  context,
+                  icon: Icons.event_available_outlined,
+                  iconColor: c.holiday,
+                  bgColor: c.holidayLight,
+                  label: AppLocalizations.of(context)!.scheduleTitle,
+                  onTap: () =>
+                      context.push('/schedule', extra: profileViewModel),
+                ),
+              if (FeatureFlags.enableSalaryAdvance)
+                _quickActionCard(
+                  context,
+                  icon: Icons.account_balance_wallet_outlined,
+                  iconColor: c.warning,
+                  bgColor: c.warningLight,
+                  label: AppLocalizations.of(context)!.requestAdvance,
+                  onTap: () =>
+                      context.push('/advances', extra: profileViewModel),
+                ),
+              if (FeatureFlags.enableLateExcuse)
+                _quickActionCard(
+                  context,
+                  icon: Icons.schedule_outlined,
+                  iconColor: c.error,
+                  bgColor: c.errorLight,
+                  label: AppLocalizations.of(context)!.lateExcusesTitle,
+                  onTap: () =>
+                      context.push('/late-excuses', extra: profileViewModel),
+                ),
             ];
             return Column(
               spacing: _tileSpacing,
@@ -617,10 +693,7 @@ class _QuickActionsRow extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: bgColor,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
               child: Icon(icon, color: iconColor, size: 24),
             ),
             const SizedBox(height: 8),
@@ -655,4 +728,3 @@ class _QuickActionsRow extends StatelessWidget {
     );
   }
 }
-
