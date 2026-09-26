@@ -497,6 +497,11 @@ class _QuickActionsRow extends StatelessWidget {
   final MainViewModel viewModel;
   final ProfileViewModel profileViewModel;
 
+  static const double _tileSpacing = 12;
+  static const double _minTileWidth = 100;
+  static const double _labelFontSize = 13;
+  static const double _labelLineHeight = 1.3;
+
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
@@ -505,68 +510,90 @@ class _QuickActionsRow extends StatelessWidget {
       children: [
         SectionHeader(title: AppLocalizations.of(context)!.quickActions),
         const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              if (FeatureFlags.enableLeaveRequest)
-                _quickActionCard(
-                  context,
-                  icon: Icons.calendar_month_outlined,
-                  iconColor: c.primary,
-                  bgColor: c.infoLight,
-                  label: AppLocalizations.of(context)!.requestLeave,
-                  onTap: () =>
-                      context.push('/leaves', extra: profileViewModel),
-                ),
-              if (FeatureFlags.enablePayroll)
-                _quickActionCard(
-                  context,
-                  icon: Icons.receipt_long_outlined,
-                  iconColor: c.success,
-                  bgColor: c.successLight,
-                  label: AppLocalizations.of(context)!.myPayslips,
-                  onTap: () => viewModel.setTabIndex(2), // Payroll tab
-                ),
-              if (FeatureFlags.enableSchedule)
-                _quickActionCard(
-                  context,
-                  icon: Icons.event_available_outlined,
-                  iconColor: c.holiday,
-                  bgColor: c.holidayLight,
-                  label: AppLocalizations.of(context)!.scheduleTitle,
-                  onTap: () =>
-                      context.push('/schedule', extra: profileViewModel),
-                ),
-              if (FeatureFlags.enableSalaryAdvance)
-                _quickActionCard(
-                  context,
-                  icon: Icons.account_balance_wallet_outlined,
-                  iconColor: c.warning,
-                  bgColor: c.warningLight,
-                  label: AppLocalizations.of(context)!.requestAdvance,
-                  onTap: () =>
-                      context.push('/advances', extra: profileViewModel),
-                ),
-              if (FeatureFlags.enableLateExcuse)
-                _quickActionCard(
-                  context,
-                  icon: Icons.schedule_outlined,
-                  iconColor: c.error,
-                  bgColor: c.errorLight,
-                  label: AppLocalizations.of(context)!.lateExcusesTitle,
-                  onTap: () =>
-                      context.push('/late-excuses', extra: profileViewModel),
-                ),
-            ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Fit as many tiles per row as the width allows (3 on phones,
+            // more on wider screens); extra actions wrap onto new rows.
+            final perRow =
+                ((constraints.maxWidth + _tileSpacing) /
+                        (_minTileWidth + _tileSpacing))
+                    .floor()
+                    .clamp(3, 6);
+            final tileWidth =
+                (constraints.maxWidth - _tileSpacing * (perRow - 1)) / perRow;
+            final tiles = [
+        if (FeatureFlags.enableLeaveRequest)
+          _quickActionCard(
+            context,
+            icon: Icons.calendar_month_outlined,
+            iconColor: c.primary,
+            bgColor: c.infoLight,
+            label: AppLocalizations.of(context)!.requestLeave,
+            onTap: () =>
+                context.push('/leaves', extra: profileViewModel),
           ),
+        if (FeatureFlags.enablePayroll)
+          _quickActionCard(
+            context,
+            icon: Icons.receipt_long_outlined,
+            iconColor: c.success,
+            bgColor: c.successLight,
+            label: AppLocalizations.of(context)!.myPayslips,
+            onTap: () => viewModel.setTabIndex(2), // Payroll tab
+          ),
+        if (FeatureFlags.enableSchedule)
+          _quickActionCard(
+            context,
+            icon: Icons.event_available_outlined,
+            iconColor: c.holiday,
+            bgColor: c.holidayLight,
+            label: AppLocalizations.of(context)!.scheduleTitle,
+            onTap: () =>
+                context.push('/schedule', extra: profileViewModel),
+          ),
+        if (FeatureFlags.enableSalaryAdvance)
+          _quickActionCard(
+            context,
+            icon: Icons.account_balance_wallet_outlined,
+            iconColor: c.warning,
+            bgColor: c.warningLight,
+            label: AppLocalizations.of(context)!.requestAdvance,
+            onTap: () =>
+                context.push('/advances', extra: profileViewModel),
+          ),
+        if (FeatureFlags.enableLateExcuse)
+          _quickActionCard(
+            context,
+            icon: Icons.schedule_outlined,
+            iconColor: c.error,
+            bgColor: c.errorLight,
+            label: AppLocalizations.of(context)!.lateExcusesTitle,
+            onTap: () => context.push(
+              '/late-excuses',
+              extra: profileViewModel,
+            ),
+          ),
+            ];
+            return Column(
+              spacing: _tileSpacing,
+              children: [
+                for (var i = 0; i < tiles.length; i += perRow)
+                  Row(
+                    spacing: _tileSpacing,
+                    children: [
+                      for (final tile in tiles.skip(i).take(perRow))
+                        SizedBox(width: tileWidth, child: tile),
+                    ],
+                  ),
+              ],
+            );
+          },
         ),
       ],
     );
   }
 
-  /// A single fixed-width quick-action tile. Fixed width (not Expanded) so the
-  /// row can scroll horizontally and stay legible as more actions are added.
+  /// A single quick-action tile; its width is set by the grid row it sits in.
   Widget _quickActionCard(
     BuildContext context, {
     required IconData icon,
@@ -576,41 +603,53 @@ class _QuickActionsRow extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     final c = appColors(context);
-    return Container(
-      width: 108,
-      margin: const EdgeInsets.only(right: 12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-          decoration: BoxDecoration(
-            color: c.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: c.divider),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: iconColor, size: 24),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: c.divider),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: bgColor,
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 8),
-              Text(
+              child: Icon(icon, color: iconColor, size: 24),
+            ),
+            const SizedBox(height: 8),
+            // Always reserve two lines for the label so every tile in the
+            // grid is the same height, whether its label wraps or not.
+            SizedBox(
+              height:
+                  MediaQuery.textScalerOf(context).scale(_labelFontSize) *
+                  _labelLineHeight *
+                  2,
+              child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: _labelFontSize,
+                  height: _labelLineHeight,
                   fontWeight: FontWeight.w700,
                   color: c.textPrimary,
                 ),
+                strutStyle: const StrutStyle(
+                  fontSize: _labelFontSize,
+                  height: _labelLineHeight,
+                  forceStrutHeight: true,
+                ),
                 textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
