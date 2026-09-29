@@ -5,6 +5,8 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:firebase_messaging/firebase_messaging.dart';
 
+import 'package:kottra_app/models/hr_employee.dart';
+
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
@@ -130,55 +132,63 @@ class NotificationService {
     await _notificationsPlugin.cancelAll();
   }
 
-  Future<void> scheduleAttendanceReminders(String startTime, String endTime) async {
+  /// Schedules weekly check-in/check-out reminders. [hoursByWeekday] is keyed
+  /// by Dart weekday (Monday = 1 … Sunday = 7), so each day can carry its own
+  /// hours (e.g. a Saturday half day). Days without an entry get no reminder.
+  Future<void> scheduleAttendanceReminders(
+    Map<int, DailyWorkingHours> hoursByWeekday,
+  ) async {
     await cancelAllReminders();
 
     try {
-      final startParts = startTime.split(':');
-      final endParts = endTime.split(':');
-      
-      if (startParts.length != 2 || endParts.length != 2) return;
+      for (final entry in hoursByWeekday.entries) {
+        final day = entry.key;
+        final startTime = entry.value.start;
+        final endTime = entry.value.end;
+        if (startTime == null || endTime == null) continue;
 
-      final startHour = int.parse(startParts[0]);
-      final startMinute = int.parse(startParts[1]);
+        final startParts = startTime.split(':');
+        final endParts = endTime.split(':');
+        if (startParts.length != 2 || endParts.length != 2) continue;
 
-      final endHour = int.parse(endParts[0]);
-      final endMinute = int.parse(endParts[1]);
+        final startHour = int.parse(startParts[0]);
+        final startMinute = int.parse(startParts[1]);
 
-      // Calculate 15 mins before start
-      int checkInHour = startHour;
-      int checkInMin = startMinute - 15;
-      if (checkInMin < 0) {
-        checkInMin += 60;
-        checkInHour -= 1;
-        if (checkInHour < 0) checkInHour += 24;
-      }
+        final endHour = int.parse(endParts[0]);
+        final endMinute = int.parse(endParts[1]);
 
-      // Calculate 15 mins after end
-      int checkOutHour = endHour;
-      int checkOutMin = endMinute + 15;
-      if (checkOutMin >= 60) {
-        checkOutMin -= 60;
-        checkOutHour += 1;
-        if (checkOutHour >= 24) checkOutHour -= 24;
-      }
+        // Calculate 15 mins before start
+        int checkInHour = startHour;
+        int checkInMin = startMinute - 15;
+        if (checkInMin < 0) {
+          checkInMin += 60;
+          checkInHour -= 1;
+          if (checkInHour < 0) checkInHour += 24;
+        }
 
-      // Schedule for Monday to Friday
-      for (int i = DateTime.monday; i <= DateTime.friday; i++) {
+        // Calculate 15 mins after end
+        int checkOutHour = endHour;
+        int checkOutMin = endMinute + 15;
+        if (checkOutMin >= 60) {
+          checkOutMin -= 60;
+          checkOutHour += 1;
+          if (checkOutHour >= 24) checkOutHour -= 24;
+        }
+
         await _scheduleWeeklyNotification(
-          id: i * 10 + 1,
+          id: day * 10 + 1,
           title: 'Upcoming Shift!',
           body: 'Don\'t forget to check in. Your shift starts at $startTime.',
-          day: i,
+          day: day,
           hour: checkInHour,
           minute: checkInMin,
         );
 
         await _scheduleWeeklyNotification(
-          id: i * 10 + 2,
+          id: day * 10 + 2,
           title: 'Shift Ended!',
           body: 'Don\'t forget to check out. Your shift ended at $endTime.',
-          day: i,
+          day: day,
           hour: checkOutHour,
           minute: checkOutMin,
         );

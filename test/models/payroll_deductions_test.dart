@@ -11,6 +11,7 @@ AttendanceRecord _rec({
   required int day,
   required AttendanceStatus status,
   int lateMinutes = 0,
+  bool lateExcused = false,
   LeaveType? leaveType,
   int year = 2026,
   int month = 8,
@@ -23,6 +24,7 @@ AttendanceRecord _rec({
     date: Timestamp.fromDate(DateTime(year, month, day)),
     status: status,
     lateMinutes: lateMinutes,
+    lateExcused: lateExcused,
     leaveType: leaveType,
   );
 }
@@ -97,6 +99,81 @@ void main() {
       );
       expect(b.late, closeTo(1.07, 0.001));
       expect(b.lateMinutes, 36);
+    });
+
+    test('prices a day with its own hours by that day\'s length', () {
+      // $280/mo monthly → $10/day. 24 late min on Fri 7 Aug (default day)
+      // → 24 × 10/480 = $0.50. 24 late min on Sat 8 Aug with 08:00–12:00
+      // (240 min) → 24 × 10/240 = $1.00. Mirrors the POS payroll spec.
+      final saturdayHalfDay = {6: const DailyWorkingHours(start: '08:00', end: '12:00')};
+      final employee = HREmployee.fromMap('e', {
+        'storeId': 's',
+        'firstName': 'A',
+        'lastName': 'B',
+        'employeeCode': 'E',
+        'gender': 'Male',
+        'phoneNumber': '0',
+        'position': 'Staff',
+        'employmentType': 'Full-time',
+        'startWorkingTime': '08:00',
+        'endWorkingTime': '17:00',
+        'weeklySchedule': {
+          for (final e in saturdayHalfDay.entries) '${e.key}': e.value.toMap(),
+        },
+        'status': 'Active',
+        'joinDate': Timestamp.fromDate(DateTime(2026, 1, 1)),
+        'basicSalary': 280,
+        'currency': 'USD',
+        'paymentMethod': 'Cash',
+        'createdAt': Timestamp.fromDate(DateTime(2026, 1, 1)),
+        'updatedAt': Timestamp.fromDate(DateTime(2026, 1, 1)),
+      });
+      final b = computePeriodDeductions(
+        records: [
+          _rec(day: 7, status: AttendanceStatus.late, lateMinutes: 24),
+          _rec(day: 8, status: AttendanceStatus.late, lateMinutes: 24),
+        ],
+        monthlyBasicSalary: 280,
+        currency: SalaryCurrency.usd,
+        settings: _settings(
+          frequency: PayrollFrequency.monthly,
+          late: const LateDeductionSettings(
+            enabled: true,
+            mode: LateDeductionMode.proportional,
+            workdayMinutes: 480,
+          ),
+        ),
+        today: _augFirstHalf,
+        dayMinutesOn: employee.overrideMinutesOn,
+      );
+      expect(b.late, closeTo(1.5, 0.001));
+      expect(b.lateMinutes, 48);
+    });
+
+    test('skips excused lateness, matching the POS', () {
+      final b = computePeriodDeductions(
+        records: [
+          _rec(day: 10, status: AttendanceStatus.late, lateMinutes: 36),
+          _rec(
+            day: 11,
+            status: AttendanceStatus.late,
+            lateMinutes: 60,
+            lateExcused: true,
+          ),
+        ],
+        monthlyBasicSalary: 400,
+        currency: SalaryCurrency.usd,
+        settings: _settings(
+          late: const LateDeductionSettings(
+            enabled: true,
+            mode: LateDeductionMode.proportional,
+            workdayMinutes: 480,
+          ),
+        ),
+        today: _augFirstHalf,
+      );
+      expect(b.lateMinutes, 36);
+      expect(b.late, closeTo(1.07, 0.001));
     });
 
     test('is 0 when the feature is disabled', () {

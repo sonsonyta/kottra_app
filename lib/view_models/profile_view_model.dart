@@ -58,11 +58,9 @@ class ProfileViewModel extends ChangeNotifier {
       _employee = emp;
       notifyListeners();
 
-      if (_remindersEnabled &&
-          emp?.startWorkingTime != null &&
-          emp?.endWorkingTime != null) {
+      if (_remindersEnabled && emp != null) {
         NotificationService.instance
-            .scheduleAttendanceReminders(emp!.startWorkingTime!, emp.endWorkingTime!);
+            .scheduleAttendanceReminders(_reminderHours(emp));
       }
     });
   }
@@ -93,12 +91,31 @@ class ProfileViewModel extends ChangeNotifier {
 
     if (value) {
       await NotificationService.instance.requestPermissions();
-      if (startWorkingTime != null && endWorkingTime != null) {
-        await NotificationService.instance.scheduleAttendanceReminders(startWorkingTime!, endWorkingTime!);
+      final emp = _employee;
+      if (emp != null) {
+        await NotificationService.instance
+            .scheduleAttendanceReminders(_reminderHours(emp));
       }
     } else {
       await NotificationService.instance.cancelAllReminders();
     }
+  }
+
+  /// Reminder hours per Dart weekday (Monday = 1 … Sunday = 7): Monday to
+  /// Friday on the default hours, plus any day the POS gave its own hours
+  /// (e.g. a Saturday half day).
+  Map<int, DailyWorkingHours> _reminderHours(HREmployee emp) {
+    final hours = <int, DailyWorkingHours>{};
+    for (var day = DateTime.monday; day <= DateTime.sunday; day++) {
+      final isWeekday = day <= DateTime.friday;
+      if (!isWeekday && !emp.weeklySchedule.containsKey(day % 7)) continue;
+      // 2024-01-01 was a Monday, so this date falls on `day`.
+      final resolved = emp.workingHoursOn(DateTime(2024, 1, day));
+      if (resolved.start != null && resolved.end != null) {
+        hours[day] = resolved;
+      }
+    }
+    return hours;
   }
 
   Future<void> toggleLeaveNotifications(bool value) async {

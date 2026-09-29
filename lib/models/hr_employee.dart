@@ -50,6 +50,26 @@ enum SalaryCurrency {
       .firstWhere((s) => s.value == value, orElse: () => SalaryCurrency.usd);
 }
 
+/// An employee's scheduled hours for one weekday, as `HH:mm` strings.
+class DailyWorkingHours {
+  const DailyWorkingHours({this.start, this.end});
+
+  final String? start;
+  final String? end;
+
+  static DailyWorkingHours? fromMap(dynamic raw) {
+    if (raw is! Map) return null;
+    final start = raw['start'] as String?;
+    final end = raw['end'] as String?;
+    if ((start == null || start.isEmpty) && (end == null || end.isEmpty)) {
+      return null;
+    }
+    return DailyWorkingHours(start: start, end: end);
+  }
+
+  Map<String, dynamic> toMap() => {'start': start, 'end': end};
+}
+
 class HREmployee {
   const HREmployee({
     required this.id,
@@ -76,6 +96,7 @@ class HREmployee {
     this.workShift,
     this.startWorkingTime,
     this.endWorkingTime,
+    this.weeklySchedule = const {},
     this.lateTime,
     required this.status,
     required this.joinDate,
@@ -144,6 +165,11 @@ class HREmployee {
   final String? workShift;
   final String? startWorkingTime;
   final String? endWorkingTime;
+
+  /// Per-weekday overrides of [startWorkingTime]/[endWorkingTime], keyed by
+  /// JS weekday (0 = Sunday … 6 = Saturday) to match the Firestore map the
+  /// POS writes. Days without an entry use the default hours.
+  final Map<int, DailyWorkingHours> weeklySchedule;
   final int? lateTime;
   final EmployeeStatus status;
 
@@ -200,6 +226,45 @@ class HREmployee {
 
   String get fullName => '$firstName $lastName';
 
+  /// The hours that apply on [localDay] (a date in the store's timezone).
+  /// Falls back field-by-field to the default hours.
+  ///
+  /// Mirrors resolveWorkingHours in the POS repo
+  /// (functions/src/HR/workingHours.ts) — keep them in sync.
+  DailyWorkingHours workingHoursOn(DateTime localDay) {
+    // Dart: Monday = 1 … Sunday = 7; stored keys use Sunday = 0.
+    final override = weeklySchedule[localDay.weekday % 7];
+    String? pick(String? value, String? fallback) =>
+        (value != null && value.isNotEmpty) ? value : fallback;
+    return DailyWorkingHours(
+      start: pick(override?.start, startWorkingTime),
+      end: pick(override?.end, endWorkingTime),
+    );
+  }
+
+  /// Length in minutes of this employee's own hours on [localDay]'s weekday,
+  /// or null when that weekday uses the default hours. An end at/before the
+  /// start is treated as crossing midnight. Sizes the proportional late
+  /// deduction on shorter (or longer) days.
+  ///
+  /// Mirrors overrideDayMinutes in the POS repo
+  /// (src/app/main-layout/hr/hr-employee.model.ts) — keep them in sync.
+  int? overrideMinutesOn(DateTime localDay) {
+    final hours = weeklySchedule[localDay.weekday % 7];
+    final start = _toMinutes(hours?.start);
+    final end = _toMinutes(hours?.end);
+    if (start == null || end == null) return null;
+    return end > start ? end - start : end + 24 * 60 - start;
+  }
+
+  static int? _toMinutes(String? time) {
+    final parts = time?.split(':');
+    if (parts == null || parts.length != 2) return null;
+    final h = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    return (h == null || m == null) ? null : h * 60 + m;
+  }
+
   factory HREmployee.fromMap(String id, Map<String, dynamic> map) {
     DateTime toDateTime(dynamic ts) {
       if (ts is DateTime) return ts;
@@ -213,6 +278,19 @@ class HREmployee {
     DateTime? toDateTimeNullable(dynamic ts) {
       if (ts == null) return null;
       return toDateTime(ts);
+    }
+
+    Map<int, DailyWorkingHours> toWeeklySchedule(dynamic raw) {
+      if (raw is! Map) return const {};
+      final schedule = <int, DailyWorkingHours>{};
+      raw.forEach((key, value) {
+        final day = int.tryParse(key.toString());
+        final hours = DailyWorkingHours.fromMap(value);
+        if (day != null && day >= 0 && day <= 6 && hours != null) {
+          schedule[day] = hours;
+        }
+      });
+      return schedule;
     }
 
     return HREmployee(
@@ -240,6 +318,7 @@ class HREmployee {
       workShift: map['workShift'] as String?,
       startWorkingTime: map['startWorkingTime'] as String?,
       endWorkingTime: map['endWorkingTime'] as String?,
+      weeklySchedule: toWeeklySchedule(map['weeklySchedule']),
       lateTime: (map['lateTime'] as num?)?.toInt(),
       status: EmployeeStatus.fromString(map['status'] as String),
       joinDate: toDateTime(map['joinDate']),
@@ -304,6 +383,11 @@ class HREmployee {
         if (workShift != null) 'workShift': workShift,
         if (startWorkingTime != null) 'startWorkingTime': startWorkingTime,
         if (endWorkingTime != null) 'endWorkingTime': endWorkingTime,
+        if (weeklySchedule.isNotEmpty)
+          'weeklySchedule': {
+            for (final entry in weeklySchedule.entries)
+              '${entry.key}': entry.value.toMap(),
+          },
         if (lateTime != null) 'lateTime': lateTime,
         'status': status.value,
         'joinDate': Timestamp.fromDate(joinDate),

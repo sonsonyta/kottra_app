@@ -132,6 +132,11 @@ class DeductionBreakdown {
 /// converts a record's stored date into that same zone so day-of-month
 /// comparisons line up regardless of the device timezone; it defaults to the
 /// identity function (fine for tests that use plain local dates).
+///
+/// [dayMinutesOn] returns the length of the employee's own hours on a store-
+/// local day (e.g. 240 for a Saturday 08:00–12:00), or null for default hours
+/// — pass [HREmployee.overrideMinutesOn]. Proportional late minutes on such a
+/// day are priced by that day's length instead of `workdayMinutes`.
 DeductionBreakdown computePeriodDeductions({
   required List<AttendanceRecord> records,
   required double monthlyBasicSalary,
@@ -139,6 +144,7 @@ DeductionBreakdown computePeriodDeductions({
   required HrSettings settings,
   required DateTime today,
   DateTime Function(DateTime date)? toStoreZone,
+  int? Function(DateTime localDay)? dayMinutesOn,
 }) {
   final zone = toStoreZone ?? (d) => d;
   // 'endOfMonth' basis accumulates the whole month regardless of payroll
@@ -157,6 +163,9 @@ DeductionBreakdown computePeriodDeductions({
   var unpaidDays = 0;
   var totalLateMinutes = 0;
   var lateDays = 0;
+  // Chargeable late minutes per day, with that day's length when it has its
+  // own hours (null = the store's standard workday).
+  final lateEntries = <({int minutes, int? dayMinutes})>[];
   for (final r in inPeriod) {
     if (r.status == AttendanceStatus.holiday ||
         r.status == AttendanceStatus.dayOff) {
@@ -168,9 +177,15 @@ DeductionBreakdown computePeriodDeductions({
         r.leaveType == LeaveType.unpaidLeave;
     if (isAbsent || isUnpaidLeave) unpaidDays++;
 
-    if (r.lateMinutes > 0) {
+    // Forgiven lateness (approved late excuse / HR waiver) is never charged,
+    // matching the POS generator.
+    if (r.lateMinutes > 0 && !r.lateExcused) {
       totalLateMinutes += r.lateMinutes;
       lateDays++;
+      lateEntries.add((
+        minutes: r.lateMinutes,
+        dayMinutes: dayMinutesOn?.call(zone(r.date.toDate())),
+      ));
     }
   }
 
@@ -180,6 +195,7 @@ DeductionBreakdown computePeriodDeductions({
     standardWorkDays: period.standardWorkDays,
     totalLateMinutes: totalLateMinutes,
     lateDays: lateDays,
+    lateEntries: lateEntries,
     settings: settings.lateDeduction,
   );
   final absence = _computeAbsence(
@@ -208,6 +224,7 @@ double _computeLate({
   required int standardWorkDays,
   required int totalLateMinutes,
   required int lateDays,
+  required List<({int minutes, int? dayMinutes})> lateEntries,
   required LateDeductionSettings settings,
 }) {
   if (!settings.enabled || totalLateMinutes <= 0) return 0;
@@ -226,12 +243,17 @@ double _computeLate({
       amount = lateDays * rate;
       break;
     case LateDeductionMode.proportional:
+      // A weekday with its own hours (e.g. Saturday 08:00–12:00) is sized by
+      // that day's length rather than the store's standard workday.
       final workdayMinutes = settings.workdayMinutes ?? 480;
       final dailyRate =
           standardWorkDays > 0 ? periodBasic / standardWorkDays : 0.0;
-      final perMinutePay =
-          workdayMinutes > 0 ? dailyRate / workdayMinutes : 0.0;
-      amount = totalLateMinutes * perMinutePay;
+      amount = 0;
+      for (final entry in lateEntries) {
+        final dayMinutes = entry.dayMinutes ?? workdayMinutes;
+        final perMinutePay = dayMinutes > 0 ? dailyRate / dayMinutes : 0.0;
+        amount += entry.minutes * perMinutePay;
+      }
       break;
   }
   return _round2(amount);

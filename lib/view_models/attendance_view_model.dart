@@ -243,6 +243,7 @@ class AttendanceViewModel extends ChangeNotifier {
       settings: settings,
       today: _now(),
       toStoreZone: _inStoreZone,
+      dayMinutesOn: employee.overrideMinutesOn,
     );
   }
 
@@ -374,11 +375,18 @@ class AttendanceViewModel extends ChangeNotifier {
   /// the QR scanner to check the scanned code targets the right store.
   String? get storeId => _identity?.storeId;
 
-  /// The employee's shift start (`HH:mm`), used to flag a late check-in.
-  String? get startWorkingTime => _employee?.startWorkingTime;
+  /// Today's shift start (`HH:mm`), used to flag a late check-in. Follows
+  /// any per-weekday hours (e.g. a Saturday half day).
+  String? get startWorkingTime => _employee?.workingHoursOn(_now()).start;
 
-  /// The employee's shift end (`HH:mm`), used to flag an early check-out.
-  String? get endWorkingTime => _employee?.endWorkingTime;
+  /// The current shift's end (`HH:mm`), used to flag an early check-out.
+  /// Resolved for the day the shift started, like the check-out function.
+  String? get endWorkingTime {
+    final startedAt = checkInTime;
+    return _employee
+        ?.workingHoursOn(startedAt != null ? _inStoreZone(startedAt) : _now())
+        .end;
+  }
 
   /// Grace minutes after [startWorkingTime] before a check-in counts as late.
   int? get lateTime => _employee?.lateTime;
