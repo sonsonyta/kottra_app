@@ -224,7 +224,7 @@ class FakeAttendancePhotoService implements AttendancePhotoService {
 class FakeLocationService implements LocationServiceBase {
   FakeLocationService({this.coords, this.error});
 
-  final LocationCoords? coords;
+  LocationCoords? coords;
   final Object? error;
   int calls = 0;
 
@@ -284,6 +284,7 @@ AttendanceViewModel buildViewModel({
   FakeConnectivityProbe? connectivity,
   FakeAttendancePhotoService? photoService,
   HrSettings? settings,
+  HREmployee? employee,
   Duration checkOutLockDuration =
       AttendanceViewModel.defaultCheckOutLockDuration,
   ({String storeId, String employeeId})? identity,
@@ -294,7 +295,7 @@ AttendanceViewModel buildViewModel({
     locationService: locationService,
     storeService: FakeStoreService(),
     settingsService: FakeSettingsService(settings: settings),
-    employeeService: FakeEmployeeService(),
+    employeeService: FakeEmployeeService(employee: employee),
     photoService: photoService ?? FakeAttendancePhotoService(),
     offlineQueue: queue ?? OfflineAttendanceQueue(store: InMemoryPendingStore()),
     connectivity: connectivity ?? FakeConnectivityProbe(online: online),
@@ -302,6 +303,28 @@ AttendanceViewModel buildViewModel({
     identity: identity,
   );
 }
+
+  HREmployee buildEmployee({bool? allowCheckinRemote}) => HREmployee.fromMap(
+        'emp-1',
+        {
+          'storeId': 'store-1',
+          'firstName': 'A',
+          'lastName': 'B',
+          'employeeCode': 'E1',
+          'gender': 'Male',
+          'phoneNumber': '012',
+          'position': 'Staff',
+          'employmentType': 'Full-time',
+          'status': 'Active',
+          'joinDate': Timestamp.fromDate(DateTime(2026, 1, 1)),
+          'basicSalary': 300,
+          'currency': 'USD',
+          'paymentMethod': 'Cash',
+          'createdAt': Timestamp.fromDate(DateTime(2026, 1, 1)),
+          'updatedAt': Timestamp.fromDate(DateTime(2026, 1, 1)),
+          'allowCheckinRemote': ?allowCheckinRemote,
+        },
+      );
 
 void main() {
   group('AttendanceViewModel.checkIn', () {
@@ -693,6 +716,133 @@ void main() {
       expect(photoService.uploadedPaths, isEmpty, reason: 'no upload offline');
       expect(queue.actions, hasLength(1));
       expect(queue.actions.first.photoPath, isNotNull);
+
+      viewModel.dispose();
+    });
+  });
+
+  group('AttendanceViewModel QR attendance', () {
+    const qrSettings = HrSettings(
+      payrollFrequency: PayrollFrequency.monthly,
+      lateDeduction: LateDeductionSettings.disabled,
+      absenceDeduction: AbsenceDeductionSettings.legacyDefault,
+      allowDisplayPreviewDeduction: true,
+      deductionPeriodBasis: DeductionPeriodBasis.payrollFrequency,
+      attendanceMethod: AttendanceMethod.qr,
+      requirePhotoOnAttendance: false,
+    );
+
+    test('on-site employees scan the store QR', () async {
+      final viewModel = buildViewModel(
+        attendanceService: FakeAttendanceService(),
+        locationService: FakeLocationService(),
+        settings: qrSettings,
+        employee: buildEmployee(),
+      );
+      await Future<void>.delayed(Duration.zero); // let streams emit
+
+      expect(viewModel.usesQrAttendance, isTrue);
+
+      viewModel.dispose();
+    });
+
+    test('remote employees skip the QR scan', () async {
+      final viewModel = buildViewModel(
+        attendanceService: FakeAttendanceService(),
+        locationService: FakeLocationService(),
+        settings: qrSettings,
+        employee: buildEmployee(allowCheckinRemote: true),
+      );
+      await Future<void>.delayed(Duration.zero); // let streams emit
+
+      expect(viewModel.canAttendRemotely, isTrue);
+      expect(viewModel.usesQrAttendance, isFalse);
+
+      viewModel.dispose();
+    });
+  });
+
+  group('AttendanceViewModel remote location', () {
+    const coords = LocationCoords(latitude: 11.55, longitude: 104.92);
+
+    test('remote check-in without location fails without queuing', () async {
+      final attendanceService = FakeAttendanceService();
+      final queue = OfflineAttendanceQueue(store: InMemoryPendingStore());
+      final photoService = FakeAttendancePhotoService();
+      final viewModel = buildViewModel(
+        attendanceService: attendanceService,
+        locationService: FakeLocationService(),
+        queue: queue,
+        photoService: photoService,
+        employee: buildEmployee(allowCheckinRemote: true),
+      );
+      await Future<void>.delayed(Duration.zero); // let streams emit
+
+      await expectLater(
+        viewModel.checkIn(photoBytes: Uint8List.fromList([1, 2, 3])),
+        throwsA(isA<LocationRequiredException>()),
+      );
+      expect(attendanceService.checkInCalls, 0);
+      expect(queue.actions, isEmpty);
+      expect(photoService.savedIds, isEmpty, reason: 'no orphaned photo');
+      expect(viewModel.isActionLoading, isFalse);
+
+      viewModel.dispose();
+    });
+
+    test('remote check-out without location fails', () async {
+      final attendanceService = FakeAttendanceService();
+      final locationService = FakeLocationService(coords: coords);
+      final viewModel = buildViewModel(
+        attendanceService: attendanceService,
+        locationService: locationService,
+        employee: buildEmployee(allowCheckinRemote: true),
+        checkOutLockDuration: Duration.zero,
+      );
+      await Future<void>.delayed(Duration.zero); // let streams emit
+
+      await viewModel.checkIn();
+      await Future<void>.delayed(Duration.zero); // let the lock expire
+      locationService.coords = null;
+
+      await expectLater(
+        viewModel.checkOut(),
+        throwsA(isA<LocationRequiredException>()),
+      );
+      expect(attendanceService.checkOutCalls, 0);
+
+      viewModel.dispose();
+    });
+
+    test('remote check-in with location goes through', () async {
+      final attendanceService = FakeAttendanceService();
+      final viewModel = buildViewModel(
+        attendanceService: attendanceService,
+        locationService: FakeLocationService(coords: coords),
+        employee: buildEmployee(allowCheckinRemote: true),
+      );
+      await Future<void>.delayed(Duration.zero); // let streams emit
+
+      final result = await viewModel.checkIn();
+
+      expect(result!.success, isTrue);
+      expect(attendanceService.checkInCalls, 1);
+
+      viewModel.dispose();
+    });
+
+    test('on-site check-in without location is still allowed', () async {
+      final attendanceService = FakeAttendanceService();
+      final viewModel = buildViewModel(
+        attendanceService: attendanceService,
+        locationService: FakeLocationService(),
+        employee: buildEmployee(),
+      );
+      await Future<void>.delayed(Duration.zero); // let streams emit
+
+      await viewModel.checkIn();
+
+      expect(attendanceService.checkInCalls, 1);
 
       viewModel.dispose();
     });

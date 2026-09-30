@@ -25,6 +25,13 @@ export 'package:kottra_app/models/payroll_deductions.dart';
 export 'package:kottra_app/services/attendance_service.dart'
     show CheckInResult, CheckOutResult;
 
+/// Thrown by [AttendanceViewModel.checkIn]/[AttendanceViewModel.checkOut] when
+/// a remote employee's location couldn't be read (services off, permission
+/// denied or no fix). The backend requires coordinates for remote attendance.
+class LocationRequiredException implements Exception {
+  const LocationRequiredException();
+}
+
 class AttendanceViewModel extends ChangeNotifier {
   static const int maxHoursBeforeStaleCheckIn = 18;
   static const int minHoursBeforeNewCheckIn = 8;
@@ -391,12 +398,19 @@ class AttendanceViewModel extends ChangeNotifier {
   /// Grace minutes after [startWorkingTime] before a check-in counts as late.
   int? get lateTime => _employee?.lateTime;
 
+  /// Whether the employee may check in/out away from the store
+  /// (`allowCheckinRemote`). The backend already skips its geofence for them.
+  bool get canAttendRemotely => _employee?.allowCheckinRemote == true;
+
   /// Whether check-in/out should go through a QR scan of the store's posted
   /// code. True only when the master feature flag is on and the store has
   /// opted into [AttendanceMethod.qr]; otherwise the plain button is used.
+  /// Remote employees always get the button, since scanning the posted code
+  /// would require them to be on-site.
   bool get usesQrAttendance =>
       FeatureFlags.enableQrAttendance &&
-      _hrSettings?.attendanceMethod == AttendanceMethod.qr;
+      _hrSettings?.attendanceMethod == AttendanceMethod.qr &&
+      !canAttendRemotely;
 
   /// Whether the employee must attach a camera photo when checking in/out. True
   /// only when the master feature flag is on and the store has opted into
@@ -517,6 +531,12 @@ class AttendanceViewModel extends ChangeNotifier {
       // action whether it's sent immediately or replayed later from the queue.
       final localId = _newLocalId();
       final coords = await _tryGetCoords('check-in');
+      // The backend rejects a remote check-in without coordinates; fail here
+      // so the employee can turn location on, rather than queuing an action
+      // that would be rejected when it syncs.
+      if (coords == null && canAttendRemotely) {
+        throw const LocationRequiredException();
+      }
 
       // Persist the photo locally first so it survives an offline replay
       // (and app restarts) and can be uploaded on sync.
@@ -654,6 +674,9 @@ class AttendanceViewModel extends ChangeNotifier {
       final eventAt = DateTime.now();
       final localId = _newLocalId();
       final coords = await _tryGetCoords('check-out');
+      if (coords == null && canAttendRemotely) {
+        throw const LocationRequiredException();
+      }
 
       final photoPath = await _savePhoto(localId, photoBytes);
 

@@ -14,7 +14,10 @@ class CheckInCard extends StatelessWidget {
 
   final AttendanceViewModel attendanceViewModel;
 
-  String _formatCheckInError(Object error) {
+  String _formatCheckInError(Object error, AppLocalizations localizations) {
+    if (error is LocationRequiredException) {
+      return localizations.locationRequiredRemote;
+    }
     if (error is FirebaseFunctionsException) {
       return error.message ?? 'Check-in failed.';
     }
@@ -150,7 +153,7 @@ class CheckInCard extends StatelessWidget {
       messenger.showSnackBar(SnackBar(content: Text(message)));
     } catch (error) {
       messenger.showSnackBar(
-        SnackBar(content: Text(_formatCheckInError(error))),
+        SnackBar(content: Text(_formatCheckInError(error, localizations))),
       );
     }
   }
@@ -194,7 +197,7 @@ class CheckInCard extends StatelessWidget {
       messenger.showSnackBar(SnackBar(content: Text(message)));
     } catch (error) {
       messenger.showSnackBar(
-        SnackBar(content: Text(_formatCheckInError(error))),
+        SnackBar(content: Text(_formatCheckInError(error, localizations))),
       );
     }
   }

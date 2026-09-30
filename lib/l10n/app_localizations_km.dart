@@ -141,6 +141,9 @@ class AppLocalizationsKm extends AppLocalizations {
   }
 
   @override
+  String get locationRequiredRemote => 'សូមបើកទីតាំង ដើម្បីកត់វត្តមានពីចម្ងាយ។';
+
+  @override
   String get checkInFailed => 'ការកត់វត្តមានចូលបានបរាជ័យ។ សូមព្យាយាមម្តងទៀត។';
 
   @override

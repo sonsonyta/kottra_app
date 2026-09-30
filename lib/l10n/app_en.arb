@@ -50,6 +50,7 @@
       }
     }
   },
+  "locationRequiredRemote": "Turn on location to check in or out remotely.",
   "checkInFailed": "Check-in failed. Please try again.",
   "alreadyCheckedOut": "You're already checked out today.",
   "checkOutSuccess": "Checked out successful",

@@ -142,6 +142,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get locationRequiredRemote =>
+      'Turn on location to check in or out remotely.';
+
+  @override
   String get checkInFailed => 'Check-in failed. Please try again.';
 
   @override

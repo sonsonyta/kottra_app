@@ -356,6 +356,12 @@ abstract class AppLocalizations {
   /// **'Checked in — {status}'**
   String checkInSuccess(String status);
 
+  /// No description provided for @locationRequiredRemote.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on location to check in or out remotely.'**
+  String get locationRequiredRemote;
+
   /// No description provided for @checkInFailed.
   ///
   /// In en, this message translates to:
