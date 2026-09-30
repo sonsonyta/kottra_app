@@ -1,6 +1,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:kottra_app/services/notification_service.dart';
 
 abstract class AuthServiceBase {
   Future<void> signInWithEmailPassword({
@@ -80,6 +81,9 @@ class AuthService implements AuthServiceBase {
 
   @override
   Future<void> signOut() async {
+    // Clear notifications first so a signed-out device stops receiving the
+    // user's reminders and pushes.
+    await NotificationService.instance.clearForSignOut();
     await Future.wait<void>([_firebaseAuth.signOut(), _googleSignIn.signOut()]);
   }
 }

@@ -132,6 +132,26 @@ class NotificationService {
     await _notificationsPlugin.cancelAll();
   }
 
+  /// Stops everything this device would show for the signed-out user:
+  /// scheduled reminders, notifications already in the tray, and pushes.
+  /// Deleting the FCM token invalidates the copy stored on their employee
+  /// record; the next sign-in syncs a fresh one.
+  Future<void> clearForSignOut() async {
+    try {
+      await _notificationsPlugin.cancelAll();
+    } catch (e) {
+      debugPrint('Error cancelling notifications on sign-out: $e');
+    }
+    try {
+      // Bounded so a stalled call (offline, no APNs) can't block logout.
+      await FirebaseMessaging.instance.deleteToken().timeout(
+        const Duration(seconds: 5),
+      );
+    } catch (e) {
+      debugPrint('Error deleting FCM token on sign-out: $e');
+    }
+  }
+
   /// Schedules weekly check-in/check-out reminders. [hoursByWeekday] is keyed
   /// by Dart weekday (Monday = 1 … Sunday = 7), so each day can carry its own
   /// hours (e.g. a Saturday half day). Days without an entry get no reminder.
