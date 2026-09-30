@@ -461,6 +461,9 @@ class AppLocalizationsKm extends AppLocalizations {
   String get otherDeduction => 'ផ្សេងៗ';
 
   @override
+  String get missedCheckOut => 'ភ្លេចចេញ';
+
+  @override
   String get payslipProvisionalNote =>
       'តួលេខទាំងនេះជាបណ្តោះអាសន្ន ហើយអាចផ្លាស់ប្តូរ រហូតដល់ការគណនាប្រាក់ខែត្រូវបានបញ្ចប់។';
 

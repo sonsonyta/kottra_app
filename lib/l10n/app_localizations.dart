@@ -956,6 +956,12 @@ abstract class AppLocalizations {
   /// **'Other'**
   String get otherDeduction;
 
+  /// No description provided for @missedCheckOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed check-out'**
+  String get missedCheckOut;
+
   /// No description provided for @payslipProvisionalNote.
   ///
   /// In en, this message translates to:

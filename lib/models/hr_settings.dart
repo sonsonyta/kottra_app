@@ -1,6 +1,7 @@
 /// Store-level HR configuration, read from Firestore `settings/{storeId}` under
 /// the `hrSettings` key. Mirrors the shapes the POS admin app writes there
-/// (`HRSettings`, `HRLateDeductionSettings`, `HRAbsenceDeductionSettings`) so
+/// (`HRSettings`, `HRLateDeductionSettings`, `HRAbsenceDeductionSettings`,
+/// `HRMissedCheckOutDeductionSettings`) so
 /// the employee app can compute the same payroll deductions the POS does.
 library;
 
@@ -148,11 +149,43 @@ class AbsenceDeductionSettings {
   );
 }
 
+/// Flat deduction per forgotten check-out; mirrors the POS
+/// `HRMissedCheckOutDeductionSettings`.
+class MissedCheckOutDeductionSettings {
+  const MissedCheckOutDeductionSettings({
+    required this.enabled,
+    this.perMissUsd,
+    this.perMissKhr,
+    this.freeMissesPerMonth,
+  });
+
+  final bool enabled;
+  final double? perMissUsd;
+  final double? perMissKhr;
+  final int? freeMissesPerMonth;
+
+  factory MissedCheckOutDeductionSettings.fromMap(Map<String, dynamic> map) {
+    return MissedCheckOutDeductionSettings(
+      enabled: map['enabled'] == true,
+      perMissUsd: (map['perMissUSD'] as num?)?.toDouble(),
+      perMissKhr: (map['perMissKHR'] as num?)?.toDouble(),
+      freeMissesPerMonth: (map['freeMissesPerMonth'] as num?)?.toInt(),
+    );
+  }
+
+  /// Feature-off default: matches the POS `defaultMissedCheckOutDeduction`.
+  static const disabled = MissedCheckOutDeductionSettings(
+    enabled: false,
+    freeMissesPerMonth: 0,
+  );
+}
+
 class HrSettings {
   const HrSettings({
     required this.payrollFrequency,
     required this.lateDeduction,
     required this.absenceDeduction,
+    this.missedCheckOutDeduction = MissedCheckOutDeductionSettings.disabled,
     required this.allowDisplayPreviewDeduction,
     required this.deductionPeriodBasis,
     required this.attendanceMethod,
@@ -162,6 +195,7 @@ class HrSettings {
   final PayrollFrequency payrollFrequency;
   final LateDeductionSettings lateDeduction;
   final AbsenceDeductionSettings absenceDeduction;
+  final MissedCheckOutDeductionSettings missedCheckOutDeduction;
 
   /// How employees check in/out for this store (button vs QR scan).
   final AttendanceMethod attendanceMethod;
@@ -186,6 +220,7 @@ class HrSettings {
 
     final late = hrMap['lateDeduction'];
     final absence = hrMap['absenceDeduction'];
+    final missedCheckOut = hrMap['missedCheckOutDeduction'];
 
     return HrSettings(
       payrollFrequency:
@@ -196,6 +231,10 @@ class HrSettings {
       absenceDeduction: absence is Map
           ? AbsenceDeductionSettings.fromMap(absence.cast<String, dynamic>())
           : AbsenceDeductionSettings.legacyDefault,
+      missedCheckOutDeduction: missedCheckOut is Map
+          ? MissedCheckOutDeductionSettings.fromMap(
+              missedCheckOut.cast<String, dynamic>())
+          : MissedCheckOutDeductionSettings.disabled,
       allowDisplayPreviewDeduction:
           hrMap['allowDisplayPreviewDeduction'] as bool? ?? true,
       deductionPeriodBasis: DeductionPeriodBasis.fromString(

@@ -233,7 +233,7 @@ class AttendanceViewModel extends ChangeNotifier {
         }, onError: (Object e) => debugPrint('Error loading employee: $e'));
   }
 
-  /// The employee's accrued late + absence deductions for the current pay
+  /// The employee's accrued late/absence/missed check-out deductions for the pay
   /// period, or `null` when unavailable — the settings/employee haven't loaded
   /// yet, or the store has hidden the preview
   /// (`allowDisplayPreviewDeduction` = false). Callers hide their card on null.

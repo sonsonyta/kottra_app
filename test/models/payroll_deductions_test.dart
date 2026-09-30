@@ -13,6 +13,11 @@ AttendanceRecord _rec({
   int lateMinutes = 0,
   bool lateExcused = false,
   LeaveType? leaveType,
+  DateTime? checkIn,
+  DateTime? checkOut,
+  String? checkOutNote,
+  bool missedCheckOut = false,
+  bool missedCheckOutExcused = false,
   int year = 2026,
   int month = 8,
 }) {
@@ -26,6 +31,11 @@ AttendanceRecord _rec({
     lateMinutes: lateMinutes,
     lateExcused: lateExcused,
     leaveType: leaveType,
+    checkIn: checkIn,
+    checkOut: checkOut,
+    checkOutNote: checkOutNote,
+    missedCheckOut: missedCheckOut,
+    missedCheckOutExcused: missedCheckOutExcused,
   );
 }
 
@@ -33,12 +43,15 @@ HrSettings _settings({
   PayrollFrequency frequency = PayrollFrequency.semiMonthly,
   LateDeductionSettings? late,
   AbsenceDeductionSettings? absence,
+  MissedCheckOutDeductionSettings? missedCheckOut,
   DeductionPeriodBasis basis = DeductionPeriodBasis.payrollFrequency,
 }) {
   return HrSettings(
     payrollFrequency: frequency,
     lateDeduction: late ?? LateDeductionSettings.disabled,
     absenceDeduction: absence ?? AbsenceDeductionSettings.legacyDefault,
+    missedCheckOutDeduction:
+        missedCheckOut ?? MissedCheckOutDeductionSettings.disabled,
     allowDisplayPreviewDeduction: true,
     deductionPeriodBasis: basis,
     attendanceMethod: AttendanceMethod.button,
@@ -415,6 +428,138 @@ void main() {
       );
       expect(b.lateMinutes, 60); // 36 + 24
       expect(b.late, closeTo(1.79, 0.01)); // 60 × (400 ÷ 28 ÷ 480)
+    });
+  });
+
+  group('missed check-out deduction', () {
+    const policy = MissedCheckOutDeductionSettings(
+      enabled: true,
+      perMissUsd: 2,
+      perMissKhr: 8000,
+      freeMissesPerMonth: 0,
+    );
+    DateTime at(int day, int hour) => DateTime(2026, 8, day, hour);
+
+    test('charges auto-closed, stale-closed and past open days', () {
+      final records = [
+        // Auto check-out closed it.
+        _rec(
+          day: 3,
+          status: AttendanceStatus.present,
+          checkIn: at(3, 8),
+          checkOut: at(3, 17),
+          checkOutNote: 'Miss Check-Out',
+        ),
+        // Closed as stale at the next check-in.
+        _rec(
+          day: 4,
+          status: AttendanceStatus.present,
+          checkIn: at(4, 8),
+          missedCheckOut: true,
+        ),
+        // Still open, on a past day.
+        _rec(day: 5, status: AttendanceStatus.late, checkIn: at(5, 9)),
+        // Checked out normally.
+        _rec(
+          day: 6,
+          status: AttendanceStatus.present,
+          checkIn: at(6, 8),
+          checkOut: at(6, 17),
+        ),
+        // Open today — may still be working.
+        _rec(
+          day: _semiFirstHalfDay,
+          status: AttendanceStatus.present,
+          checkIn: at(_semiFirstHalfDay, 8),
+        ),
+      ];
+      final b = computePeriodDeductions(
+        records: records,
+        monthlyBasicSalary: 400,
+        currency: SalaryCurrency.usd,
+        settings: _settings(missedCheckOut: policy),
+        today: _augFirstHalf,
+      );
+      expect(b.missedCheckOuts, 3);
+      expect(b.missedCheckOut, 6); // 3 × 2 USD
+      expect(b.total, 6);
+    });
+
+    test('skips HR-excused days and uses the KHR rate', () {
+      final records = [
+        _rec(
+          day: 3,
+          status: AttendanceStatus.present,
+          checkIn: at(3, 8),
+          checkOut: at(3, 17),
+          checkOutNote: 'Miss Check-Out',
+          missedCheckOutExcused: true,
+        ),
+        _rec(
+          day: 4,
+          status: AttendanceStatus.present,
+          checkIn: at(4, 8),
+          checkOut: at(4, 17),
+          checkOutNote: 'Miss Check-Out',
+        ),
+      ];
+      final b = computePeriodDeductions(
+        records: records,
+        monthlyBasicSalary: 1600000,
+        currency: SalaryCurrency.khr,
+        settings: _settings(missedCheckOut: policy),
+        today: _augFirstHalf,
+      );
+      expect(b.missedCheckOuts, 1);
+      expect(b.missedCheckOut, 8000);
+    });
+
+    test('scales free misses to a semi-monthly half', () {
+      final records = [
+        for (final d in [2, 3, 4])
+          _rec(
+            day: d,
+            status: AttendanceStatus.present,
+            checkIn: at(d, 8),
+            missedCheckOut: true,
+          ),
+      ];
+      final b = computePeriodDeductions(
+        records: records,
+        monthlyBasicSalary: 400,
+        currency: SalaryCurrency.usd,
+        settings: _settings(
+          missedCheckOut: const MissedCheckOutDeductionSettings(
+            enabled: true,
+            perMissUsd: 2,
+            freeMissesPerMonth: 2,
+          ),
+        ),
+        today: _augFirstHalf,
+      );
+      // 2 free/month → 1 free this half; 3 − 1 = 2 chargeable.
+      expect(b.missedCheckOut, 4);
+    });
+
+    test('leave/absent days and disabled policy never charge', () {
+      final records = [
+        _rec(day: 3, status: AttendanceStatus.absent),
+        _rec(
+          day: 4,
+          status: AttendanceStatus.present,
+          checkIn: at(4, 8),
+          missedCheckOut: true,
+        ),
+      ];
+      final off = computePeriodDeductions(
+        records: records,
+        monthlyBasicSalary: 400,
+        currency: SalaryCurrency.usd,
+        settings: _settings(),
+        today: _augFirstHalf,
+      );
+      expect(off.missedCheckOuts, 1); // counted, but the policy is off
+      expect(off.missedCheckOut, 0);
     });
   });
 }

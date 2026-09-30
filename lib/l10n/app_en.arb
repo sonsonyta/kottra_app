@@ -178,6 +178,7 @@
   "tax": "Tax",
   "leaveDeductionLabel": "Leave deduction",
   "otherDeduction": "Other",
+  "missedCheckOut": "Missed check-out",
   "payslipProvisionalNote": "These figures are provisional and may change until payroll is finalized.",
   "noPayslipsYet": "No payslips yet",
   "payslipsWillAppearHere": "Your payslips will appear here once payroll runs.",

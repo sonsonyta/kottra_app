@@ -346,6 +346,15 @@ class _DeductionCard extends StatelessWidget {
             amount: _money(b.absence, b.currency),
             color: c.error,
           ),
+          if (b.missedCheckOut > 0 || b.missedCheckOuts > 0) ...[
+            const SizedBox(height: 10),
+            _DeductionRow(
+              label: l.missedCheckOut,
+              detail: '${b.missedCheckOuts}×',
+              amount: _money(b.missedCheckOut, b.currency),
+              color: c.warning,
+            ),
+          ],
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Divider(height: 1, color: c.textSecondary.withValues(alpha: 0.15)),

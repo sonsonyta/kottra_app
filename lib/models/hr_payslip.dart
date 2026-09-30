@@ -28,6 +28,7 @@ class HRPayslip {
     required this.tax,
     required this.leaveDeduction,
     required this.otherDeductions,
+    this.missedCheckOutDeduction = 0,
     required this.netSalary,
     required this.currency,
     required this.status,
@@ -56,6 +57,10 @@ class HRPayslip {
   final double leaveDeduction;
   final double otherDeductions;
 
+  /// Flat charge for forgotten check-outs (0 on payslips from before the
+  /// missed check-out policy).
+  final double missedCheckOutDeduction;
+
   // Net
   final double netSalary;
   final SalaryCurrency currency;
@@ -66,7 +71,8 @@ class HRPayslip {
   double get grossEarnings =>
       basicSalary + overtimePay + bonuses + allowances;
 
-  double get totalDeductions => tax + leaveDeduction + otherDeductions;
+  double get totalDeductions =>
+      tax + leaveDeduction + otherDeductions + missedCheckOutDeduction;
 
   factory HRPayslip.fromMap(String id, Map<String, dynamic> map) {
     DateTime? toDateTimeNullable(dynamic ts) {
@@ -96,6 +102,7 @@ class HRPayslip {
       tax: toDouble(map['tax']),
       leaveDeduction: toDouble(map['leaveDeduction']),
       otherDeductions: toDouble(map['otherDeductions']),
+      missedCheckOutDeduction: toDouble(map['missedCheckOutDeduction']),
       netSalary: toDouble(map['netSalary']),
       currency: SalaryCurrency.fromString(map['currency'] as String? ?? 'USD'),
       status: PayslipStatus.fromString(map['status'] as String? ?? 'Pending'),
@@ -118,6 +125,7 @@ class HRPayslip {
         'tax': tax,
         'leaveDeduction': leaveDeduction,
         'otherDeductions': otherDeductions,
+        'missedCheckOutDeduction': missedCheckOutDeduction,
         'netSalary': netSalary,
         'currency': currency.value,
         'status': status.value,

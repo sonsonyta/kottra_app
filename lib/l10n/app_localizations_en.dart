@@ -463,6 +463,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get otherDeduction => 'Other';
 
   @override
+  String get missedCheckOut => 'Missed check-out';
+
+  @override
   String get payslipProvisionalNote =>
       'These figures are provisional and may change until payroll is finalized.';
 

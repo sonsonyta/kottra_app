@@ -3,7 +3,8 @@ import 'package:kottra_app/models/hr_employee.dart';
 import 'package:kottra_app/models/hr_settings.dart';
 
 /// Pure payroll-deduction logic, ported from the POS `HrPayrollComponent`
-/// (`computeLateDeduction` / `computeAbsenceDeduction`). Kept framework-free so
+/// (`computeLateDeduction` / `computeAbsenceDeduction` /
+/// `computeMissedCheckOutDeduction`). Kept framework-free so
 /// it can be unit-tested and reused, and so the live figure the employee sees
 /// matches the amount the POS will actually post on the payslip.
 ///
@@ -95,6 +96,8 @@ class DeductionBreakdown {
     required this.lateMinutes,
     required this.lateDays,
     required this.unpaidDays,
+    this.missedCheckOut = 0,
+    this.missedCheckOuts = 0,
     required this.currency,
     required this.period,
   });
@@ -104,10 +107,15 @@ class DeductionBreakdown {
   final int lateMinutes;
   final int lateDays;
   final int unpaidDays;
+
+  /// Missed check-out charge and the number of (unexcused) misses behind it.
+  final double missedCheckOut;
+  final int missedCheckOuts;
+
   final SalaryCurrency currency;
   final PayPeriod period;
 
-  double get total => _round2(late + absence);
+  double get total => _round2(late + absence + missedCheckOut);
   bool get hasDeductions => total > 0;
 
   static DeductionBreakdown empty(SalaryCurrency currency, PayPeriod period) =>
@@ -122,8 +130,29 @@ class DeductionBreakdown {
       );
 }
 
-/// Computes the employee's accrued late + absence deductions for the pay period
-/// containing [today], from their attendance [records] and the store settings.
+/// `checkOutNote` the server's auto check-out writes on a forgotten day.
+const missedCheckOutNote = 'Miss Check-Out';
+
+/// Whether the employee forgot to check out of [r], ignoring any HR waiver.
+/// Mirrors the POS `isMissedCheckOut`: auto-closed by the server, closed as
+/// stale at the next check-in, or still open on a day before [today].
+/// [localDay] is the record's date already in the store's timezone.
+bool isMissedCheckOut(AttendanceRecord r, DateTime localDay, DateTime today) {
+  if (r.status == AttendanceStatus.leave ||
+      r.status == AttendanceStatus.absent ||
+      r.status == AttendanceStatus.holiday ||
+      r.status == AttendanceStatus.dayOff) {
+    return false;
+  }
+  if (r.checkIn == null) return false;
+  if (r.checkOutNote == missedCheckOutNote || r.missedCheckOut) return true;
+  final todayStart = DateTime(today.year, today.month, today.day);
+  return r.checkOut == null && localDay.isBefore(todayStart);
+}
+
+/// Computes the employee's accrued late + absence + missed check-out
+/// deductions for the pay period containing [today], from their attendance
+/// [records] and the store settings.
 ///
 /// [records] may span more than the period (e.g. the streamed 90-day history);
 /// only records inside the period are considered.
@@ -161,6 +190,7 @@ DeductionBreakdown computePeriodDeductions({
       records.where((r) => period.contains(zone(r.date.toDate()))).toList();
 
   var unpaidDays = 0;
+  var missedCheckOuts = 0;
   var totalLateMinutes = 0;
   var lateDays = 0;
   // Chargeable late minutes per day, with that day's length when it has its
@@ -176,6 +206,12 @@ DeductionBreakdown computePeriodDeductions({
     final isUnpaidLeave = r.status == AttendanceStatus.leave &&
         r.leaveType == LeaveType.unpaidLeave;
     if (isAbsent || isUnpaidLeave) unpaidDays++;
+
+    // HR-excused missed check-outs are never charged, matching the POS.
+    if (!r.missedCheckOutExcused &&
+        isMissedCheckOut(r, zone(r.date.toDate()), today)) {
+      missedCheckOuts++;
+    }
 
     // Forgiven lateness (approved late excuse / HR waiver) is never charged,
     // matching the POS generator.
@@ -207,12 +243,21 @@ DeductionBreakdown computePeriodDeductions({
     settings: settings.absenceDeduction,
   );
 
+  final missedCheckOut = _computeMissedCheckOut(
+    currency: currency,
+    periodFactor: period.factor,
+    missedCheckOuts: missedCheckOuts,
+    settings: settings.missedCheckOutDeduction,
+  );
+
   return DeductionBreakdown(
     late: late,
     absence: absence,
     lateMinutes: totalLateMinutes,
     lateDays: lateDays,
     unpaidDays: unpaidDays,
+    missedCheckOut: missedCheckOut,
+    missedCheckOuts: missedCheckOuts,
     currency: currency,
     period: period,
   );
@@ -285,4 +330,22 @@ double _computeAbsence({
     amount = chargeableDays * dailyRate;
   }
   return _round2(amount);
+}
+
+double _computeMissedCheckOut({
+  required SalaryCurrency currency,
+  required double periodFactor,
+  required int missedCheckOuts,
+  required MissedCheckOutDeductionSettings settings,
+}) {
+  if (!settings.enabled || missedCheckOuts <= 0) return 0;
+
+  final freeMisses = (settings.freeMissesPerMonth ?? 0) * periodFactor;
+  final chargeable = missedCheckOuts - freeMisses;
+  if (chargeable <= 0) return 0;
+
+  final isUsd = currency == SalaryCurrency.usd;
+  final rate =
+      ((isUsd ? settings.perMissUsd : settings.perMissKhr) ?? 0).toDouble();
+  return _round2(chargeable * rate);
 }

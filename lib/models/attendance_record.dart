@@ -53,6 +53,9 @@ class AttendanceRecord {
     required this.status,
     this.lateMinutes = 0,
     this.lateExcused = false,
+    this.checkOutNote,
+    this.missedCheckOut = false,
+    this.missedCheckOutExcused = false,
     this.leaveType,
     this.lateCheckInNote,
     this.earlyCheckOutNote,
@@ -85,6 +88,17 @@ class AttendanceRecord {
   /// True when this day's lateness has been forgiven (an approved late-excuse
   /// request or a manual HR waiver). Excluded from the late-arrival deduction.
   final bool lateExcused;
+
+  /// 'Miss Check-Out' when the server's auto check-out closed a day the
+  /// employee forgot to check out of.
+  final String? checkOutNote;
+
+  /// True when an open session was closed as stale at the next check-in.
+  final bool missedCheckOut;
+
+  /// True when HR waived this day's missed check-out. Excluded from the
+  /// missed check-out deduction.
+  final bool missedCheckOutExcused;
 
   final LeaveType? leaveType;
   final String? lateCheckInNote;
@@ -141,6 +155,9 @@ class AttendanceRecord {
       status: AttendanceStatus.fromString(map['status'] as String),
       lateMinutes: (map['lateMinutes'] as num?)?.toInt() ?? 0,
       lateExcused: map['lateExcused'] as bool? ?? false,
+      checkOutNote: map['checkOutNote'] as String?,
+      missedCheckOut: map['missedCheckOut'] as bool? ?? false,
+      missedCheckOutExcused: map['missedCheckOutExcused'] as bool? ?? false,
       leaveType: LeaveType.fromString(map['leaveType'] as String?),
       lateCheckInNote: map['lateCheckInNote'] as String?,
       earlyCheckOutNote: map['earlyCheckOutNote'] as String?,
@@ -170,6 +187,9 @@ class AttendanceRecord {
         'status': status.value,
         'lateMinutes': lateMinutes,
         if (lateExcused) 'lateExcused': true,
+        if (checkOutNote != null) 'checkOutNote': checkOutNote,
+        if (missedCheckOut) 'missedCheckOut': true,
+        if (missedCheckOutExcused) 'missedCheckOutExcused': true,
         if (leaveType != null) 'leaveType': leaveType!.value,
         if (lateCheckInNote != null) 'lateCheckInNote': lateCheckInNote,
         if (earlyCheckOutNote != null) 'earlyCheckOutNote': earlyCheckOutNote,

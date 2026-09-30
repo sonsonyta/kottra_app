@@ -217,6 +217,11 @@ class _LatestPayslipCard extends StatelessWidget {
                   label: l.otherDeduction,
                   value: payslip.otherDeductions,
                 ),
+                if (payslip.missedCheckOutDeduction > 0)
+                  _BreakdownRow(
+                    label: l.missedCheckOut,
+                    value: payslip.missedCheckOutDeduction,
+                  ),
               ],
               currency: currency,
             ),
