@@ -215,5 +215,107 @@
         "type": "String"
       }
     }
-  }
+  },
+  "manage": "Manage",
+  "requests": "Requests",
+  "advance": "Advance",
+  "switchStore": "Switch store",
+  "leaveRequests": "Leave requests",
+  "leaveRequestsSubtitle": "Review and approve time off",
+  "lateExcuses": "Late excuses",
+  "lateExcusesSubtitle": "Review late-arrival excuses",
+  "salaryAdvances": "Salary advances",
+  "salaryAdvancesSubtitle": "Review advance requests",
+  "attendanceSubtitle": "See who's in today",
+  "noAttendanceForDay": "No attendance records for this day.",
+  "lateExcused": "Late excused",
+  "photoIn": "In",
+  "photoOut": "Out",
+  "inLocation": "In location",
+  "outLocation": "Out location",
+  "couldNotOpenMaps": "Could not open maps.",
+  "noLeaveRequestsYet": "No leave requests yet.",
+  "noAdvanceRequestsYet": "No salary advance requests yet.",
+  "requestedAs": "Requested as {type}",
+  "@requestedAs": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "approve": "Approve",
+  "reject": "Reject",
+  "decisionNoteHint": "Reason shown to the employee",
+  "couldNotUpdate": "Could not update: {error}",
+  "@couldNotUpdate": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "approveLeaveTitle": "Approve leave?",
+  "rejectLeaveTitle": "Reject leave?",
+  "leaveApproved": "Leave approved.",
+  "leaveRejected": "Leave rejected.",
+  "advanceSubtitle": "Advance · {amount}",
+  "@advanceSubtitle": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "approveAdvanceTitle": "Approve {amount} advance?",
+  "@approveAdvanceTitle": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "rejectAdvanceTitle": "Reject {amount} advance?",
+  "@rejectAdvanceTitle": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "advanceApproved": "Advance approved.",
+  "advanceRejected": "Advance rejected.",
+  "lateExcuseLabel": "Late excuse",
+  "approveLateExcuseTitle": "Approve late excuse?",
+  "rejectLateExcuseTitle": "Reject late excuse?",
+  "lateExcuseApproved": "Late excuse approved.",
+  "lateExcuseRejected": "Late excuse rejected.",
+  "displayName": "Display name",
+  "profileUpdated": "Profile updated.",
+  "profilePhotoUpdated": "Profile photo updated.",
+  "couldNotUploadPhoto": "Could not upload photo: {error}",
+  "@couldNotUploadPhoto": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "store": "Store",
+  "role": "Role",
+  "employeeRequests": "Employee requests",
+  "employeeRequestsSubtitle": "Get notified when employees submit leave or late-excuse requests",
+  "selectStore": "Select a store",
+  "retry": "Retry",
+  "noStoreRole": "No store role assigned",
+  "noStoreRoleMessage": "This account isn't a member of any store. Ask a store owner to add you, then sign in again.",
+  "welcomeUser": "Welcome, {name}",
+  "@welcomeUser": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "couldNotLoadStores": "Could not load your stores. Please try again."
 }

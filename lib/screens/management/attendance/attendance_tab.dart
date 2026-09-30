@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/models/attendance_record.dart';
 import 'package:kottra_app/screens/management/management_widgets.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
@@ -26,24 +27,13 @@ class ManagementAttendanceTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final l10n = AppLocalizations.of(context)!;
     final isToday = DateUtils.isSameDay(viewModel.selectedDate, DateTime.now());
-    return SafeArea(
-      child: Column(
+    return Scaffold(
+      backgroundColor: c.background,
+      appBar: managementAppBar(context, l10n.attendance),
+      body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Attendance',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: c.textPrimary,
-                ),
-              ),
-            ),
-          ),
           Container(
             color: c.surface,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -66,6 +56,7 @@ class ManagementAttendanceTab extends StatelessWidget {
                           Text(
                             DateFormat(
                               'EEE, d MMM yyyy',
+                              dateLocale(context),
                             ).format(viewModel.selectedDate),
                             style: TextStyle(
                               fontSize: 15,
@@ -75,7 +66,7 @@ class ManagementAttendanceTab extends StatelessWidget {
                           ),
                           if (isToday)
                             Text(
-                              'Today',
+                              l10n.today,
                               style: TextStyle(
                                 fontSize: 11,
                                 color: c.textSecondary,
@@ -103,7 +94,7 @@ class ManagementAttendanceTab extends StatelessWidget {
                 : viewModel.attendance.isEmpty
                 ? EmptyState(
                     icon: Icons.event_busy_rounded,
-                    message: 'No attendance records for this day.',
+                    message: l10n.noAttendanceForDay,
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.all(16),
@@ -127,6 +118,7 @@ class _AttendanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final l10n = AppLocalizations.of(context)!;
     final timeFmt = DateFormat('HH:mm');
     final inTime = record.checkIn != null
         ? timeFmt.format(record.checkIn!)
@@ -180,14 +172,14 @@ class _AttendanceCard extends StatelessWidget {
                 if (record.lateMinutes > 0 && !record.lateExcused) ...[
                   const SizedBox(height: 4),
                   Text(
-                    '${record.lateMinutes} min late',
+                    l10n.minutesLate(record.lateMinutes),
                     style: TextStyle(fontSize: 12, color: c.warning),
                   ),
                 ],
                 if (record.lateExcused) ...[
                   const SizedBox(height: 4),
                   Text(
-                    'Late excused',
+                    l10n.lateExcused,
                     style: TextStyle(fontSize: 12, color: c.textSecondary),
                   ),
                 ],
@@ -198,7 +190,7 @@ class _AttendanceCard extends StatelessWidget {
                       if (record.checkInPhotoUrl != null)
                         AttendancePhotoThumb(
                           url: record.checkInPhotoUrl!,
-                          label: 'In',
+                          label: l10n.photoIn,
                         ),
                       if (record.checkInPhotoUrl != null &&
                           record.checkOutPhotoUrl != null)
@@ -206,7 +198,7 @@ class _AttendanceCard extends StatelessWidget {
                       if (record.checkOutPhotoUrl != null)
                         AttendancePhotoThumb(
                           url: record.checkOutPhotoUrl!,
-                          label: 'Out',
+                          label: l10n.photoOut,
                         ),
                     ],
                   ),
@@ -219,12 +211,12 @@ class _AttendanceCard extends StatelessWidget {
                     children: [
                       if (inLocation != null)
                         _LocationButton(
-                          label: 'In location',
+                          label: l10n.inLocation,
                           point: inLocation,
                         ),
                       if (outLocation != null)
                         _LocationButton(
-                          label: 'Out location',
+                          label: l10n.outLocation,
                           point: outLocation,
                         ),
                     ],
@@ -233,7 +225,7 @@ class _AttendanceCard extends StatelessWidget {
               ],
             ),
           ),
-          StatusChip(label: record.status.value, color: c),
+          StatusChip(status: record.status.value, color: c),
         ],
       ),
     );
@@ -260,9 +252,9 @@ class _LocationButton extends StatelessWidget {
       debugPrint('Could not open attendance location: $e');
     }
     if (!opened && context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Could not open maps.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.couldNotOpenMaps)),
+      );
     }
   }
 

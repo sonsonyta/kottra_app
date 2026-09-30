@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 
 // Widgets and helpers shared by the store-management tabs.
@@ -13,9 +14,32 @@ String initialsFor(String name) {
   return name.isNotEmpty ? name[0].toUpperCase() : 'U';
 }
 
+/// Locale code for [DateFormat], so dates follow the app language.
+String dateLocale(BuildContext context) =>
+    Localizations.localeOf(context).languageCode;
+
+/// Localized label for a raw request/attendance status value as stored in
+/// Firestore (e.g. `Approved`, `Day Off`). Unknown values are shown as-is.
+String localizedStatus(AppLocalizations l10n, String status) {
+  return switch (status.toLowerCase()) {
+    'pending' => l10n.statusPending,
+    'approved' => l10n.statusApproved,
+    'rejected' => l10n.statusRejected,
+    'deducted' => l10n.statusDeducted,
+    'present' => l10n.present,
+    'late' => l10n.late,
+    'absent' => l10n.absent,
+    'leave' => l10n.leave,
+    'holiday' => l10n.holiday,
+    'day off' => l10n.dayOff,
+    _ => status,
+  };
+}
+
 /// Confirmation dialog with an optional note. Returns the (possibly empty)
 /// note when confirmed, or null when dismissed.
 Future<String?> promptDecision(BuildContext context, String title) {
+  final l10n = AppLocalizations.of(context)!;
   final controller = TextEditingController();
   return showDialog<String>(
     context: context,
@@ -23,23 +47,57 @@ Future<String?> promptDecision(BuildContext context, String title) {
       title: Text(title),
       content: TextField(
         controller: controller,
-        decoration: const InputDecoration(
-          labelText: 'Note (optional)',
-          hintText: 'Reason shown to the employee',
+        decoration: InputDecoration(
+          labelText: l10n.noteOptional,
+          hintText: l10n.decisionNoteHint,
         ),
         maxLines: 2,
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(context, controller.text.trim()),
-          child: const Text('Confirm'),
+          child: Text(l10n.confirm),
         ),
       ],
     ),
+  );
+}
+
+/// Gradient header matching the employee tabs (e.g. Attendance, Payroll):
+/// white title over the primary gradient, drawn under the status bar.
+/// [bottom] hosts an optional tab bar.
+PreferredSizeWidget managementAppBar(
+  BuildContext context,
+  String title, {
+  PreferredSizeWidget? bottom,
+}) {
+  final c = appColors(context);
+  return AppBar(
+    automaticallyImplyLeading: false,
+    backgroundColor: c.primary,
+    elevation: 0,
+    title: Text(
+      title,
+      style: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w800,
+        fontSize: 20,
+      ),
+    ),
+    flexibleSpace: Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [c.primaryDark, c.primary],
+        ),
+      ),
+    ),
+    bottom: bottom,
   );
 }
 
@@ -69,7 +127,7 @@ class RequestCard extends StatelessWidget {
     required this.subtitle,
     required this.dateLine,
     required this.reason,
-    required this.statusLabel,
+    required this.status,
     required this.isPending,
     required this.onApprove,
     required this.onReject,
@@ -83,7 +141,9 @@ class RequestCard extends StatelessWidget {
   final String subtitle;
   final String dateLine;
   final String reason;
-  final String statusLabel;
+
+  /// Raw status value (e.g. `Approved`); localized and colored for display.
+  final String status;
   final bool isPending;
   final VoidCallback onApprove;
   final VoidCallback onReject;
@@ -99,7 +159,9 @@ class RequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final l10n = AppLocalizations.of(context)!;
     final note = actionNote?.trim() ?? '';
+    final actor = actionedBy ?? '…';
     final showDecision =
         !isPending &&
         (actionedBy != null || actionedAt != null || note.isNotEmpty);
@@ -134,7 +196,7 @@ class RequestCard extends StatelessWidget {
                   ],
                 ),
               ),
-              StatusChip(label: statusLabel, color: c),
+              StatusChip(status: status, color: c),
             ],
           ),
           const SizedBox(height: 10),
@@ -166,14 +228,19 @@ class RequestCard extends StatelessWidget {
             const SizedBox(height: 10),
             _DecisionLine(
               icon: Icons.person_outline_rounded,
-              text: '$statusLabel by ${actionedBy ?? '…'}',
+              text: status.toLowerCase() == 'rejected'
+                  ? l10n.rejectedBy(actor)
+                  : l10n.approvedBy(actor),
               color: c,
             ),
             if (actionedAt != null) ...[
               const SizedBox(height: 4),
               _DecisionLine(
                 icon: Icons.schedule_rounded,
-                text: DateFormat('EEE, d MMM yyyy · HH:mm').format(actionedAt!),
+                text: DateFormat(
+                  'EEE, d MMM yyyy · HH:mm',
+                  dateLocale(context),
+                ).format(actionedAt!),
                 color: c,
               ),
             ],
@@ -195,7 +262,7 @@ class RequestCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: onReject,
                     icon: const Icon(Icons.close_rounded, size: 18),
-                    label: const Text('Reject'),
+                    label: Text(l10n.reject),
                     style: OutlinedButton.styleFrom(foregroundColor: c.error),
                   ),
                 ),
@@ -204,7 +271,7 @@ class RequestCard extends StatelessWidget {
                   child: FilledButton.icon(
                     onPressed: onApprove,
                     icon: const Icon(Icons.check_rounded, size: 18),
-                    label: const Text('Approve'),
+                    label: Text(l10n.approve),
                   ),
                 ),
               ],
@@ -252,14 +319,16 @@ class _DecisionLine extends StatelessWidget {
 }
 
 class StatusChip extends StatelessWidget {
-  const StatusChip({super.key, required this.label, required this.color});
+  const StatusChip({super.key, required this.status, required this.color});
 
-  final String label;
+  /// Raw status value (e.g. `Approved`, `Late`); drives both color and label.
+  final String status;
   final AppColors color;
 
   @override
   Widget build(BuildContext context) {
-    final lower = label.toLowerCase();
+    final label = localizedStatus(AppLocalizations.of(context)!, status);
+    final lower = status.toLowerCase();
     Color fg;
     if (lower == 'approved' || lower == 'present') {
       fg = color.success;

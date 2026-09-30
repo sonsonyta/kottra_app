@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kottra_app/config/feature_flags.dart';
+import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/screens/management/management_widgets.dart';
 import 'package:kottra_app/screens/tabs/home/check_in_card.dart';
 import 'package:kottra_app/screens/tabs/shared_widgets.dart';
@@ -17,16 +18,17 @@ class ManagementHomeTab extends StatelessWidget {
   final StoreManagementViewModel viewModel;
   final VoidCallback? onSwitchStore;
 
-  String _greeting() {
+  String _greeting(AppLocalizations l10n) {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (h < 12) return l10n.goodMorning;
+    if (h < 17) return l10n.goodAfternoon;
+    return l10n.goodEvening;
   }
 
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final l10n = AppLocalizations.of(context)!;
     final selfAttendance = viewModel.selfAttendance;
     return CustomScrollView(
       slivers: [
@@ -46,7 +48,10 @@ class ManagementHomeTab extends StatelessWidget {
                 const SizedBox(height: 24),
               ],
               Text(
-                DateFormat('EEE, d MMM yyyy').format(viewModel.selectedDate),
+                DateFormat(
+                  'EEE, d MMM yyyy',
+                  dateLocale(context),
+                ).format(viewModel.selectedDate),
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -56,14 +61,14 @@ class ManagementHomeTab extends StatelessWidget {
               const SizedBox(height: 10),
               _SummaryStatRow(viewModel: viewModel),
               const SizedBox(height: 24),
-              SectionHeaderText(text: 'Manage', color: c),
+              SectionHeaderText(text: l10n.manage, color: c),
               const SizedBox(height: 12),
               _ManageActionCard(
                 icon: Icons.beach_access_rounded,
                 iconColor: c.primary,
                 iconBackground: c.infoLight,
-                title: 'Leave requests',
-                subtitle: 'Review and approve time off',
+                title: l10n.leaveRequests,
+                subtitle: l10n.leaveRequestsSubtitle,
                 badge: viewModel.pendingLeaveCount,
                 color: c,
                 onTap: () => viewModel.setNavIndex(2),
@@ -73,8 +78,8 @@ class ManagementHomeTab extends StatelessWidget {
                 icon: Icons.schedule_rounded,
                 iconColor: c.warning,
                 iconBackground: c.warningLight,
-                title: 'Late excuses',
-                subtitle: 'Review late-arrival excuses',
+                title: l10n.lateExcuses,
+                subtitle: l10n.lateExcusesSubtitle,
                 badge: viewModel.pendingLateExcuseCount,
                 color: c,
                 onTap: () => viewModel.setNavIndex(2),
@@ -85,8 +90,8 @@ class ManagementHomeTab extends StatelessWidget {
                   icon: Icons.payments_rounded,
                   iconColor: c.success,
                   iconBackground: c.successLight,
-                  title: 'Salary advances',
-                  subtitle: 'Review advance requests',
+                  title: l10n.salaryAdvances,
+                  subtitle: l10n.salaryAdvancesSubtitle,
                   badge: viewModel.pendingAdvanceCount,
                   color: c,
                   onTap: () => viewModel.setNavIndex(2),
@@ -97,8 +102,8 @@ class ManagementHomeTab extends StatelessWidget {
                 icon: Icons.calendar_month_rounded,
                 iconColor: c.success,
                 iconBackground: c.successLight,
-                title: 'Attendance',
-                subtitle: 'See who\'s in today',
+                title: l10n.attendance,
+                subtitle: l10n.attendanceSubtitle,
                 color: c,
                 onTap: () => viewModel.setNavIndex(1),
               ),
@@ -112,6 +117,7 @@ class ManagementHomeTab extends StatelessWidget {
   /// Gradient header mirroring the employee Home tab: store name, greeting,
   /// user name, date and avatar, with a switch-store action.
   Widget _buildHeader(BuildContext context, AppColors c) {
+    final l10n = AppLocalizations.of(context)!;
     return SliverAppBar(
       expandedHeight: 160,
       pinned: true,
@@ -121,7 +127,7 @@ class ManagementHomeTab extends StatelessWidget {
         if (onSwitchStore != null)
           IconButton(
             icon: const Icon(Icons.swap_horiz_rounded, color: Colors.white),
-            tooltip: 'Switch store',
+            tooltip: l10n.switchStore,
             onPressed: onSwitchStore,
           ),
       ],
@@ -169,7 +175,7 @@ class ManagementHomeTab extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          _greeting(),
+                          _greeting(l10n),
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 14,
@@ -191,6 +197,7 @@ class ManagementHomeTab extends StatelessWidget {
                         Text(
                           DateFormat(
                             'EEEE, d MMMM yyyy',
+                            dateLocale(context),
                           ).format(DateTime.now()),
                           style: const TextStyle(
                             color: Colors.white60,
@@ -226,6 +233,7 @@ class _SummaryStatRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final l10n = AppLocalizations.of(context)!;
     if (viewModel.attendanceLoading) {
       return const SizedBox(
         height: 74,
@@ -237,7 +245,7 @@ class _SummaryStatRow extends StatelessWidget {
         Expanded(
           child: _StatChip(
             value: '${viewModel.presentCount}',
-            label: 'Present',
+            label: l10n.present,
             color: c.success,
             background: c.successLight,
             icon: Icons.check_circle_outline_rounded,
@@ -247,7 +255,7 @@ class _SummaryStatRow extends StatelessWidget {
         Expanded(
           child: _StatChip(
             value: '${viewModel.lateCount}',
-            label: 'Late',
+            label: l10n.late,
             color: c.warning,
             background: c.warningLight,
             icon: Icons.access_time_rounded,
@@ -257,7 +265,7 @@ class _SummaryStatRow extends StatelessWidget {
         Expanded(
           child: _StatChip(
             value: '${viewModel.absentCount}',
-            label: 'Absent',
+            label: l10n.absent,
             color: c.error,
             background: c.errorLight,
             icon: Icons.cancel_outlined,
@@ -267,7 +275,7 @@ class _SummaryStatRow extends StatelessWidget {
         Expanded(
           child: _StatChip(
             value: '${viewModel.leaveCount}',
-            label: 'Leave',
+            label: l10n.leave,
             color: c.primary,
             background: c.infoLight,
             icon: Icons.calendar_today_rounded,

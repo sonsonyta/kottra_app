@@ -522,4 +522,180 @@ class AppLocalizationsEn extends AppLocalizations {
   String rejectedBy(String name) {
     return 'Rejected by $name';
   }
+
+  @override
+  String get manage => 'Manage';
+
+  @override
+  String get requests => 'Requests';
+
+  @override
+  String get advance => 'Advance';
+
+  @override
+  String get switchStore => 'Switch store';
+
+  @override
+  String get leaveRequests => 'Leave requests';
+
+  @override
+  String get leaveRequestsSubtitle => 'Review and approve time off';
+
+  @override
+  String get lateExcuses => 'Late excuses';
+
+  @override
+  String get lateExcusesSubtitle => 'Review late-arrival excuses';
+
+  @override
+  String get salaryAdvances => 'Salary advances';
+
+  @override
+  String get salaryAdvancesSubtitle => 'Review advance requests';
+
+  @override
+  String get attendanceSubtitle => 'See who\'s in today';
+
+  @override
+  String get noAttendanceForDay => 'No attendance records for this day.';
+
+  @override
+  String get lateExcused => 'Late excused';
+
+  @override
+  String get photoIn => 'In';
+
+  @override
+  String get photoOut => 'Out';
+
+  @override
+  String get inLocation => 'In location';
+
+  @override
+  String get outLocation => 'Out location';
+
+  @override
+  String get couldNotOpenMaps => 'Could not open maps.';
+
+  @override
+  String get noLeaveRequestsYet => 'No leave requests yet.';
+
+  @override
+  String get noAdvanceRequestsYet => 'No salary advance requests yet.';
+
+  @override
+  String requestedAs(String type) {
+    return 'Requested as $type';
+  }
+
+  @override
+  String get approve => 'Approve';
+
+  @override
+  String get reject => 'Reject';
+
+  @override
+  String get decisionNoteHint => 'Reason shown to the employee';
+
+  @override
+  String couldNotUpdate(String error) {
+    return 'Could not update: $error';
+  }
+
+  @override
+  String get approveLeaveTitle => 'Approve leave?';
+
+  @override
+  String get rejectLeaveTitle => 'Reject leave?';
+
+  @override
+  String get leaveApproved => 'Leave approved.';
+
+  @override
+  String get leaveRejected => 'Leave rejected.';
+
+  @override
+  String advanceSubtitle(String amount) {
+    return 'Advance · $amount';
+  }
+
+  @override
+  String approveAdvanceTitle(String amount) {
+    return 'Approve $amount advance?';
+  }
+
+  @override
+  String rejectAdvanceTitle(String amount) {
+    return 'Reject $amount advance?';
+  }
+
+  @override
+  String get advanceApproved => 'Advance approved.';
+
+  @override
+  String get advanceRejected => 'Advance rejected.';
+
+  @override
+  String get lateExcuseLabel => 'Late excuse';
+
+  @override
+  String get approveLateExcuseTitle => 'Approve late excuse?';
+
+  @override
+  String get rejectLateExcuseTitle => 'Reject late excuse?';
+
+  @override
+  String get lateExcuseApproved => 'Late excuse approved.';
+
+  @override
+  String get lateExcuseRejected => 'Late excuse rejected.';
+
+  @override
+  String get displayName => 'Display name';
+
+  @override
+  String get profileUpdated => 'Profile updated.';
+
+  @override
+  String get profilePhotoUpdated => 'Profile photo updated.';
+
+  @override
+  String couldNotUploadPhoto(String error) {
+    return 'Could not upload photo: $error';
+  }
+
+  @override
+  String get store => 'Store';
+
+  @override
+  String get role => 'Role';
+
+  @override
+  String get employeeRequests => 'Employee requests';
+
+  @override
+  String get employeeRequestsSubtitle =>
+      'Get notified when employees submit leave or late-excuse requests';
+
+  @override
+  String get selectStore => 'Select a store';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get noStoreRole => 'No store role assigned';
+
+  @override
+  String get noStoreRoleMessage =>
+      'This account isn\'t a member of any store. Ask a store owner to add you, then sign in again.';
+
+  @override
+  String welcomeUser(String name) {
+    return 'Welcome, $name';
+  }
+
+  @override
+  String get couldNotLoadStores =>
+      'Could not load your stores. Please try again.';
 }

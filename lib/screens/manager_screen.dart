@@ -64,7 +64,8 @@ class _ManagerScreenState extends State<ManagerScreen> {
               backgroundColor: c.error,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: Text(l10n.yesLogout),
           ),
@@ -100,16 +101,17 @@ class _ManagerScreenState extends State<ManagerScreen> {
 
   Widget _buildSelectionScaffold(BuildContext context) {
     final c = appColors(context);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: c.background,
       appBar: AppBar(
         backgroundColor: c.surface,
         elevation: 0,
-        title: const Text('Select a store'),
+        title: Text(l10n.selectStore),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout_rounded),
-            tooltip: 'Log out',
+            tooltip: l10n.logout,
             onPressed: _handleLogout,
           ),
         ],
@@ -123,8 +125,8 @@ class _ManagerScreenState extends State<ManagerScreen> {
             return _CenteredMessage(
               icon: Icons.error_outline_rounded,
               iconColor: c.error,
-              title: _viewModel.errorMessage!,
-              actionLabel: 'Retry',
+              title: l10n.couldNotLoadStores,
+              actionLabel: l10n.retry,
               onAction: _viewModel.refresh,
             );
           }
@@ -132,19 +134,17 @@ class _ManagerScreenState extends State<ManagerScreen> {
             return _CenteredMessage(
               icon: Icons.no_accounts_rounded,
               iconColor: c.textSecondary,
-              title: 'No store role assigned',
-              subtitle:
-                  'This account isn\'t a member of any store. Ask a store owner '
-                  'to add you, then sign in again.',
+              title: l10n.noStoreRole,
+              subtitle: l10n.noStoreRoleMessage,
             );
           }
-          return _buildStoreList(c);
+          return _buildStoreList(c, l10n);
         },
       ),
     );
   }
 
-  Widget _buildStoreList(AppColors c) {
+  Widget _buildStoreList(AppColors c, AppLocalizations l10n) {
     final memberships = _viewModel.memberships;
     return RefreshIndicator(
       onRefresh: _viewModel.refresh,
@@ -157,7 +157,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
             return Padding(
               padding: const EdgeInsets.only(bottom: 4, left: 4),
               child: Text(
-                'Welcome, ${_viewModel.userName}',
+                l10n.welcomeUser(_viewModel.userName),
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -226,7 +226,10 @@ class _StoreCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       membership.userRole.displayName,
-                      style: TextStyle(fontSize: 13, color: color.textSecondary),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: color.textSecondary,
+                      ),
                     ),
                   ],
                 ),

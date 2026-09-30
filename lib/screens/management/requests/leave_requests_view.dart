@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/models/leave_request.dart';
 import 'package:kottra_app/screens/management/management_widgets.dart';
 import 'package:kottra_app/view_models/store_management_view_model.dart';
@@ -9,15 +10,27 @@ class LeaveRequestsView extends StatelessWidget {
 
   final StoreManagementViewModel viewModel;
 
+  static String _typeLabel(AppLocalizations l10n, LeaveType type) {
+    return switch (type) {
+      LeaveType.sick => l10n.sickLeave,
+      LeaveType.paid => l10n.paidLeave,
+      LeaveType.other => l10n.otherLeave,
+      LeaveType.unpaid => l10n.unpaidLeave,
+      LeaveType.annual => l10n.annualLeave,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final locale = dateLocale(context);
     if (viewModel.leavesLoading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (viewModel.leaves.isEmpty) {
       return EmptyState(
         icon: Icons.beach_access_rounded,
-        message: 'No leave requests yet.',
+        message: l10n.noLeaveRequestsYet,
       );
     }
     return ListView.separated(
@@ -30,14 +43,14 @@ class LeaveRequestsView extends StatelessWidget {
           title: req.employeeName.isNotEmpty
               ? req.employeeName
               : req.employeeId,
-          subtitle: req.type.value,
+          subtitle: _typeLabel(l10n, req.type),
           detail: req.requestedType != null && req.requestedType != req.type
-              ? 'Requested as ${req.requestedType!.value}'
+              ? l10n.requestedAs(_typeLabel(l10n, req.requestedType!))
               : null,
           dateLine:
-              '${DateFormat('d MMM').format(req.startDate)} – ${DateFormat('d MMM yyyy').format(req.endDate)}',
+              '${DateFormat('d MMM', locale).format(req.startDate)} – ${DateFormat('d MMM yyyy', locale).format(req.endDate)}',
           reason: req.reason,
-          statusLabel: req.status.value,
+          status: req.status.value,
           isPending: req.status == LeaveStatus.pending,
           onApprove: () => _action(context, req, LeaveStatus.approved),
           onReject: () => _action(context, req, LeaveStatus.rejected),
@@ -54,6 +67,7 @@ class LeaveRequestsView extends StatelessWidget {
     LeaveRequest req,
     LeaveStatus status,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     String? reason;
     LeaveType? leaveType;
@@ -63,7 +77,7 @@ class LeaveRequestsView extends StatelessWidget {
       reason = decision.note;
       leaveType = decision.type;
     } else {
-      reason = await promptDecision(context, 'Reject leave?');
+      reason = await promptDecision(context, l10n.rejectLeaveTitle);
       if (reason == null) return;
     }
     try {
@@ -74,10 +88,18 @@ class LeaveRequestsView extends StatelessWidget {
         leaveType: leaveType,
       );
       messenger.showSnackBar(
-        SnackBar(content: Text('Leave ${status.value.toLowerCase()}.')),
+        SnackBar(
+          content: Text(
+            status == LeaveStatus.approved
+                ? l10n.leaveApproved
+                : l10n.leaveRejected,
+          ),
+        ),
       );
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Could not update: $e')));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.couldNotUpdate('$e'))),
+      );
     }
   }
 
@@ -87,21 +109,22 @@ class LeaveRequestsView extends StatelessWidget {
     BuildContext context,
     LeaveType current,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
     var selected = current;
     return showDialog<({LeaveType type, String note})>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Approve leave?'),
+        title: Text(l10n.approveLeaveTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             DropdownButtonFormField<LeaveType>(
               initialValue: current,
-              decoration: const InputDecoration(labelText: 'Leave type'),
+              decoration: InputDecoration(labelText: l10n.leaveType),
               items: [
                 for (final t in LeaveType.values)
-                  DropdownMenuItem(value: t, child: Text(t.value)),
+                  DropdownMenuItem(value: t, child: Text(_typeLabel(l10n, t))),
               ],
               onChanged: (t) {
                 if (t != null) selected = t;
@@ -110,9 +133,9 @@ class LeaveRequestsView extends StatelessWidget {
             const SizedBox(height: 12),
             TextField(
               controller: controller,
-              decoration: const InputDecoration(
-                labelText: 'Note (optional)',
-                hintText: 'Reason shown to the employee',
+              decoration: InputDecoration(
+                labelText: l10n.noteOptional,
+                hintText: l10n.decisionNoteHint,
               ),
               maxLines: 2,
             ),
@@ -121,14 +144,14 @@ class LeaveRequestsView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, (
               type: selected,
               note: controller.text.trim(),
             )),
-            child: const Text('Approve'),
+            child: Text(l10n.approve),
           ),
         ],
       ),

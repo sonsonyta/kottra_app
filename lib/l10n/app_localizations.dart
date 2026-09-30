@@ -1057,6 +1057,324 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rejected by {name}'**
   String rejectedBy(String name);
+
+  /// No description provided for @manage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get manage;
+
+  /// No description provided for @requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get requests;
+
+  /// No description provided for @advance.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance'**
+  String get advance;
+
+  /// No description provided for @switchStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch store'**
+  String get switchStore;
+
+  /// No description provided for @leaveRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave requests'**
+  String get leaveRequests;
+
+  /// No description provided for @leaveRequestsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review and approve time off'**
+  String get leaveRequestsSubtitle;
+
+  /// No description provided for @lateExcuses.
+  ///
+  /// In en, this message translates to:
+  /// **'Late excuses'**
+  String get lateExcuses;
+
+  /// No description provided for @lateExcusesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review late-arrival excuses'**
+  String get lateExcusesSubtitle;
+
+  /// No description provided for @salaryAdvances.
+  ///
+  /// In en, this message translates to:
+  /// **'Salary advances'**
+  String get salaryAdvances;
+
+  /// No description provided for @salaryAdvancesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review advance requests'**
+  String get salaryAdvancesSubtitle;
+
+  /// No description provided for @attendanceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'See who\'s in today'**
+  String get attendanceSubtitle;
+
+  /// No description provided for @noAttendanceForDay.
+  ///
+  /// In en, this message translates to:
+  /// **'No attendance records for this day.'**
+  String get noAttendanceForDay;
+
+  /// No description provided for @lateExcused.
+  ///
+  /// In en, this message translates to:
+  /// **'Late excused'**
+  String get lateExcused;
+
+  /// No description provided for @photoIn.
+  ///
+  /// In en, this message translates to:
+  /// **'In'**
+  String get photoIn;
+
+  /// No description provided for @photoOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Out'**
+  String get photoOut;
+
+  /// No description provided for @inLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'In location'**
+  String get inLocation;
+
+  /// No description provided for @outLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Out location'**
+  String get outLocation;
+
+  /// No description provided for @couldNotOpenMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open maps.'**
+  String get couldNotOpenMaps;
+
+  /// No description provided for @noLeaveRequestsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No leave requests yet.'**
+  String get noLeaveRequestsYet;
+
+  /// No description provided for @noAdvanceRequestsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No salary advance requests yet.'**
+  String get noAdvanceRequestsYet;
+
+  /// No description provided for @requestedAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested as {type}'**
+  String requestedAs(String type);
+
+  /// No description provided for @approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get approve;
+
+  /// No description provided for @reject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get reject;
+
+  /// No description provided for @decisionNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason shown to the employee'**
+  String get decisionNoteHint;
+
+  /// No description provided for @couldNotUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update: {error}'**
+  String couldNotUpdate(String error);
+
+  /// No description provided for @approveLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve leave?'**
+  String get approveLeaveTitle;
+
+  /// No description provided for @rejectLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject leave?'**
+  String get rejectLeaveTitle;
+
+  /// No description provided for @leaveApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave approved.'**
+  String get leaveApproved;
+
+  /// No description provided for @leaveRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave rejected.'**
+  String get leaveRejected;
+
+  /// No description provided for @advanceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance · {amount}'**
+  String advanceSubtitle(String amount);
+
+  /// No description provided for @approveAdvanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve {amount} advance?'**
+  String approveAdvanceTitle(String amount);
+
+  /// No description provided for @rejectAdvanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject {amount} advance?'**
+  String rejectAdvanceTitle(String amount);
+
+  /// No description provided for @advanceApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance approved.'**
+  String get advanceApproved;
+
+  /// No description provided for @advanceRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance rejected.'**
+  String get advanceRejected;
+
+  /// No description provided for @lateExcuseLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Late excuse'**
+  String get lateExcuseLabel;
+
+  /// No description provided for @approveLateExcuseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve late excuse?'**
+  String get approveLateExcuseTitle;
+
+  /// No description provided for @rejectLateExcuseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject late excuse?'**
+  String get rejectLateExcuseTitle;
+
+  /// No description provided for @lateExcuseApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Late excuse approved.'**
+  String get lateExcuseApproved;
+
+  /// No description provided for @lateExcuseRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Late excuse rejected.'**
+  String get lateExcuseRejected;
+
+  /// No description provided for @displayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get displayName;
+
+  /// No description provided for @profileUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated.'**
+  String get profileUpdated;
+
+  /// No description provided for @profilePhotoUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile photo updated.'**
+  String get profilePhotoUpdated;
+
+  /// No description provided for @couldNotUploadPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not upload photo: {error}'**
+  String couldNotUploadPhoto(String error);
+
+  /// No description provided for @store.
+  ///
+  /// In en, this message translates to:
+  /// **'Store'**
+  String get store;
+
+  /// No description provided for @role.
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get role;
+
+  /// No description provided for @employeeRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee requests'**
+  String get employeeRequests;
+
+  /// No description provided for @employeeRequestsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Get notified when employees submit leave or late-excuse requests'**
+  String get employeeRequestsSubtitle;
+
+  /// No description provided for @selectStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a store'**
+  String get selectStore;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @noStoreRole.
+  ///
+  /// In en, this message translates to:
+  /// **'No store role assigned'**
+  String get noStoreRole;
+
+  /// No description provided for @noStoreRoleMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This account isn\'t a member of any store. Ask a store owner to add you, then sign in again.'**
+  String get noStoreRoleMessage;
+
+  /// No description provided for @welcomeUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome, {name}'**
+  String welcomeUser(String name);
+
+  /// No description provided for @couldNotLoadStores.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load your stores. Please try again.'**
+  String get couldNotLoadStores;
 }
 
 class _AppLocalizationsDelegate

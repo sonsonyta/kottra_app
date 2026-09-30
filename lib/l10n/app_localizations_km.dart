@@ -520,4 +520,180 @@ class AppLocalizationsKm extends AppLocalizations {
   String rejectedBy(String name) {
     return 'បដិសេធដោយ $name';
   }
+
+  @override
+  String get manage => 'គ្រប់គ្រង';
+
+  @override
+  String get requests => 'សំណើ';
+
+  @override
+  String get advance => 'បុរេប្រទាន';
+
+  @override
+  String get switchStore => 'ប្តូរហាង';
+
+  @override
+  String get leaveRequests => 'សំណើសុំច្បាប់';
+
+  @override
+  String get leaveRequestsSubtitle => 'ពិនិត្យ និងអនុម័តការឈប់សម្រាក';
+
+  @override
+  String get lateExcuses => 'ការសុំលើកលែងការមកយឺត';
+
+  @override
+  String get lateExcusesSubtitle => 'ពិនិត្យការសុំលើកលែងការមកយឺត';
+
+  @override
+  String get salaryAdvances => 'បុរេប្រទានប្រាក់ខែ';
+
+  @override
+  String get salaryAdvancesSubtitle => 'ពិនិត្យសំណើបុរេប្រទាន';
+
+  @override
+  String get attendanceSubtitle => 'មើលអ្នកដែលមកធ្វើការថ្ងៃនេះ';
+
+  @override
+  String get noAttendanceForDay => 'មិនមានកំណត់ត្រាវត្តមានសម្រាប់ថ្ងៃនេះទេ។';
+
+  @override
+  String get lateExcused => 'បានលើកលែងការមកយឺត';
+
+  @override
+  String get photoIn => 'ចូល';
+
+  @override
+  String get photoOut => 'ចេញ';
+
+  @override
+  String get inLocation => 'ទីតាំងចូល';
+
+  @override
+  String get outLocation => 'ទីតាំងចេញ';
+
+  @override
+  String get couldNotOpenMaps => 'មិនអាចបើកផែនទីបានទេ។';
+
+  @override
+  String get noLeaveRequestsYet => 'មិនទាន់មានសំណើសុំច្បាប់នៅឡើយទេ។';
+
+  @override
+  String get noAdvanceRequestsYet => 'មិនទាន់មានសំណើបុរេប្រទាននៅឡើយទេ។';
+
+  @override
+  String requestedAs(String type) {
+    return 'បានស្នើសុំជា $type';
+  }
+
+  @override
+  String get approve => 'អនុម័ត';
+
+  @override
+  String get reject => 'បដិសេធ';
+
+  @override
+  String get decisionNoteHint => 'មូលហេតុដែលបង្ហាញដល់បុគ្គលិក';
+
+  @override
+  String couldNotUpdate(String error) {
+    return 'មិនអាចធ្វើបច្ចុប្បន្នភាពបានទេ: $error';
+  }
+
+  @override
+  String get approveLeaveTitle => 'អនុម័តការសុំច្បាប់?';
+
+  @override
+  String get rejectLeaveTitle => 'បដិសេធការសុំច្បាប់?';
+
+  @override
+  String get leaveApproved => 'បានអនុម័តការសុំច្បាប់។';
+
+  @override
+  String get leaveRejected => 'បានបដិសេធការសុំច្បាប់។';
+
+  @override
+  String advanceSubtitle(String amount) {
+    return 'បុរេប្រទាន · $amount';
+  }
+
+  @override
+  String approveAdvanceTitle(String amount) {
+    return 'អនុម័តបុរេប្រទាន $amount?';
+  }
+
+  @override
+  String rejectAdvanceTitle(String amount) {
+    return 'បដិសេធបុរេប្រទាន $amount?';
+  }
+
+  @override
+  String get advanceApproved => 'បានអនុម័តបុរេប្រទាន។';
+
+  @override
+  String get advanceRejected => 'បានបដិសេធបុរេប្រទាន។';
+
+  @override
+  String get lateExcuseLabel => 'សុំលើកលែងការមកយឺត';
+
+  @override
+  String get approveLateExcuseTitle => 'អនុម័តការសុំលើកលែងការមកយឺត?';
+
+  @override
+  String get rejectLateExcuseTitle => 'បដិសេធការសុំលើកលែងការមកយឺត?';
+
+  @override
+  String get lateExcuseApproved => 'បានអនុម័តការសុំលើកលែងការមកយឺត។';
+
+  @override
+  String get lateExcuseRejected => 'បានបដិសេធការសុំលើកលែងការមកយឺត។';
+
+  @override
+  String get displayName => 'ឈ្មោះបង្ហាញ';
+
+  @override
+  String get profileUpdated => 'បានកែប្រែគណនី។';
+
+  @override
+  String get profilePhotoUpdated => 'បានកែប្រែរូបថតគណនី។';
+
+  @override
+  String couldNotUploadPhoto(String error) {
+    return 'មិនអាចផ្ទុករូបថតឡើងបានទេ: $error';
+  }
+
+  @override
+  String get store => 'ហាង';
+
+  @override
+  String get role => 'តួនាទី';
+
+  @override
+  String get employeeRequests => 'សំណើរបស់បុគ្គលិក';
+
+  @override
+  String get employeeRequestsSubtitle =>
+      'ទទួលការជូនដំណឹងនៅពេលបុគ្គលិកដាក់សំណើសុំច្បាប់ ឬសុំលើកលែងការមកយឺត';
+
+  @override
+  String get selectStore => 'ជ្រើសរើសហាង';
+
+  @override
+  String get retry => 'ព្យាយាមម្តងទៀត';
+
+  @override
+  String get noStoreRole => 'មិនទាន់មានតួនាទីក្នុងហាង';
+
+  @override
+  String get noStoreRoleMessage =>
+      'គណនីនេះមិនមែនជាសមាជិកនៃហាងណាមួយទេ។ សូមស្នើម្ចាស់ហាងឱ្យបន្ថែមអ្នក រួចចូលម្តងទៀត។';
+
+  @override
+  String welcomeUser(String name) {
+    return 'សូមស្វាគមន៍, $name';
+  }
+
+  @override
+  String get couldNotLoadStores =>
+      'មិនអាចផ្ទុកហាងរបស់អ្នកបានទេ។ សូមព្យាយាមម្តងទៀត។';
 }

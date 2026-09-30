@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/screens/management/management_widgets.dart';
 import 'package:kottra_app/screens/tabs/settings_sections.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
@@ -20,26 +21,27 @@ class ManagementProfileTab extends StatelessWidget {
   final VoidCallback? onLogout;
 
   Future<void> _editName(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: viewModel.managerName);
     final messenger = ScaffoldMessenger.of(context);
     final newName = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Update profile'),
+        title: Text(l10n.editProfile),
         content: TextField(
           controller: controller,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(labelText: 'Display name'),
+          decoration: InputDecoration(labelText: l10n.displayName),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Save'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -47,14 +49,17 @@ class ManagementProfileTab extends StatelessWidget {
     if (newName == null || newName.isEmpty) return;
     try {
       await viewModel.updateDisplayName(newName);
-      messenger.showSnackBar(const SnackBar(content: Text('Profile updated.')));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.profileUpdated)));
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Could not update: $e')));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.couldNotUpdate('$e'))),
+      );
     }
   }
 
   Future<void> _editPhoto(BuildContext context) async {
     if (viewModel.isUploadingPhoto) return;
+    final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     final result = await FilePicker.pickFiles(
       type: FileType.image,
@@ -65,12 +70,10 @@ class ManagementProfileTab extends StatelessWidget {
     if (bytes == null) return;
     try {
       await viewModel.updateProfilePhoto(bytes);
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Profile photo updated.')),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(l10n.profilePhotoUpdated)));
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Could not upload photo: $e')),
+        SnackBar(content: Text(l10n.couldNotUploadPhoto('$e'))),
       );
     }
   }
@@ -78,21 +81,13 @@ class ManagementProfileTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
-    return SafeArea(
-      child: ListView(
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      backgroundColor: c.background,
+      appBar: managementAppBar(context, l10n.profile),
+      body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12, top: 4),
-            child: Text(
-              'Profile',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: c.textPrimary,
-              ),
-            ),
-          ),
           // ── Profile update ──
           Container(
             padding: const EdgeInsets.all(18),
@@ -138,40 +133,61 @@ class ManagementProfileTab extends StatelessWidget {
                     ),
                     IconButton(
                       icon: Icon(Icons.edit_outlined, color: c.primary),
-                      tooltip: 'Update profile',
+                      tooltip: l10n.editProfile,
                       onPressed: () => _editName(context),
                     ),
                   ],
                 ),
                 const Divider(height: 24),
                 _InfoRow(
-                  label: 'Store',
+                  label: l10n.store,
                   value: viewModel.storeName ?? viewModel.storeId,
                   color: c,
                 ),
                 const SizedBox(height: 12),
-                _InfoRow(label: 'Role', value: viewModel.roleLabel, color: c),
+                _InfoRow(
+                  label: l10n.role,
+                  value: viewModel.roleLabel,
+                  color: c,
+                ),
               ],
             ),
           ),
           const SizedBox(height: 16),
           // ── Notifications ──
           SettingsCard(
-            title: 'Notifications',
+            title: l10n.notifications,
             icon: Icons.notifications_active_outlined,
-            child: SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                'Employee requests',
-                style: TextStyle(fontSize: 14, color: c.textPrimary),
-              ),
-              subtitle: Text(
-                'Get notified when employees submit leave or late-excuse requests',
-                style: TextStyle(fontSize: 12, color: c.textSecondary),
-              ),
-              activeThumbColor: c.primary,
-              value: viewModel.requestNotificationsEnabled,
-              onChanged: viewModel.toggleRequestNotifications,
+            child: Column(
+              children: [
+                // The manager's own attendance notifications, only when they
+                // can check in/out (linked to an employee in this store).
+                if (viewModel.selfAttendance != null) ...[
+                  _NotificationSwitch(
+                    title: l10n.attendanceReminders,
+                    subtitle: l10n.dailyCheckInOutAlertsSubtitle,
+                    value: viewModel.remindersEnabled,
+                    onChanged: viewModel.toggleReminders,
+                    color: c,
+                  ),
+                  Divider(height: 1, color: c.divider),
+                  _NotificationSwitch(
+                    title: l10n.leaveNotifications,
+                    subtitle: l10n.leaveNotificationsSubtitle,
+                    value: viewModel.leaveNotificationsEnabled,
+                    onChanged: viewModel.toggleLeaveNotifications,
+                    color: c,
+                  ),
+                  Divider(height: 1, color: c.divider),
+                ],
+                _NotificationSwitch(
+                  title: l10n.employeeRequests,
+                  subtitle: l10n.employeeRequestsSubtitle,
+                  value: viewModel.requestNotificationsEnabled,
+                  onChanged: viewModel.toggleRequestNotifications,
+                  color: c,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
@@ -184,7 +200,7 @@ class ManagementProfileTab extends StatelessWidget {
           if (onSwitchStore != null)
             _ProfileTile(
               icon: Icons.swap_horiz_rounded,
-              label: 'Switch store',
+              label: l10n.switchStore,
               color: c,
               onTap: onSwitchStore!,
             ),
@@ -192,7 +208,7 @@ class ManagementProfileTab extends StatelessWidget {
             const SizedBox(height: 12),
             _ProfileTile(
               icon: Icons.logout_rounded,
-              label: 'Log out',
+              label: l10n.logout,
               color: c,
               destructive: true,
               onTap: onLogout!,
@@ -365,6 +381,40 @@ class _ProfileTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _NotificationSwitch extends StatelessWidget {
+  const _NotificationSwitch({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+    required this.color,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final AppColors color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(
+        title,
+        style: TextStyle(fontSize: 14, color: color.textPrimary),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(fontSize: 12, color: color.textSecondary),
+      ),
+      activeThumbColor: color.primary,
+      value: value,
+      onChanged: onChanged,
     );
   }
 }

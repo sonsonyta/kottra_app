@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kottra_app/config/feature_flags.dart';
+import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/screens/management/management_widgets.dart';
 import 'package:kottra_app/screens/management/requests/advance_requests_view.dart';
 import 'package:kottra_app/screens/management/requests/late_excuse_requests_view.dart';
@@ -15,58 +16,45 @@ class ManagementRequestsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final l10n = AppLocalizations.of(context)!;
     const showAdvances = FeatureFlags.enableSalaryAdvance;
-    return SafeArea(
-      child: DefaultTabController(
-        length: showAdvances ? 3 : 2,
-        child: Column(
+    return DefaultTabController(
+      length: showAdvances ? 3 : 2,
+      child: Scaffold(
+        backgroundColor: c.background,
+        appBar: managementAppBar(
+          context,
+          l10n.requests,
+          bottom: TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            dividerColor: Colors.transparent,
+            tabs: [
+              TabWithBadge(
+                label: l10n.leave,
+                count: viewModel.pendingLeaveCount,
+                color: c,
+              ),
+              TabWithBadge(
+                label: l10n.late,
+                count: viewModel.pendingLateExcuseCount,
+                color: c,
+              ),
+              if (showAdvances)
+                TabWithBadge(
+                  label: l10n.advance,
+                  count: viewModel.pendingAdvanceCount,
+                  color: c,
+                ),
+            ],
+          ),
+        ),
+        body: TabBarView(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Requests',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: c.textPrimary,
-                  ),
-                ),
-              ),
-            ),
-            TabBar(
-              labelColor: c.primary,
-              unselectedLabelColor: c.textSecondary,
-              indicatorColor: c.primary,
-              tabs: [
-                TabWithBadge(
-                  label: 'Leave',
-                  count: viewModel.pendingLeaveCount,
-                  color: c,
-                ),
-                TabWithBadge(
-                  label: 'Late',
-                  count: viewModel.pendingLateExcuseCount,
-                  color: c,
-                ),
-                if (showAdvances)
-                  TabWithBadge(
-                    label: 'Advance',
-                    count: viewModel.pendingAdvanceCount,
-                    color: c,
-                  ),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  LeaveRequestsView(viewModel: viewModel),
-                  LateExcuseRequestsView(viewModel: viewModel),
-                  if (showAdvances) AdvanceRequestsView(viewModel: viewModel),
-                ],
-              ),
-            ),
+            LeaveRequestsView(viewModel: viewModel),
+            LateExcuseRequestsView(viewModel: viewModel),
+            if (showAdvances) AdvanceRequestsView(viewModel: viewModel),
           ],
         ),
       ),

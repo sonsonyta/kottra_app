@@ -152,23 +152,85 @@ class StoreManagementViewModel extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       _requestNotificationsEnabled = prefs.getBool(_notifPrefKey) ?? true;
+      _remindersEnabled = prefs.getBool(_remindersPrefKey) ?? false;
+      _leaveNotificationsEnabled = prefs.getBool(_leaveNotifPrefKey) ?? true;
     } catch (e) {
       debugPrint('Error loading manager notification pref: $e');
     }
     NotificationService.instance.leaveNotificationsEnabled =
-        _requestNotificationsEnabled;
+        _leaveNotificationsEnabled;
+    if (_disposed) return;
     notifyListeners();
+    // The linked employee may have loaded before the prefs did.
+    _scheduleOwnReminders();
   }
 
   Future<void> toggleRequestNotifications(bool value) async {
     _requestNotificationsEnabled = value;
-    NotificationService.instance.leaveNotificationsEnabled = value;
     notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_notifPrefKey, value);
     } catch (e) {
       debugPrint('Error saving manager notification pref: $e');
+    }
+  }
+
+  // The manager's own attendance notifications, shown when they're linked to
+  // an employee record. Same device-level keys as the employee profile, since
+  // reminders are scheduled per device.
+  static const String _remindersPrefKey = 'attendance_reminders';
+  static const String _leaveNotifPrefKey = 'leave_notifications';
+
+  bool _remindersEnabled = false;
+  bool _leaveNotificationsEnabled = true;
+
+  /// Whether daily check-in/out reminders are on for the linked employee.
+  bool get remindersEnabled => _remindersEnabled;
+
+  /// Whether pushes about the manager's own leave requests are shown.
+  bool get leaveNotificationsEnabled => _leaveNotificationsEnabled;
+
+  Future<void> toggleReminders(bool value) async {
+    _remindersEnabled = value;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_remindersPrefKey, value);
+    } catch (e) {
+      debugPrint('Error saving reminder pref: $e');
+    }
+    if (_disposed) return;
+    if (value) {
+      await NotificationService.instance.requestPermissions();
+      await _scheduleOwnReminders();
+    } else {
+      await NotificationService.instance.cancelAllReminders();
+    }
+  }
+
+  Future<void> toggleLeaveNotifications(bool value) async {
+    _leaveNotificationsEnabled = value;
+    NotificationService.instance.leaveNotificationsEnabled = value;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_leaveNotifPrefKey, value);
+    } catch (e) {
+      debugPrint('Error saving leave notification pref: $e');
+    }
+  }
+
+  /// (Re)schedules reminders on the linked employee's hours when enabled.
+  Future<void> _scheduleOwnReminders() async {
+    final employee = _linkedEmployee;
+    if (!_remindersEnabled || employee == null) return;
+    try {
+      await NotificationService.instance.scheduleAttendanceReminders(
+        employee.reminderHours,
+      );
+    } catch (e) {
+      debugPrint('Error scheduling attendance reminders: $e');
     }
   }
 
@@ -277,6 +339,8 @@ class StoreManagementViewModel extends ChangeNotifier {
 
   StreamSubscription<HREmployee?>? _linkedEmployeeSub;
   AttendanceViewModel? _selfAttendance;
+  HREmployee? _linkedEmployee;
+  String? _fcmTokenSyncedFor;
 
   /// Check-in/out state for the signed-in user's own employee record, or null
   /// when they aren't linked to an active employee in this store.
@@ -292,10 +356,20 @@ class StoreManagementViewModel extends ChangeNotifier {
         .streamEmployeeByUserId(storeId, uid)
         .listen(
           (employee) {
-            final employeeId =
+            final active =
                 employee != null && employee.status == EmployeeStatus.active
-                ? employee.id
+                ? employee
                 : null;
+            final employeeId = active?.id;
+            final wasLinked = _linkedEmployee != null;
+            _linkedEmployee = active;
+            if (active != null) {
+              // Hours may have changed in the POS; keep reminders current.
+              _scheduleOwnReminders();
+              _syncFcmToken(active);
+            } else if (wasLinked && _remindersEnabled) {
+              NotificationService.instance.cancelAllReminders();
+            }
             if (employeeId == _selfAttendanceEmployeeId) return;
             _selfAttendance?.dispose();
             _selfAttendance = employeeId == null
@@ -313,6 +387,24 @@ class StoreManagementViewModel extends ChangeNotifier {
   }
 
   String? _selfAttendanceEmployeeId;
+
+  /// Points the linked employee record's `fcmToken` at this device, so the
+  /// manager receives pushes about their own requests (e.g. leave decisions).
+  /// Mirrors what the employee login does in MainViewModel.
+  Future<void> _syncFcmToken(HREmployee employee) async {
+    if (_fcmTokenSyncedFor == employee.id) return;
+    _fcmTokenSyncedFor = employee.id;
+    try {
+      final token = await NotificationService.instance.getFcmToken();
+      if (token != null && employee.fcmToken != token) {
+        await _employeeService.updateEmployee(storeId, employee.id, {
+          'fcmToken': token,
+        });
+      }
+    } catch (e) {
+      debugPrint('Error updating FCM token: $e');
+    }
+  }
 
   // ── Bottom-nav ────────────────────────────────────────────────────────────
 

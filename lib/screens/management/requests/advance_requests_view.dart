@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/models/salary_advance.dart';
 import 'package:kottra_app/screens/management/management_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_helpers.dart';
@@ -12,13 +13,15 @@ class AdvanceRequestsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final locale = dateLocale(context);
     if (viewModel.advancesLoading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (viewModel.advances.isEmpty) {
       return EmptyState(
         icon: Icons.payments_rounded,
-        message: 'No salary advance requests yet.',
+        message: l10n.noAdvanceRequestsYet,
       );
     }
     return ListView.separated(
@@ -31,12 +34,14 @@ class AdvanceRequestsView extends StatelessWidget {
           title: advance.employeeName.isNotEmpty
               ? advance.employeeName
               : advance.employeeId,
-          subtitle:
-              'Advance · ${fmtMoney(advance.amount, advance.currency.value)}',
-          dateLine:
-              'Requested ${DateFormat('EEE, d MMM yyyy').format(advance.requestedAt)}',
+          subtitle: l10n.advanceSubtitle(
+            fmtMoney(advance.amount, advance.currency.value),
+          ),
+          dateLine: l10n.requestedOnDate(
+            DateFormat('EEE, d MMM yyyy', locale).format(advance.requestedAt),
+          ),
           reason: advance.reason,
-          statusLabel: advance.status.value,
+          status: advance.status.value,
           isPending: advance.status == AdvanceStatus.pending,
           onApprove: () => _action(context, advance, AdvanceStatus.approved),
           onReject: () => _action(context, advance, AdvanceStatus.rejected),
@@ -53,22 +58,31 @@ class AdvanceRequestsView extends StatelessWidget {
     SalaryAdvance advance,
     AdvanceStatus status,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     final amount = fmtMoney(advance.amount, advance.currency.value);
     final reason = await promptDecision(
       context,
       status == AdvanceStatus.approved
-          ? 'Approve $amount advance?'
-          : 'Reject $amount advance?',
+          ? l10n.approveAdvanceTitle(amount)
+          : l10n.rejectAdvanceTitle(amount),
     );
     if (reason == null) return;
     try {
       await viewModel.actionAdvance(advance, status, reason: reason);
       messenger.showSnackBar(
-        SnackBar(content: Text('Advance ${status.value.toLowerCase()}.')),
+        SnackBar(
+          content: Text(
+            status == AdvanceStatus.approved
+                ? l10n.advanceApproved
+                : l10n.advanceRejected,
+          ),
+        ),
       );
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Could not update: $e')));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.couldNotUpdate('$e'))),
+      );
     }
   }
 }

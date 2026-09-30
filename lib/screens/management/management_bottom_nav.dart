@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/screens/management/management_widgets.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
 
@@ -19,6 +20,7 @@ class ManagementBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = appColors(context);
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         color: c.surface,
@@ -39,7 +41,7 @@ class ManagementBottomNav extends StatelessWidget {
               _NavItem(
                 icon: Icons.home_outlined,
                 activeIcon: Icons.home_rounded,
-                label: 'Home',
+                label: l10n.home,
                 index: 0,
                 currentIndex: currentIndex,
                 onTap: onTap,
@@ -47,7 +49,7 @@ class ManagementBottomNav extends StatelessWidget {
               _NavItem(
                 icon: Icons.calendar_month_outlined,
                 activeIcon: Icons.calendar_month_rounded,
-                label: 'Attendance',
+                label: l10n.attendance,
                 index: 1,
                 currentIndex: currentIndex,
                 onTap: onTap,
@@ -55,7 +57,7 @@ class ManagementBottomNav extends StatelessWidget {
               _NavItem(
                 icon: Icons.inbox_outlined,
                 activeIcon: Icons.inbox_rounded,
-                label: 'Requests',
+                label: l10n.requests,
                 index: 2,
                 currentIndex: currentIndex,
                 onTap: onTap,
@@ -64,7 +66,7 @@ class ManagementBottomNav extends StatelessWidget {
               _NavItem(
                 icon: Icons.person_outline_rounded,
                 activeIcon: Icons.person_rounded,
-                label: 'Profile',
+                label: l10n.profile,
                 index: 3,
                 currentIndex: currentIndex,
                 onTap: onTap,

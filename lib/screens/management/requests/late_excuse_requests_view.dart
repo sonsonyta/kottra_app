@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/models/late_excuse_request.dart';
 import 'package:kottra_app/screens/management/management_widgets.dart';
 import 'package:kottra_app/view_models/store_management_view_model.dart';
@@ -11,13 +12,15 @@ class LateExcuseRequestsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final locale = dateLocale(context);
     if (viewModel.lateExcusesLoading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (viewModel.lateExcuses.isEmpty) {
       return EmptyState(
         icon: Icons.timer_off_rounded,
-        message: 'No late-excuse requests yet.',
+        message: l10n.noLateExcusesYet,
       );
     }
     return ListView.separated(
@@ -27,16 +30,16 @@ class LateExcuseRequestsView extends StatelessWidget {
       itemBuilder: (context, i) {
         final req = viewModel.lateExcuses[i];
         final late = req.lateMinutes != null
-            ? ' · ${req.lateMinutes} min late'
+            ? ' · ${l10n.minutesLate(req.lateMinutes!)}'
             : '';
         return RequestCard(
           title: req.employeeName.isNotEmpty
               ? req.employeeName
               : req.employeeId,
-          subtitle: 'Late excuse$late',
-          dateLine: DateFormat('EEE, d MMM yyyy').format(req.date),
+          subtitle: '${l10n.lateExcuseLabel}$late',
+          dateLine: DateFormat('EEE, d MMM yyyy', locale).format(req.date),
           reason: req.reason,
-          statusLabel: req.status.value,
+          status: req.status.value,
           isPending: req.status == LateExcuseStatus.pending,
           onApprove: () => _action(context, req, LateExcuseStatus.approved),
           onReject: () => _action(context, req, LateExcuseStatus.rejected),
@@ -53,21 +56,30 @@ class LateExcuseRequestsView extends StatelessWidget {
     LateExcuseRequest req,
     LateExcuseStatus status,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     final reason = await promptDecision(
       context,
       status == LateExcuseStatus.approved
-          ? 'Approve late excuse?'
-          : 'Reject late excuse?',
+          ? l10n.approveLateExcuseTitle
+          : l10n.rejectLateExcuseTitle,
     );
     if (reason == null) return;
     try {
       await viewModel.actionLateExcuse(req, status, reason: reason);
       messenger.showSnackBar(
-        SnackBar(content: Text('Late excuse ${status.value.toLowerCase()}.')),
+        SnackBar(
+          content: Text(
+            status == LateExcuseStatus.approved
+                ? l10n.lateExcuseApproved
+                : l10n.lateExcuseRejected,
+          ),
+        ),
       );
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Could not update: $e')));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.couldNotUpdate('$e'))),
+      );
     }
   }
 }
