@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#2e86c1</color>
+    <!-- Launch splash background: the app icon's blue (assets/logo.png). -->
+    <color name="launch_background">#2579A6</color>
 </resources>
