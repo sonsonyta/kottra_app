@@ -75,4 +75,24 @@ void main() {
       expect(again.workingHoursOn(saturday).end, '12:00');
     });
   });
+
+  group('HREmployee.reminderHours', () {
+    test('covers weekdays plus days the POS gave hours', () {
+      final emp = HREmployee.fromMap(
+        'e1',
+        _employeeMap(weeklySchedule: {
+          '6': {'start': '08:00', 'end': '12:00'},
+        }),
+      );
+      final hours = emp.reminderHours;
+      expect(hours.keys, [1, 2, 3, 4, 5, 6]);
+      expect(hours[DateTime.saturday]!.end, '12:00');
+      expect(hours[DateTime.monday]!.end, '17:00');
+    });
+
+    test('weekdays only without overrides', () {
+      final emp = HREmployee.fromMap('e1', _employeeMap());
+      expect(emp.reminderHours.keys, [1, 2, 3, 4, 5]);
+    });
+  });
 }

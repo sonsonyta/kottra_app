@@ -242,6 +242,23 @@ class HREmployee {
     );
   }
 
+  /// Hours to schedule attendance reminders on, per Dart weekday (Monday = 1
+  /// … Sunday = 7): Monday to Friday on the default hours, plus any day the
+  /// POS gave its own hours (e.g. a Saturday half day).
+  Map<int, DailyWorkingHours> get reminderHours {
+    final hours = <int, DailyWorkingHours>{};
+    for (var day = DateTime.monday; day <= DateTime.sunday; day++) {
+      final isWeekday = day <= DateTime.friday;
+      if (!isWeekday && !weeklySchedule.containsKey(day % 7)) continue;
+      // 2024-01-01 was a Monday, so this date falls on `day`.
+      final resolved = workingHoursOn(DateTime(2024, 1, day));
+      if (resolved.start != null && resolved.end != null) {
+        hours[day] = resolved;
+      }
+    }
+    return hours;
+  }
+
   /// Length in minutes of this employee's own hours on [localDay]'s weekday,
   /// or null when that weekday uses the default hours. An end at/before the
   /// start is treated as crossing midnight. Sizes the proportional late
