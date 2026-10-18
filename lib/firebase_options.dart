@@ -54,7 +54,7 @@ class DefaultFirebaseOptions {
     appId: '1:421403764828:android:72bbe3a9944edea4509e99',
     messagingSenderId: '421403764828',
     projectId: 'kottra-pos-d7e02',
-    storageBucket: 'kottra-pos-d7e02.firebasestorage.app',
+    storageBucket: 'kottra-as1',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -62,7 +62,7 @@ class DefaultFirebaseOptions {
     appId: '1:421403764828:ios:49dd6b226a826f3a509e99',
     messagingSenderId: '421403764828',
     projectId: 'kottra-pos-d7e02',
-    storageBucket: 'kottra-pos-d7e02.firebasestorage.app',
+    storageBucket: 'kottra-as1',
     iosClientId: '421403764828-1dognl8sf8m49hn8mt92gumjq7lgh163.apps.googleusercontent.com',
     iosBundleId: 'com.kottra.app',
   );
