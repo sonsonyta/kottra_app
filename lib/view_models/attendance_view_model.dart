@@ -314,7 +314,20 @@ class AttendanceViewModel extends ChangeNotifier {
       return;
     }
 
-    final latest = relevantHistory.first;
+    // A shift that is still open (and not yet stale) stays the active record
+    // even when a newer record without a check-in exists — e.g. an overnight
+    // shift started yesterday evening when today is a day off, leave, holiday
+    // or absence. Otherwise today's record would mask the open shift and the
+    // employee could not check out.
+    final openShift = relevantHistory
+        .where(
+          (r) =>
+              r.checkIn != null &&
+              r.checkOut == null &&
+              now.difference(r.checkIn!).inHours <= maxHoursBeforeStaleCheckIn,
+        )
+        .firstOrNull;
+    final latest = openShift ?? relevantHistory.first;
     final recordDate = _inStoreZone(latest.date.toDate());
     final isTodayDate =
         recordDate.year == now.year &&

@@ -531,6 +531,97 @@ void main() {
         viewModel.dispose();
       },
     );
+
+    for (final status in [
+      AttendanceStatus.dayOff,
+      AttendanceStatus.leave,
+      AttendanceStatus.absent,
+      AttendanceStatus.holiday,
+    ]) {
+      test(
+        'keeps an overnight shift checkoutable when today is ${status.value}',
+        () async {
+          final now = DateTime.now();
+          final todayNonWork = AttendanceRecord(
+            id: 'today-non-work',
+            storeId: 'store-1',
+            employeeId: 'emp-1',
+            employeeName: 'Employee',
+            date: Timestamp.fromDate(now),
+            status: status,
+          );
+          final overnightShift = AttendanceRecord(
+            id: 'overnight-shift',
+            storeId: 'store-1',
+            employeeId: 'emp-1',
+            employeeName: 'Employee',
+            date: Timestamp.fromDate(now.subtract(const Duration(days: 1))),
+            checkIn: now.subtract(const Duration(hours: 9)),
+            status: AttendanceStatus.present,
+          );
+
+          final attendanceService = FakeAttendanceService()
+            ..history = [todayNonWork, overnightShift];
+
+          final viewModel = buildViewModel(
+            attendanceService: attendanceService,
+            locationService: FakeLocationService(),
+          );
+          await Future<void>.delayed(Duration.zero);
+
+          expect(viewModel.todayRecord?.id, 'overnight-shift');
+          expect(viewModel.isCheckedIn, isTrue);
+          expect(viewModel.isDayOff, isFalse);
+          expect(viewModel.isOnLeave, isFalse);
+          expect(viewModel.isAbsent, isFalse);
+
+          await viewModel.checkOut();
+          expect(attendanceService.checkOutCalls, 1);
+          expect(attendanceService.lastAttendanceId, 'overnight-shift');
+
+          viewModel.dispose();
+        },
+      );
+    }
+
+    test('shows today\'s day off once the open shift is stale', () async {
+      final now = DateTime.now();
+      final attendanceService = FakeAttendanceService()
+        ..history = [
+          AttendanceRecord(
+            id: 'today-day-off',
+            storeId: 'store-1',
+            employeeId: 'emp-1',
+            employeeName: 'Employee',
+            date: Timestamp.fromDate(now),
+            status: AttendanceStatus.dayOff,
+          ),
+          AttendanceRecord(
+            id: 'stale-shift',
+            storeId: 'store-1',
+            employeeId: 'emp-1',
+            employeeName: 'Employee',
+            date: Timestamp.fromDate(now.subtract(const Duration(days: 1))),
+            checkIn: now.subtract(
+              const Duration(
+                hours: AttendanceViewModel.maxHoursBeforeStaleCheckIn + 2,
+              ),
+            ),
+            status: AttendanceStatus.present,
+          ),
+        ];
+
+      final viewModel = buildViewModel(
+        attendanceService: attendanceService,
+        locationService: FakeLocationService(),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(viewModel.todayRecord?.id, 'today-day-off');
+      expect(viewModel.isDayOff, isTrue);
+
+      viewModel.dispose();
+    });
   });
 
   group('AttendanceViewModel offline check-in/out', () {
