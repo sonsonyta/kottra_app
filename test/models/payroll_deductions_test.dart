@@ -44,6 +44,7 @@ HrSettings _settings({
   LateDeductionSettings? late,
   AbsenceDeductionSettings? absence,
   MissedCheckOutDeductionSettings? missedCheckOut,
+  LeaveDeductionSettings? leave,
   DeductionPeriodBasis basis = DeductionPeriodBasis.payrollFrequency,
 }) {
   return HrSettings(
@@ -52,6 +53,7 @@ HrSettings _settings({
     absenceDeduction: absence ?? AbsenceDeductionSettings.legacyDefault,
     missedCheckOutDeduction:
         missedCheckOut ?? MissedCheckOutDeductionSettings.disabled,
+    leaveDeduction: leave,
     allowDisplayPreviewDeduction: true,
     deductionPeriodBasis: basis,
     attendanceMethod: AttendanceMethod.button,
@@ -560,6 +562,84 @@ void main() {
       );
       expect(off.missedCheckOuts, 1); // counted, but the policy is off
       expect(off.missedCheckOut, 0);
+    });
+  });
+
+  group('leave deduction policy', () {
+    final today = DateTime(2026, 8, 31);
+    final records = [
+      _rec(day: 3, status: AttendanceStatus.absent),
+      _rec(day: 4, status: AttendanceStatus.leave, leaveType: LeaveType.unpaidLeave),
+      _rec(day: 5, status: AttendanceStatus.leave, leaveType: LeaveType.sickLeave),
+      _rec(day: 6, status: AttendanceStatus.leave, leaveType: LeaveType.sickLeave),
+      _rec(day: 7, status: AttendanceStatus.leave), // no type → Other
+      _rec(day: 10, status: AttendanceStatus.leave, leaveType: LeaveType.annualLeave),
+      _rec(day: 11, status: AttendanceStatus.holiday),
+    ];
+    DeductionBreakdown run(LeaveDeductionSettings? leave) => computePeriodDeductions(
+          records: records,
+          monthlyBasicSalary: 280, // $10/day over the 28-day divisor
+          currency: SalaryCurrency.usd,
+          settings: _settings(frequency: PayrollFrequency.monthly, leave: leave),
+          today: today,
+        );
+    LeaveDeductionSettings policy(Set<LeaveType> types,
+            {bool enabled = true,
+            AbsenceDeductionMode mode = AbsenceDeductionMode.proportional,
+            double? perDayUsd}) =>
+        LeaveDeductionSettings(
+          enabled: enabled,
+          unpaidLeaveTypes: types,
+          mode: mode,
+          perDayUsd: perDayUsd,
+        );
+
+    test('legacy (no policy): Unpaid Leave counts as an absence day', () {
+      final b = run(null);
+      expect(b.unpaidDays, 2);
+      expect(b.absence, 20);
+    });
+
+    test('policy charges each unpaid type; absence is Absent only', () {
+      final b = run(policy({LeaveType.unpaidLeave, LeaveType.sickLeave}));
+      expect(b.unpaidDays, 4); // 1 absent + 3 leave
+      expect(b.absence, 40);
+    });
+
+    test('a leave record with no type is treated as Other', () {
+      final b = run(policy({LeaveType.other}));
+      expect(b.unpaidDays, 2);
+      expect(b.absence, 20);
+    });
+
+    test('a disabled policy deducts no leave at all', () {
+      final b = run(policy({LeaveType.unpaidLeave}, enabled: false));
+      expect(b.unpaidDays, 1);
+      expect(b.absence, 10);
+    });
+
+    test('fixed mode uses the per-day amount', () {
+      final b = run(policy({LeaveType.sickLeave},
+          mode: AbsenceDeductionMode.fixed, perDayUsd: 7));
+      expect(b.absence, 10 + 14); // absent day proportional + 2 × $7
+    });
+
+    test('parses leaveDeduction from the settings doc', () {
+      final s = HrSettings.fromSettingsDoc({
+        'hrSettings': {
+          'leaveDeduction': {
+            'enabled': true,
+            'unpaidLeaveTypes': ['Sick Leave', 'Unpaid Leave', 'Bogus'],
+            'mode': 'fixed',
+            'perDayUSD': 5,
+          },
+        },
+      });
+      expect(s.leaveDeduction!.unpaidLeaveTypes,
+          {LeaveType.sickLeave, LeaveType.unpaidLeave});
+      expect(s.leaveDeduction!.mode, AbsenceDeductionMode.fixed);
+      expect(s.leaveDeduction!.perDayUsd, 5);
+      expect(HrSettings.fromSettingsDoc({'hrSettings': {}}).leaveDeduction, isNull);
     });
   });
 }

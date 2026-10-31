@@ -5,6 +5,8 @@
 /// the employee app can compute the same payroll deductions the POS does.
 library;
 
+import 'package:kottra_app/models/attendance_record.dart';
+
 /// How often payroll runs. `monthly` = one run/month paying the full salary;
 /// `semiMonthly` = two runs/month (1st–15th and 16th–end), each paying half.
 enum PayrollFrequency {
@@ -149,6 +151,46 @@ class AbsenceDeductionSettings {
   );
 }
 
+/// Which leave types are unpaid and how an unpaid leave day is deducted;
+/// mirrors the POS `HRLeaveDeductionSettings`. When a store has no
+/// `leaveDeduction` saved, [HrSettings.leaveDeduction] is null and the legacy
+/// rule applies ('Unpaid Leave' counts as an absence day).
+class LeaveDeductionSettings {
+  const LeaveDeductionSettings({
+    required this.enabled,
+    required this.unpaidLeaveTypes,
+    required this.mode,
+    this.perDayUsd,
+    this.perDayKhr,
+  });
+
+  final bool enabled;
+
+  /// Leave types that are deducted; every other type stays paid.
+  final Set<LeaveType> unpaidLeaveTypes;
+
+  /// Same two modes as absence: proportional daily rate or fixed per day.
+  final AbsenceDeductionMode mode;
+  final double? perDayUsd;
+  final double? perDayKhr;
+
+  factory LeaveDeductionSettings.fromMap(Map<String, dynamic> map) {
+    final types = map['unpaidLeaveTypes'];
+    return LeaveDeductionSettings(
+      enabled: map['enabled'] == true,
+      unpaidLeaveTypes: types is List
+          ? types
+              .map((t) => LeaveType.fromString(t as String?))
+              .whereType<LeaveType>()
+              .toSet()
+          : const {},
+      mode: AbsenceDeductionMode.fromString(map['mode'] as String?),
+      perDayUsd: (map['perDayUSD'] as num?)?.toDouble(),
+      perDayKhr: (map['perDayKHR'] as num?)?.toDouble(),
+    );
+  }
+}
+
 /// Flat deduction per forgotten check-out; mirrors the POS
 /// `HRMissedCheckOutDeductionSettings`.
 class MissedCheckOutDeductionSettings {
@@ -186,6 +228,7 @@ class HrSettings {
     required this.lateDeduction,
     required this.absenceDeduction,
     this.missedCheckOutDeduction = MissedCheckOutDeductionSettings.disabled,
+    this.leaveDeduction,
     required this.allowDisplayPreviewDeduction,
     required this.deductionPeriodBasis,
     required this.attendanceMethod,
@@ -196,6 +239,9 @@ class HrSettings {
   final LateDeductionSettings lateDeduction;
   final AbsenceDeductionSettings absenceDeduction;
   final MissedCheckOutDeductionSettings missedCheckOutDeduction;
+
+  /// Leave policy, or null when the store hasn't configured one (legacy).
+  final LeaveDeductionSettings? leaveDeduction;
 
   /// How employees check in/out for this store (button vs QR scan).
   final AttendanceMethod attendanceMethod;
@@ -221,6 +267,7 @@ class HrSettings {
     final late = hrMap['lateDeduction'];
     final absence = hrMap['absenceDeduction'];
     final missedCheckOut = hrMap['missedCheckOutDeduction'];
+    final leave = hrMap['leaveDeduction'];
 
     return HrSettings(
       payrollFrequency:
@@ -235,6 +282,9 @@ class HrSettings {
           ? MissedCheckOutDeductionSettings.fromMap(
               missedCheckOut.cast<String, dynamic>())
           : MissedCheckOutDeductionSettings.disabled,
+      leaveDeduction: leave is Map
+          ? LeaveDeductionSettings.fromMap(leave.cast<String, dynamic>())
+          : null,
       allowDisplayPreviewDeduction:
           hrMap['allowDisplayPreviewDeduction'] as bool? ?? true,
       deductionPeriodBasis: DeductionPeriodBasis.fromString(

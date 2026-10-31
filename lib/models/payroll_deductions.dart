@@ -4,7 +4,8 @@ import 'package:kottra_app/models/hr_settings.dart';
 
 /// Pure payroll-deduction logic, ported from the POS `HrPayrollComponent`
 /// (`computeLateDeduction` / `computeAbsenceDeduction` /
-/// `computeMissedCheckOutDeduction`). Kept framework-free so
+/// `computeMissedCheckOutDeduction`, plus `countUnpaidDays` /
+/// `computeUnpaidLeaveDeduction` for the leave policy). Kept framework-free so
 /// it can be unit-tested and reused, and so the live figure the employee sees
 /// matches the amount the POS will actually post on the payslip.
 ///
@@ -103,9 +104,13 @@ class DeductionBreakdown {
   });
 
   final double late;
+
+  /// Absence + unpaid leave, matching the payslip's `leaveDeduction` line.
   final double absence;
   final int lateMinutes;
   final int lateDays;
+
+  /// Absent days plus unpaid leave days behind [absence].
   final int unpaidDays;
 
   /// Missed check-out charge and the number of (unexcused) misses behind it.
@@ -189,7 +194,9 @@ DeductionBreakdown computePeriodDeductions({
   final inPeriod =
       records.where((r) => period.contains(zone(r.date.toDate()))).toList();
 
-  var unpaidDays = 0;
+  var absentDays = 0;
+  var unpaidLeaveDays = 0;
+  final leavePolicy = settings.leaveDeduction;
   var missedCheckOuts = 0;
   var totalLateMinutes = 0;
   var lateDays = 0;
@@ -202,10 +209,20 @@ DeductionBreakdown computePeriodDeductions({
       continue;
     }
 
-    final isAbsent = r.status == AttendanceStatus.absent;
-    final isUnpaidLeave = r.status == AttendanceStatus.leave &&
-        r.leaveType == LeaveType.unpaidLeave;
-    if (isAbsent || isUnpaidLeave) unpaidDays++;
+    // Mirrors POS countUnpaidDays: without a leave policy 'Unpaid Leave' is an
+    // absence day; with one, leave of an unpaid type (missing = Other) is
+    // charged by the leave policy and absence covers Absent only.
+    if (r.status == AttendanceStatus.absent) {
+      absentDays++;
+    } else if (r.status == AttendanceStatus.leave) {
+      final type = r.leaveType ?? LeaveType.other;
+      if (leavePolicy == null) {
+        if (type == LeaveType.unpaidLeave) absentDays++;
+      } else if (leavePolicy.enabled &&
+          leavePolicy.unpaidLeaveTypes.contains(type)) {
+        unpaidLeaveDays++;
+      }
+    }
 
     // HR-excused missed check-outs are never charged, matching the POS.
     if (!r.missedCheckOutExcused &&
@@ -234,14 +251,21 @@ DeductionBreakdown computePeriodDeductions({
     lateEntries: lateEntries,
     settings: settings.lateDeduction,
   );
-  final absence = _computeAbsence(
-    currency: currency,
-    periodBasic: periodBasic,
-    standardWorkDays: period.standardWorkDays,
-    periodFactor: period.factor,
-    unpaidDays: unpaidDays,
-    settings: settings.absenceDeduction,
-  );
+  final absence = _round2(_computeAbsence(
+        currency: currency,
+        periodBasic: periodBasic,
+        standardWorkDays: period.standardWorkDays,
+        periodFactor: period.factor,
+        unpaidDays: absentDays,
+        settings: settings.absenceDeduction,
+      ) +
+      _computeUnpaidLeave(
+        currency: currency,
+        periodBasic: periodBasic,
+        standardWorkDays: period.standardWorkDays,
+        unpaidLeaveDays: unpaidLeaveDays,
+        settings: leavePolicy,
+      ));
 
   final missedCheckOut = _computeMissedCheckOut(
     currency: currency,
@@ -255,7 +279,7 @@ DeductionBreakdown computePeriodDeductions({
     absence: absence,
     lateMinutes: totalLateMinutes,
     lateDays: lateDays,
-    unpaidDays: unpaidDays,
+    unpaidDays: absentDays + unpaidLeaveDays,
     missedCheckOut: missedCheckOut,
     missedCheckOuts: missedCheckOuts,
     currency: currency,
@@ -328,6 +352,30 @@ double _computeAbsence({
     final dailyRate =
         standardWorkDays > 0 ? periodBasic / standardWorkDays : 0.0;
     amount = chargeableDays * dailyRate;
+  }
+  return _round2(amount);
+}
+
+/// Unpaid leave under the leave policy; no free days. Mirrors POS
+/// `computeUnpaidLeaveDeduction`.
+double _computeUnpaidLeave({
+  required SalaryCurrency currency,
+  required double periodBasic,
+  required int standardWorkDays,
+  required int unpaidLeaveDays,
+  required LeaveDeductionSettings? settings,
+}) {
+  if (settings == null || !settings.enabled || unpaidLeaveDays <= 0) return 0;
+  double amount;
+  if (settings.mode == AbsenceDeductionMode.fixed) {
+    final isUsd = currency == SalaryCurrency.usd;
+    final rate =
+        ((isUsd ? settings.perDayUsd : settings.perDayKhr) ?? 0).toDouble();
+    amount = unpaidLeaveDays * rate;
+  } else {
+    final dailyRate =
+        standardWorkDays > 0 ? periodBasic / standardWorkDays : 0.0;
+    amount = unpaidLeaveDays * dailyRate;
   }
   return _round2(amount);
 }
