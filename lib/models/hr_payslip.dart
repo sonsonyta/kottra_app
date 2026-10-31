@@ -29,6 +29,10 @@ class HRPayslip {
     required this.leaveDeduction,
     required this.otherDeductions,
     this.missedCheckOutDeduction = 0,
+    this.advanceDeduction = 0,
+    this.nssfContribution = 0,
+    this.customDeduction = 0,
+    this.customDeductionNote,
     required this.netSalary,
     required this.currency,
     required this.status,
@@ -61,6 +65,16 @@ class HRPayslip {
   /// missed check-out policy).
   final double missedCheckOutDeduction;
 
+  /// Salary advances repaid on this payslip.
+  final double advanceDeduction;
+
+  /// Employee NSSF pension contribution (when the store enables it).
+  final double nssfContribution;
+
+  /// One-off deduction (uniform, damage, loan…) and its reason.
+  final double customDeduction;
+  final String? customDeductionNote;
+
   // Net
   final double netSalary;
   final SalaryCurrency currency;
@@ -72,7 +86,13 @@ class HRPayslip {
       basicSalary + overtimePay + bonuses + allowances;
 
   double get totalDeductions =>
-      tax + leaveDeduction + otherDeductions + missedCheckOutDeduction;
+      tax +
+      leaveDeduction +
+      otherDeductions +
+      missedCheckOutDeduction +
+      advanceDeduction +
+      nssfContribution +
+      customDeduction;
 
   factory HRPayslip.fromMap(String id, Map<String, dynamic> map) {
     DateTime? toDateTimeNullable(dynamic ts) {
@@ -103,6 +123,10 @@ class HRPayslip {
       leaveDeduction: toDouble(map['leaveDeduction']),
       otherDeductions: toDouble(map['otherDeductions']),
       missedCheckOutDeduction: toDouble(map['missedCheckOutDeduction']),
+      advanceDeduction: toDouble(map['advanceDeduction']),
+      nssfContribution: toDouble(map['nssfContribution']),
+      customDeduction: toDouble(map['customDeduction']),
+      customDeductionNote: (map['customDeductionNote'] as String?)?.trim(),
       netSalary: toDouble(map['netSalary']),
       currency: SalaryCurrency.fromString(map['currency'] as String? ?? 'USD'),
       status: PayslipStatus.fromString(map['status'] as String? ?? 'Pending'),
@@ -126,6 +150,11 @@ class HRPayslip {
         'leaveDeduction': leaveDeduction,
         'otherDeductions': otherDeductions,
         'missedCheckOutDeduction': missedCheckOutDeduction,
+        'advanceDeduction': advanceDeduction,
+        'nssfContribution': nssfContribution,
+        'customDeduction': customDeduction,
+        if (customDeductionNote != null && customDeductionNote!.isNotEmpty)
+          'customDeductionNote': customDeductionNote,
         'netSalary': netSalary,
         'currency': currency.value,
         'status': status.value,

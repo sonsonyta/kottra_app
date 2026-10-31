@@ -699,4 +699,7 @@ class AppLocalizationsKm extends AppLocalizations {
   @override
   String get couldNotLoadStores =>
       'មិនអាចផ្ទុកហាងរបស់អ្នកបានទេ។ សូមព្យាយាមម្តងទៀត។';
+
+  @override
+  String get nssfPension => 'ប.ស.ស សោធន';
 }

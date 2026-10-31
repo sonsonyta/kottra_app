@@ -701,4 +701,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get couldNotLoadStores =>
       'Could not load your stores. Please try again.';
+
+  @override
+  String get nssfPension => 'NSSF pension';
 }

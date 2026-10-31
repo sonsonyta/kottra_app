@@ -230,13 +230,18 @@ DeductionBreakdown computePeriodDeductions({
       missedCheckOuts++;
     }
 
-    // Forgiven lateness (approved late excuse / HR waiver) is never charged,
-    // matching the POS generator.
-    if (r.lateMinutes > 0 && !r.lateExcused) {
-      totalLateMinutes += r.lateMinutes;
+    // Forgiven lateness (approved late excuse / HR waiver) is never charged;
+    // early check-out minutes join it when the store enables that. Matches
+    // the POS generator's per-day chargeable minutes.
+    final minutes = (r.lateExcused ? 0 : r.lateMinutes) +
+        (settings.lateDeduction.includeEarlyCheckOut
+            ? r.earlyCheckOutMinutes
+            : 0);
+    if (minutes > 0) {
+      totalLateMinutes += minutes;
       lateDays++;
       lateEntries.add((
-        minutes: r.lateMinutes,
+        minutes: minutes,
         dayMinutes: dayMinutesOn?.call(zone(r.date.toDate())),
       ));
     }

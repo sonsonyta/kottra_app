@@ -11,6 +11,7 @@ AttendanceRecord _rec({
   required int day,
   required AttendanceStatus status,
   int lateMinutes = 0,
+  int earlyCheckOutMinutes = 0,
   bool lateExcused = false,
   LeaveType? leaveType,
   DateTime? checkIn,
@@ -29,6 +30,7 @@ AttendanceRecord _rec({
     date: Timestamp.fromDate(DateTime(year, month, day)),
     status: status,
     lateMinutes: lateMinutes,
+    earlyCheckOutMinutes: earlyCheckOutMinutes,
     lateExcused: lateExcused,
     leaveType: leaveType,
     checkIn: checkIn,
@@ -640,6 +642,48 @@ void main() {
       expect(s.leaveDeduction!.mode, AbsenceDeductionMode.fixed);
       expect(s.leaveDeduction!.perDayUsd, 5);
       expect(HrSettings.fromSettingsDoc({'hrSettings': {}}).leaveDeduction, isNull);
+    });
+  });
+
+  group('early check-out', () {
+    final records = [
+      _rec(day: 4, status: AttendanceStatus.present, earlyCheckOutMinutes: 10),
+      _rec(day: 5, status: AttendanceStatus.late, lateMinutes: 6, lateExcused: true, earlyCheckOutMinutes: 4),
+    ];
+    DeductionBreakdown run({required bool include}) => computePeriodDeductions(
+          records: records,
+          monthlyBasicSalary: 280,
+          currency: SalaryCurrency.usd,
+          settings: _settings(
+            frequency: PayrollFrequency.monthly,
+            late: LateDeductionSettings(
+              enabled: true,
+              mode: LateDeductionMode.perMinute,
+              perMinuteUsd: 0.5,
+              includeEarlyCheckOut: include,
+            ),
+          ),
+          today: DateTime(2026, 8, 31),
+        );
+
+    test('is ignored unless the late policy includes it', () {
+      expect(run(include: false).late, 0);
+    });
+
+    test('is charged with the late rate; excused lateness still is not', () {
+      final b = run(include: true);
+      expect(b.lateMinutes, 14); // 10 + 4 early, the 6 late minutes are excused
+      expect(b.lateDays, 2);
+      expect(b.late, 7);
+    });
+
+    test('parses includeEarlyCheckOut from settings', () {
+      final s = HrSettings.fromSettingsDoc({
+        'hrSettings': {
+          'lateDeduction': {'enabled': true, 'mode': 'perMinute', 'includeEarlyCheckOut': true},
+        },
+      });
+      expect(s.lateDeduction.includeEarlyCheckOut, isTrue);
     });
   });
 }

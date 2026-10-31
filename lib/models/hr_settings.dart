@@ -87,10 +87,14 @@ class LateDeductionSettings {
     this.perDayUsd,
     this.perDayKhr,
     this.workdayMinutes,
+    this.includeEarlyCheckOut = false,
   });
 
   final bool enabled;
   final LateDeductionMode mode;
+
+  /// Also charge early check-out minutes with the same mode and rates.
+  final bool includeEarlyCheckOut;
   final double? perMinuteUsd;
   final double? perMinuteKhr;
   final double? perDayUsd;
@@ -106,6 +110,7 @@ class LateDeductionSettings {
       perDayUsd: (map['perDayUSD'] as num?)?.toDouble(),
       perDayKhr: (map['perDayKHR'] as num?)?.toDouble(),
       workdayMinutes: (map['workdayMinutes'] as num?)?.toInt(),
+      includeEarlyCheckOut: map['includeEarlyCheckOut'] == true,
     );
   }
 

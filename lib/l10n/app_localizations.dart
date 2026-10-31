@@ -1381,6 +1381,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load your stores. Please try again.'**
   String get couldNotLoadStores;
+
+  /// No description provided for @nssfPension.
+  ///
+  /// In en, this message translates to:
+  /// **'NSSF pension'**
+  String get nssfPension;
 }
 
 class _AppLocalizationsDelegate

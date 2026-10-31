@@ -222,6 +222,22 @@ class _LatestPayslipCard extends StatelessWidget {
                     label: l.missedCheckOut,
                     value: payslip.missedCheckOutDeduction,
                   ),
+                if (payslip.nssfContribution > 0)
+                  _BreakdownRow(
+                    label: l.nssfPension,
+                    value: payslip.nssfContribution,
+                  ),
+                if (payslip.customDeduction > 0)
+                  _BreakdownRow(
+                    label: l.otherDeduction,
+                    value: payslip.customDeduction,
+                    note: payslip.customDeductionNote,
+                  ),
+                if (payslip.advanceDeduction > 0)
+                  _BreakdownRow(
+                    label: l.advance,
+                    value: payslip.advanceDeduction,
+                  ),
               ],
               currency: currency,
             ),

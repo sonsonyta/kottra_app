@@ -318,5 +318,6 @@
       }
     }
   },
-  "couldNotLoadStores": "Could not load your stores. Please try again."
+  "couldNotLoadStores": "Could not load your stores. Please try again.",
+  "nssfPension": "NSSF pension"
 }

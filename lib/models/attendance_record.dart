@@ -52,6 +52,7 @@ class AttendanceRecord {
     this.checkOut,
     required this.status,
     this.lateMinutes = 0,
+    this.earlyCheckOutMinutes = 0,
     this.lateExcused = false,
     this.checkOutNote,
     this.missedCheckOut = false,
@@ -84,6 +85,10 @@ class AttendanceRecord {
   /// Minutes late past the employee's grace period (0 when on time). Written
   /// server-side on check-in; drives the late-arrival payroll deduction.
   final int lateMinutes;
+
+  /// Minutes left early past the grace period (0 when on time). Charged with
+  /// the late policy when the store enables `includeEarlyCheckOut`.
+  final int earlyCheckOutMinutes;
 
   /// True when this day's lateness has been forgiven (an approved late-excuse
   /// request or a manual HR waiver). Excluded from the late-arrival deduction.
@@ -154,6 +159,8 @@ class AttendanceRecord {
       checkOut: map['checkOut'] != null ? toDateTime(map['checkOut']) : null,
       status: AttendanceStatus.fromString(map['status'] as String),
       lateMinutes: (map['lateMinutes'] as num?)?.toInt() ?? 0,
+      earlyCheckOutMinutes:
+          (map['earlyCheckOutMinutes'] as num?)?.toInt() ?? 0,
       lateExcused: map['lateExcused'] as bool? ?? false,
       checkOutNote: map['checkOutNote'] as String?,
       missedCheckOut: map['missedCheckOut'] as bool? ?? false,
