@@ -323,6 +323,28 @@ void main() {
       expect(b.unpaidDays, 1);
       expect(b.absence, closeTo(14.29, 0.01));
     });
+
+    test('a leave day written twice is counted once', () {
+      final leave = _rec(
+        day: 4,
+        status: AttendanceStatus.leave,
+        leaveType: LeaveType.unpaidLeave,
+      );
+      final b = computePeriodDeductions(
+        records: [leave, leave],
+        monthlyBasicSalary: 400,
+        currency: SalaryCurrency.usd,
+        settings: _settings(
+          absence: const AbsenceDeductionSettings(
+            enabled: true,
+            mode: AbsenceDeductionMode.proportional,
+            freeDaysPerMonth: 0,
+          ),
+        ),
+        today: _augFirstHalf,
+      );
+      expect(b.unpaidDays, 1);
+    });
   });
 
   group('period filtering', () {
@@ -600,6 +622,16 @@ void main() {
       final b = run(null);
       expect(b.unpaidDays, 2);
       expect(b.absence, 20);
+    });
+
+    test('free leave days per month are not charged', () {
+      final b = run(LeaveDeductionSettings(
+        enabled: true,
+        unpaidLeaveTypes: const {LeaveType.unpaidLeave, LeaveType.sickLeave},
+        mode: AbsenceDeductionMode.proportional,
+        freeDaysPerMonth: 2,
+      ));
+      expect(b.absence, 20); // $10 absent + 1 of 3 leave days
     });
 
     test('policy charges each unpaid type; absence is Absent only', () {

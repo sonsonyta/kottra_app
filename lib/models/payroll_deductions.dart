@@ -135,6 +135,23 @@ class DeductionBreakdown {
       );
 }
 
+/// Drops duplicate no-check-in placeholders (Leave / Absent / Holiday / Day
+/// Off) for the same employee, store-local day and status, keeping the first.
+/// Mirrors the POS `dropDuplicatePlaceholders`: older leave approvals wrote
+/// each day twice (POS + Cloud Function), which double-counted unpaid leave.
+/// Records with a check-in are always kept.
+List<AttendanceRecord> dropDuplicatePlaceholders(
+  List<AttendanceRecord> records,
+  DateTime Function(DateTime date) toStoreZone,
+) {
+  final seen = <String>{};
+  return records.where((r) {
+    if (r.checkIn != null) return true;
+    final d = toStoreZone(r.date.toDate());
+    return seen.add('${r.employeeId}|${r.status}|${d.year}-${d.month}-${d.day}');
+  }).toList();
+}
+
 /// `checkOutNote` the server's auto check-out writes on a forgotten day.
 const missedCheckOutNote = 'Miss Check-Out';
 
@@ -191,8 +208,10 @@ DeductionBreakdown computePeriodDeductions({
   final period = PayPeriod.forDate(effectiveFrequency, today);
   final periodBasic = monthlyBasicSalary * period.factor;
 
-  final inPeriod =
-      records.where((r) => period.contains(zone(r.date.toDate()))).toList();
+  final inPeriod = dropDuplicatePlaceholders(
+    records.where((r) => period.contains(zone(r.date.toDate()))).toList(),
+    zone,
+  );
 
   var absentDays = 0;
   var unpaidLeaveDays = 0;
@@ -268,6 +287,7 @@ DeductionBreakdown computePeriodDeductions({
         currency: currency,
         periodBasic: periodBasic,
         standardWorkDays: period.standardWorkDays,
+        periodFactor: period.factor,
         unpaidLeaveDays: unpaidLeaveDays,
         settings: leavePolicy,
       ));
@@ -367,20 +387,25 @@ double _computeUnpaidLeave({
   required SalaryCurrency currency,
   required double periodBasic,
   required int standardWorkDays,
+  required double periodFactor,
   required int unpaidLeaveDays,
   required LeaveDeductionSettings? settings,
 }) {
   if (settings == null || !settings.enabled || unpaidLeaveDays <= 0) return 0;
+  // Monthly free leave days, scaled to the pay period (POS parity).
+  final freeDays = (settings.freeDaysPerMonth ?? 0) * periodFactor;
+  final chargeableDays = unpaidLeaveDays - freeDays;
+  if (chargeableDays <= 0) return 0;
   double amount;
   if (settings.mode == AbsenceDeductionMode.fixed) {
     final isUsd = currency == SalaryCurrency.usd;
     final rate =
         ((isUsd ? settings.perDayUsd : settings.perDayKhr) ?? 0).toDouble();
-    amount = unpaidLeaveDays * rate;
+    amount = chargeableDays * rate;
   } else {
     final dailyRate =
         standardWorkDays > 0 ? periodBasic / standardWorkDays : 0.0;
-    amount = unpaidLeaveDays * dailyRate;
+    amount = chargeableDays * dailyRate;
   }
   return _round2(amount);
 }

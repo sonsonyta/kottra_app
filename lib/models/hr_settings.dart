@@ -167,9 +167,13 @@ class LeaveDeductionSettings {
     required this.mode,
     this.perDayUsd,
     this.perDayKhr,
+    this.freeDaysPerMonth,
   });
 
   final bool enabled;
+
+  /// Unpaid leave days per month that are not deducted (null = 0).
+  final int? freeDaysPerMonth;
 
   /// Leave types that are deducted; every other type stays paid.
   final Set<LeaveType> unpaidLeaveTypes;
@@ -192,6 +196,7 @@ class LeaveDeductionSettings {
       mode: AbsenceDeductionMode.fromString(map['mode'] as String?),
       perDayUsd: (map['perDayUSD'] as num?)?.toDouble(),
       perDayKhr: (map['perDayKHR'] as num?)?.toDouble(),
+      freeDaysPerMonth: (map['freeDaysPerMonth'] as num?)?.toInt(),
     );
   }
 }
