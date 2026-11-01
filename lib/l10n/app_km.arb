@@ -250,5 +250,6 @@
   "approveEarlyLeaveTitle": "អនុម័តសំណើសុំចេញមុនម៉ោង?",
   "rejectEarlyLeaveTitle": "បដិសេធសំណើសុំចេញមុនម៉ោង?",
   "earlyLeaveApproved": "បានអនុម័តសំណើសុំចេញមុនម៉ោង។",
-  "earlyLeaveRejected": "បានបដិសេធសំណើសុំចេញមុនម៉ោង។"
+  "earlyLeaveRejected": "បានបដិសេធសំណើសុំចេញមុនម៉ោង។",
+  "chooseLeaveType": "សូមជ្រើសរើសប្រភេទច្បាប់"
 }

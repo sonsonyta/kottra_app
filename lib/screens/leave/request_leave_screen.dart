@@ -20,7 +20,9 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
   final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
 
-  LeaveType _selectedType = LeaveType.other;
+  // No default: the employee must pick a type. "Other" isn't offered here
+  // (HR can still set it in the POS); old "Other" records keep working.
+  LeaveType? _selectedType;
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
   PlatformFile? _attachment;
@@ -29,7 +31,8 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
   int get _selectedDays =>
       DateTime(_endDate.year, _endDate.month, _endDate.day)
           .difference(
-              DateTime(_startDate.year, _startDate.month, _startDate.day))
+            DateTime(_startDate.year, _startDate.month, _startDate.day),
+          )
           .inDays +
       1;
 
@@ -54,11 +57,16 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
   String _getLeaveType(BuildContext context, LeaveType type) {
     final l10n = AppLocalizations.of(context)!;
     switch (type) {
-      case LeaveType.sick: return l10n.sickLeave;
-      case LeaveType.paid: return l10n.paidLeave;
-      case LeaveType.other: return l10n.otherLeave;
-      case LeaveType.unpaid: return l10n.unpaidLeave;
-      case LeaveType.annual: return l10n.annualLeave;
+      case LeaveType.sick:
+        return l10n.sickLeave;
+      case LeaveType.paid:
+        return l10n.paidLeave;
+      case LeaveType.other:
+        return l10n.otherLeave;
+      case LeaveType.unpaid:
+        return l10n.unpaidLeave;
+      case LeaveType.annual:
+        return l10n.annualLeave;
     }
   }
 
@@ -104,29 +112,38 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final type = _selectedType;
+    if (type == null) return;
 
     try {
       await widget.viewModel.submitRequest(
         startDate: _startDate,
         endDate: _endDate,
-        type: _selectedType,
+        type: type,
         reason: _reasonController.text,
         attachment: _attachment,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.leaveRequestSubmittedSuccess)),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.leaveRequestSubmittedSuccess,
+          ),
+        ),
       );
       context.pop();
-    } catch (e,trace) {
-
+    } catch (e, trace) {
       print(e);
       print(trace);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.errorPrefix(e.toString()))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.errorPrefix(e.toString()),
+          ),
+        ),
+      );
     }
   }
 
@@ -158,29 +175,55 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
               children: [
                 _buildSectionHeader(context, l10n.leaveType),
                 const SizedBox(height: 12),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: LeaveType.values.map((type) {
-                    final isSelected = _selectedType == type;
-                    return ChoiceChip(
-                      label: Text(_getLeaveType(context, type)),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        if (selected) {
-                          setState(() => _selectedType = type);
-                        }
-                      },
-                      selectedColor: c.primary,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : c.textPrimary,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                FormField<LeaveType>(
+                  validator: (_) =>
+                      _selectedType == null ? l10n.chooseLeaveType : null,
+                  builder: (field) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: LeaveType.values
+                            .where((t) => t != LeaveType.other)
+                            .map((type) {
+                              final isSelected = _selectedType == type;
+                              return ChoiceChip(
+                                label: Text(_getLeaveType(context, type)),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  if (selected) {
+                                    setState(() => _selectedType = type);
+                                    field.didChange(type);
+                                  }
+                                },
+                                selectedColor: c.primary,
+                                labelStyle: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : c.textPrimary,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                                backgroundColor: c.surface,
+                              );
+                            })
+                            .toList(),
                       ),
-                      backgroundColor: c.surface,
-                    );
-                  }).toList(),
+                      if (field.errorText != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            field.errorText!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
                 _buildSectionHeader(context, l10n.dateRange),
@@ -207,8 +250,14 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
                 const SizedBox(height: 12),
                 _LeaveDaysSummary(
                   selectedDays: _selectedDays,
-                  balance: widget.viewModel
-                      .balanceFor(_selectedType, _startDate, _endDate),
+                  showDaysLeft: _selectedType != null,
+                  balance: _selectedType == null
+                      ? null
+                      : widget.viewModel.balanceFor(
+                          _selectedType!,
+                          _startDate,
+                          _endDate,
+                        ),
                 ),
                 const SizedBox(height: 24),
                 _buildSectionHeader(context, l10n.reason),
@@ -382,10 +431,17 @@ class _DateField extends StatelessWidget {
 /// year (or "No limit"). Warns in red when the request goes past the limit —
 /// payroll docks those extra days as unpaid leave.
 class _LeaveDaysSummary extends StatelessWidget {
-  const _LeaveDaysSummary({required this.selectedDays, required this.balance});
+  const _LeaveDaysSummary({
+    required this.selectedDays,
+    required this.balance,
+    this.showDaysLeft = true,
+  });
 
   final int selectedDays;
   final LeaveBalance? balance;
+
+  /// False until a leave type is chosen (days left are per type).
+  final bool showDaysLeft;
 
   @override
   Widget build(BuildContext context) {
@@ -432,15 +488,17 @@ class _LeaveDaysSummary extends StatelessWidget {
             l10n.leaveSelectedDays,
             l10n.leaveDaysCount(selectedDays),
           ),
-          const SizedBox(height: 10),
-          row(
-            Icons.event_available,
-            l10n.leaveDaysLeft,
-            b == null
-                ? l10n.leaveNoLimit
-                : l10n.leaveDaysLeftOf(b.remaining, b.limit),
-            color: over ? danger : null,
-          ),
+          if (showDaysLeft) ...[
+            const SizedBox(height: 10),
+            row(
+              Icons.event_available,
+              l10n.leaveDaysLeft,
+              b == null
+                  ? l10n.leaveNoLimit
+                  : l10n.leaveDaysLeftOf(b.remaining, b.limit),
+              color: over ? danger : null,
+            ),
+          ],
           if (over) ...[
             const SizedBox(height: 10),
             Row(

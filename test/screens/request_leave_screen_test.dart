@@ -23,7 +23,7 @@ class _Settings implements SettingsService {
           payrollFrequency: PayrollFrequency.monthly,
           lateDeduction: LateDeductionSettings.disabled,
           absenceDeduction: AbsenceDeductionSettings.legacyDefault,
-          leaveLimits: const {'Other': 7},
+          leaveLimits: const {'Sick Leave': 7},
           allowDisplayPreviewDeduction: true,
           deductionPeriodBasis: DeductionPeriodBasis.payrollFrequency,
           attendanceMethod: AttendanceMethod.button,
@@ -51,7 +51,7 @@ class _Attendance implements AttendanceService {
     String employeeId,
   ) {
     final year = DateTime.now().year;
-    // Two "Other" days already taken this year.
+    // Two Sick Leave days already taken this year.
     return Stream.value([
       for (final d in [3, 4])
         att.AttendanceRecord(
@@ -61,6 +61,7 @@ class _Attendance implements AttendanceService {
           employeeName: 'Dara',
           date: Timestamp.fromDate(DateTime(year, 1, d)),
           status: att.AttendanceStatus.leave,
+          leaveType: att.LeaveType.sickLeave,
         ),
     ]);
   }
@@ -92,11 +93,16 @@ Future<LeaveViewModel> _pump(WidgetTester tester, Locale locale) async {
 }
 
 void main() {
-  testWidgets('shows the selected day count and the days left (Other: 7/yr)',
+  testWidgets('no Other option; days left show once a type is chosen',
       (tester) async {
     final vm = await _pump(tester, const Locale('en'));
+    expect(find.text('Other'), findsNothing);
     expect(find.text('Selected days'), findsOneWidget);
     expect(find.text('1 day'), findsOneWidget);
+    expect(find.text('Days left this year'), findsNothing);
+
+    await tester.tap(find.text('Sick Leave'));
+    await tester.pumpAndSettle();
     expect(find.text('Days left this year'), findsOneWidget);
     expect(find.text('5 of 7 days'), findsOneWidget);
     vm.dispose();
@@ -105,6 +111,8 @@ void main() {
   testWidgets('Khmer labels', (tester) async {
     final vm = await _pump(tester, const Locale('km'));
     expect(find.text('ចំនួនថ្ងៃដែលបានជ្រើស'), findsOneWidget);
+    await tester.tap(find.byType(ChoiceChip).first); // Sick Leave
+    await tester.pumpAndSettle();
     expect(find.text('ថ្ងៃឈប់ដែលនៅសល់ក្នុងឆ្នាំនេះ'), findsOneWidget);
     expect(find.text('5 ក្នុងចំណោម 7 ថ្ងៃ'), findsOneWidget);
     vm.dispose();

@@ -777,4 +777,7 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get earlyLeaveRejected => 'បានបដិសេធសំណើសុំចេញមុនម៉ោង។';
+
+  @override
+  String get chooseLeaveType => 'សូមជ្រើសរើសប្រភេទច្បាប់';
 }

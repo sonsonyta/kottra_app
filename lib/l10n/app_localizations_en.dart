@@ -785,4 +785,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get earlyLeaveRejected => 'Early leave rejected.';
+
+  @override
+  String get chooseLeaveType => 'Choose a leave type';
 }

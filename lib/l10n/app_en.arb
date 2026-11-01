@@ -345,5 +345,6 @@
   "approveEarlyLeaveTitle": "Approve early leave?",
   "rejectEarlyLeaveTitle": "Reject early leave?",
   "earlyLeaveApproved": "Early leave approved.",
-  "earlyLeaveRejected": "Early leave rejected."
+  "earlyLeaveRejected": "Early leave rejected.",
+  "chooseLeaveType": "Choose a leave type"
 }

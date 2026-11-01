@@ -1519,6 +1519,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Early leave rejected.'**
   String get earlyLeaveRejected;
+
+  /// No description provided for @chooseLeaveType.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a leave type'**
+  String get chooseLeaveType;
 }
 
 class _AppLocalizationsDelegate
