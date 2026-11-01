@@ -1387,6 +1387,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'NSSF pension'**
   String get nssfPension;
+
+  /// No description provided for @leaveSelectedDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected days'**
+  String get leaveSelectedDays;
+
+  /// No description provided for @leaveDaysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day} other{{days} days}}'**
+  String leaveDaysCount(int days);
+
+  /// No description provided for @leaveDaysLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Days left this year'**
+  String get leaveDaysLeft;
+
+  /// No description provided for @leaveDaysLeftOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining} of {limit} days'**
+  String leaveDaysLeftOf(int remaining, int limit);
+
+  /// No description provided for @leaveNoLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'No limit'**
+  String get leaveNoLimit;
+
+  /// No description provided for @leaveOverLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} of these days are over your yearly limit and will be deducted from your salary.'**
+  String leaveOverLimit(int days);
+
+  /// No description provided for @earlyLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Early Leave'**
+  String get earlyLeaveTitle;
+
+  /// No description provided for @earlyLeaveSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review requests to leave early'**
+  String get earlyLeaveSubtitle;
+
+  /// No description provided for @earlyLeaveTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Early'**
+  String get earlyLeaveTab;
+
+  /// No description provided for @requestEarlyLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Early Leave'**
+  String get requestEarlyLeave;
+
+  /// No description provided for @noEarlyLeaveYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No early leave requests yet.'**
+  String get noEarlyLeaveYet;
+
+  /// No description provided for @earlyLeaveDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the day'**
+  String get earlyLeaveDay;
+
+  /// No description provided for @earlyLeaveTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the time you\'ll leave'**
+  String get earlyLeaveTime;
+
+  /// No description provided for @leaveAtTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave at {time}'**
+  String leaveAtTime(String time);
+
+  /// No description provided for @earlyLeaveReasonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Why do you need to leave early?'**
+  String get earlyLeaveReasonHint;
+
+  /// No description provided for @earlyLeaveSubmittedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Early leave request submitted.'**
+  String get earlyLeaveSubmittedSuccess;
+
+  /// No description provided for @earlyLeaveDeductionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'If approved, leaving early that day won\'t be deducted from your pay.'**
+  String get earlyLeaveDeductionNote;
+
+  /// No description provided for @earlyLeaveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Early leave'**
+  String get earlyLeaveLabel;
+
+  /// No description provided for @approveEarlyLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve early leave?'**
+  String get approveEarlyLeaveTitle;
+
+  /// No description provided for @rejectEarlyLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject early leave?'**
+  String get rejectEarlyLeaveTitle;
+
+  /// No description provided for @earlyLeaveApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Early leave approved.'**
+  String get earlyLeaveApproved;
+
+  /// No description provided for @earlyLeaveRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Early leave rejected.'**
+  String get earlyLeaveRejected;
 }
 
 class _AppLocalizationsDelegate

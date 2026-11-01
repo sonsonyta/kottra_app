@@ -3,7 +3,14 @@ import 'dart:io';
 
 
 import 'package:flutter/foundation.dart';
+import 'package:kottra_app/models/attendance_record.dart' as att;
+import 'package:kottra_app/models/leave_limits.dart';
 import 'package:kottra_app/models/leave_request.dart';
+import 'package:kottra_app/models/payroll_deductions.dart'
+    show dropDuplicatePlaceholders;
+import 'package:kottra_app/services/attendance_service.dart';
+import 'package:kottra_app/services/employee_service.dart';
+import 'package:kottra_app/services/settings_service.dart';
 import 'package:kottra_app/services/leave_service.dart';
 import 'package:kottra_app/services/store_service.dart';
 import 'package:file_picker/file_picker.dart';
@@ -40,7 +47,67 @@ class LeaveViewModel extends ChangeNotifier {
   bool _isLoading = false;
   bool _disposed = false;
 
+  // Yearly leave-limit inputs; see [watchLeaveLimits].
+  final List<StreamSubscription<Object?>> _limitSubs = [];
+  LeaveLimits _storeLimits = const {};
+  LeaveLimits _employeeLimits = const {};
+  List<att.AttendanceRecord> _leaveRecords = const [];
+
   List<LeaveRequest> get leaves => _leaves;
+
+  /// Starts streaming what [balanceFor] needs: the store's and the employee's
+  /// leave limits and the employee's Leave attendance. Called by the screen
+  /// (not the constructor) so tests can build the view model without Firebase.
+  void watchLeaveLimits({
+    SettingsService? settingsService,
+    EmployeeService? employeeService,
+    AttendanceService? attendanceService,
+  }) {
+    if (employeeId.isEmpty || _limitSubs.isNotEmpty) return;
+    void onError(Object e) => debugPrint('Leave limit load error: $e');
+    _limitSubs.addAll([
+      (settingsService ?? SettingsService())
+          .streamHrSettings(storeId)
+          .listen((s) {
+        _storeLimits = s.leaveLimits;
+        if (!_disposed) notifyListeners();
+      }, onError: onError),
+      (employeeService ?? EmployeeService())
+          .streamEmployee(storeId, employeeId)
+          .listen((e) {
+        _employeeLimits = e?.leaveLimits ?? const {};
+        if (!_disposed) notifyListeners();
+      }, onError: onError),
+      (attendanceService ?? AttendanceService())
+          .streamLeaveRecords(storeId, employeeId)
+          .listen((records) {
+        _leaveRecords = records;
+        if (!_disposed) notifyListeners();
+      }, onError: onError),
+    ]);
+  }
+
+  /// The employee's yearly allowance for [type] against a request for
+  /// [start]..[end], or null when that type has no limit. Days already taken
+  /// come from Leave attendance in the year of [start] (what payroll counts).
+  LeaveBalance? balanceFor(LeaveType type, DateTime start, DateTime end) {
+    final limit =
+        effectiveLeaveLimits(_storeLimits, _employeeLimits)[type.value];
+    if (limit == null) return null;
+    final year = start.year;
+    DateTime local(DateTime d) => tz.TZDateTime.from(d, _storeLocation);
+    final used = dropDuplicatePlaceholders(_leaveRecords, local)
+        .where((r) =>
+            local(r.date.toDate()).year == year &&
+            (r.leaveType?.value ?? att.LeaveType.other.value) == type.value)
+        .length;
+    final lastDay = end.year == year ? end : DateTime(year, 12, 31);
+    final requested = DateTime(lastDay.year, lastDay.month, lastDay.day)
+            .difference(DateTime(start.year, start.month, start.day))
+            .inDays +
+        1;
+    return LeaveBalance(limit: limit, used: used, requested: requested);
+  }
   bool get isLoading => _isLoading;
 
   void _subscribeToLeaves() {
@@ -153,6 +220,27 @@ class LeaveViewModel extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _leaveSub?.cancel();
+    for (final sub in _limitSubs) {
+      sub.cancel();
+    }
     super.dispose();
   }
+}
+
+/// A leave type's yearly allowance against one request.
+class LeaveBalance {
+  const LeaveBalance({
+    required this.limit,
+    required this.used,
+    required this.requested,
+  });
+
+  final int limit;
+  final int used;
+  final int requested;
+
+  int get remaining => (limit - used).clamp(0, limit);
+
+  /// Requested days past the allowance — payroll docks them as unpaid.
+  int get over => (used + requested - limit).clamp(0, requested);
 }

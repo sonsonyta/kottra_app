@@ -646,6 +646,16 @@ class _QuickActionsRow extends StatelessWidget {
                   onTap: () =>
                       context.push('/late-excuses', extra: profileViewModel),
                 ),
+              if (FeatureFlags.enableEarlyLeave)
+                _quickActionCard(
+                  context,
+                  icon: Icons.logout,
+                  iconColor: c.primary,
+                  bgColor: c.infoLight,
+                  label: AppLocalizations.of(context)!.earlyLeaveTitle,
+                  onTap: () =>
+                      context.push('/early-leave', extra: profileViewModel),
+                ),
             ];
             return Column(
               spacing: _tileSpacing,

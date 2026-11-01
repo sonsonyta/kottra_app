@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:kottra_app/models/leave_limits.dart';
 
 enum EmployeeStatus {
   active('Active'),
@@ -97,6 +98,7 @@ class HREmployee {
     this.startWorkingTime,
     this.endWorkingTime,
     this.weeklySchedule = const {},
+    this.leaveLimits = const {},
     this.lateTime,
     required this.status,
     required this.joinDate,
@@ -170,6 +172,10 @@ class HREmployee {
   /// JS weekday (0 = Sunday … 6 = Saturday) to match the Firestore map the
   /// POS writes. Days without an entry use the default hours.
   final Map<int, DailyWorkingHours> weeklySchedule;
+
+  /// Per-type yearly leave allowance overriding the store's
+  /// `hrSettings.leaveLimits` (see leave_limits.dart).
+  final LeaveLimits leaveLimits;
   final int? lateTime;
   final EmployeeStatus status;
 
@@ -336,6 +342,7 @@ class HREmployee {
       startWorkingTime: map['startWorkingTime'] as String?,
       endWorkingTime: map['endWorkingTime'] as String?,
       weeklySchedule: toWeeklySchedule(map['weeklySchedule']),
+      leaveLimits: parseLeaveLimits(map['leaveLimits']),
       lateTime: (map['lateTime'] as num?)?.toInt(),
       status: EmployeeStatus.fromString(map['status'] as String),
       joinDate: toDateTime(map['joinDate']),
@@ -405,6 +412,7 @@ class HREmployee {
             for (final entry in weeklySchedule.entries)
               '${entry.key}': entry.value.toMap(),
           },
+        if (leaveLimits.isNotEmpty) 'leaveLimits': leaveLimits,
         if (lateTime != null) 'lateTime': lateTime,
         'status': status.value,
         'joinDate': Timestamp.fromDate(joinDate),

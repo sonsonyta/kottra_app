@@ -84,6 +84,19 @@ class ManagementHomeTab extends StatelessWidget {
                 color: c,
                 onTap: () => viewModel.setNavIndex(2),
               ),
+              if (FeatureFlags.enableEarlyLeave) ...[
+                const SizedBox(height: 12),
+                _ManageActionCard(
+                  icon: Icons.logout_rounded,
+                  iconColor: c.primary,
+                  iconBackground: c.infoLight,
+                  title: l10n.earlyLeaveTitle,
+                  subtitle: l10n.earlyLeaveSubtitle,
+                  badge: viewModel.pendingEarlyLeaveCount,
+                  color: c,
+                  onTap: () => viewModel.setNavIndex(2),
+                ),
+              ],
               if (FeatureFlags.enableSalaryAdvance) ...[
                 const SizedBox(height: 12),
                 _ManageActionCard(

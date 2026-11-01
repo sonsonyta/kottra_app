@@ -1,6 +1,7 @@
 import 'package:kottra_app/models/attendance_record.dart';
 import 'package:kottra_app/models/hr_employee.dart';
 import 'package:kottra_app/models/hr_settings.dart';
+import 'package:kottra_app/models/leave_limits.dart';
 
 /// Pure payroll-deduction logic, ported from the POS `HrPayrollComponent`
 /// (`computeLateDeduction` / `computeAbsenceDeduction` /
@@ -152,6 +153,10 @@ List<AttendanceRecord> dropDuplicatePlaceholders(
   }).toList();
 }
 
+/// Key of a store-local day in [computePeriodDeductions]' `earlyLeaveDays`.
+String earlyLeaveDayKey(DateTime localDay) =>
+    '${localDay.year}-${localDay.month}-${localDay.day}';
+
 /// `checkOutNote` the server's auto check-out writes on a forgotten day.
 const missedCheckOutNote = 'Miss Check-Out';
 
@@ -196,6 +201,9 @@ DeductionBreakdown computePeriodDeductions({
   required DateTime today,
   DateTime Function(DateTime date)? toStoreZone,
   int? Function(DateTime localDay)? dayMinutesOn,
+  List<AttendanceRecord>? yearLeaveRecords,
+  LeaveLimits employeeLeaveLimits = const {},
+  Set<String> earlyLeaveDays = const {},
 }) {
   final zone = toStoreZone ?? (d) => d;
   // 'endOfMonth' basis accumulates the whole month regardless of payroll
@@ -252,8 +260,10 @@ DeductionBreakdown computePeriodDeductions({
     // Forgiven lateness (approved late excuse / HR waiver) is never charged;
     // early check-out minutes join it when the store enables that. Matches
     // the POS generator's per-day chargeable minutes.
+    // Early minutes aren't charged on a day with approved early leave.
     final minutes = (r.lateExcused ? 0 : r.lateMinutes) +
-        (settings.lateDeduction.includeEarlyCheckOut
+        (settings.lateDeduction.includeEarlyCheckOut &&
+                !earlyLeaveDays.contains(earlyLeaveDayKey(zone(r.date.toDate())))
             ? r.earlyCheckOutMinutes
             : 0);
     if (minutes > 0) {
@@ -264,6 +274,28 @@ DeductionBreakdown computePeriodDeductions({
         dayMinutes: dayMinutesOn?.call(zone(r.date.toDate())),
       ));
     }
+  }
+
+  // Leave past the employee's yearly limit is unpaid (POS parity): under the
+  // leave policy when it's on, else as absence days (legacy). Counted over the
+  // year's leave ([yearLeaveRecords]; [records] alone may miss early-year
+  // days), skipping types the leave policy already docks.
+  final overLimit = countOverLimitLeaveDays(
+    records: dropDuplicatePlaceholders(yearLeaveRecords ?? records, zone),
+    periodStart: DateTime(period.year, period.month, period.startDay),
+    periodEnd: DateTime(period.year, period.month, period.endDay),
+    limits: effectiveLeaveLimits(settings.leaveLimits, employeeLeaveLimits),
+    alreadyUnpaid: leavePolicy == null
+        ? {LeaveType.unpaidLeave.value}
+        : leavePolicy.enabled
+            ? leavePolicy.unpaidLeaveTypes.map((t) => t.value).toSet()
+            : const {},
+    toStoreZone: zone,
+  );
+  if (leavePolicy?.enabled ?? false) {
+    unpaidLeaveDays += overLimit;
+  } else {
+    absentDays += overLimit;
   }
 
   final late = _computeLate(

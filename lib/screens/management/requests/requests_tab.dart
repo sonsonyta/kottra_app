@@ -3,6 +3,7 @@ import 'package:kottra_app/config/feature_flags.dart';
 import 'package:kottra_app/l10n/app_localizations.dart';
 import 'package:kottra_app/screens/management/management_widgets.dart';
 import 'package:kottra_app/screens/management/requests/advance_requests_view.dart';
+import 'package:kottra_app/screens/management/requests/early_leave_requests_view.dart';
 import 'package:kottra_app/screens/management/requests/late_excuse_requests_view.dart';
 import 'package:kottra_app/screens/management/requests/leave_requests_view.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
@@ -18,8 +19,9 @@ class ManagementRequestsTab extends StatelessWidget {
     final c = appColors(context);
     final l10n = AppLocalizations.of(context)!;
     const showAdvances = FeatureFlags.enableSalaryAdvance;
+    const showEarlyLeave = FeatureFlags.enableEarlyLeave;
     return DefaultTabController(
-      length: showAdvances ? 3 : 2,
+      length: 2 + (showEarlyLeave ? 1 : 0) + (showAdvances ? 1 : 0),
       child: Scaffold(
         backgroundColor: c.background,
         appBar: managementAppBar(
@@ -41,6 +43,12 @@ class ManagementRequestsTab extends StatelessWidget {
                 count: viewModel.pendingLateExcuseCount,
                 color: c,
               ),
+              if (showEarlyLeave)
+                TabWithBadge(
+                  label: l10n.earlyLeaveTab,
+                  count: viewModel.pendingEarlyLeaveCount,
+                  color: c,
+                ),
               if (showAdvances)
                 TabWithBadge(
                   label: l10n.advance,
@@ -54,6 +62,7 @@ class ManagementRequestsTab extends StatelessWidget {
           children: [
             LeaveRequestsView(viewModel: viewModel),
             LateExcuseRequestsView(viewModel: viewModel),
+            if (showEarlyLeave) EarlyLeaveRequestsView(viewModel: viewModel),
             if (showAdvances) AdvanceRequestsView(viewModel: viewModel),
           ],
         ),

@@ -704,4 +704,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nssfPension => 'NSSF pension';
+
+  @override
+  String get leaveSelectedDays => 'Selected days';
+
+  @override
+  String leaveDaysCount(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get leaveDaysLeft => 'Days left this year';
+
+  @override
+  String leaveDaysLeftOf(int remaining, int limit) {
+    return '$remaining of $limit days';
+  }
+
+  @override
+  String get leaveNoLimit => 'No limit';
+
+  @override
+  String leaveOverLimit(int days) {
+    return '$days of these days are over your yearly limit and will be deducted from your salary.';
+  }
+
+  @override
+  String get earlyLeaveTitle => 'Early Leave';
+
+  @override
+  String get earlyLeaveSubtitle => 'Review requests to leave early';
+
+  @override
+  String get earlyLeaveTab => 'Early';
+
+  @override
+  String get requestEarlyLeave => 'Request Early Leave';
+
+  @override
+  String get noEarlyLeaveYet => 'No early leave requests yet.';
+
+  @override
+  String get earlyLeaveDay => 'Choose the day';
+
+  @override
+  String get earlyLeaveTime => 'Choose the time you\'ll leave';
+
+  @override
+  String leaveAtTime(String time) {
+    return 'Leave at $time';
+  }
+
+  @override
+  String get earlyLeaveReasonHint => 'Why do you need to leave early?';
+
+  @override
+  String get earlyLeaveSubmittedSuccess => 'Early leave request submitted.';
+
+  @override
+  String get earlyLeaveDeductionNote =>
+      'If approved, leaving early that day won\'t be deducted from your pay.';
+
+  @override
+  String get earlyLeaveLabel => 'Early leave';
+
+  @override
+  String get approveEarlyLeaveTitle => 'Approve early leave?';
+
+  @override
+  String get rejectEarlyLeaveTitle => 'Reject early leave?';
+
+  @override
+  String get earlyLeaveApproved => 'Early leave approved.';
+
+  @override
+  String get earlyLeaveRejected => 'Early leave rejected.';
 }

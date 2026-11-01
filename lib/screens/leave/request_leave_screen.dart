@@ -25,6 +25,14 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
   DateTime _endDate = DateTime.now();
   PlatformFile? _attachment;
 
+  /// Calendar days from start to end, inclusive.
+  int get _selectedDays =>
+      DateTime(_endDate.year, _endDate.month, _endDate.day)
+          .difference(
+              DateTime(_startDate.year, _startDate.month, _startDate.day))
+          .inDays +
+      1;
+
   @override
   void dispose() {
     _reasonController.dispose();
@@ -196,6 +204,12 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                _LeaveDaysSummary(
+                  selectedDays: _selectedDays,
+                  balance: widget.viewModel
+                      .balanceFor(_selectedType, _startDate, _endDate),
+                ),
                 const SizedBox(height: 24),
                 _buildSectionHeader(context, l10n.reason),
                 const SizedBox(height: 12),
@@ -359,6 +373,94 @@ class _DateField extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// How many days the request covers, and the selected type's days left this
+/// year (or "No limit"). Warns in red when the request goes past the limit —
+/// payroll docks those extra days as unpaid leave.
+class _LeaveDaysSummary extends StatelessWidget {
+  const _LeaveDaysSummary({required this.selectedDays, required this.balance});
+
+  final int selectedDays;
+  final LeaveBalance? balance;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = appColors(context);
+    final l10n = AppLocalizations.of(context)!;
+    final b = balance;
+    final over = b != null && b.over > 0;
+    final danger = Colors.red.shade700;
+
+    Widget row(IconData icon, String label, String value, {Color? color}) =>
+        Row(
+          children: [
+            Icon(icon, size: 18, color: color ?? c.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(fontSize: 13, color: c.textSecondary),
+              ),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: color ?? c.textPrimary,
+              ),
+            ),
+          ],
+        );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: over ? Border.all(color: danger) : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          row(
+            Icons.date_range,
+            l10n.leaveSelectedDays,
+            l10n.leaveDaysCount(selectedDays),
+          ),
+          const SizedBox(height: 10),
+          row(
+            Icons.event_available,
+            l10n.leaveDaysLeft,
+            b == null
+                ? l10n.leaveNoLimit
+                : l10n.leaveDaysLeftOf(b.remaining, b.limit),
+            color: over ? danger : null,
+          ),
+          if (over) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.warning_amber_rounded, size: 18, color: danger),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n.leaveOverLimit(b.over),
+                    style: TextStyle(
+                      color: danger,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }

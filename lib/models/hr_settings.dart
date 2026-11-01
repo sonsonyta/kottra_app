@@ -6,6 +6,7 @@
 library;
 
 import 'package:kottra_app/models/attendance_record.dart';
+import 'package:kottra_app/models/leave_limits.dart';
 
 /// How often payroll runs. `monthly` = one run/month paying the full salary;
 /// `semiMonthly` = two runs/month (1st–15th and 16th–end), each paying half.
@@ -239,6 +240,7 @@ class HrSettings {
     required this.absenceDeduction,
     this.missedCheckOutDeduction = MissedCheckOutDeductionSettings.disabled,
     this.leaveDeduction,
+    this.leaveLimits = const {},
     required this.allowDisplayPreviewDeduction,
     required this.deductionPeriodBasis,
     required this.attendanceMethod,
@@ -252,6 +254,9 @@ class HrSettings {
 
   /// Leave policy, or null when the store hasn't configured one (legacy).
   final LeaveDeductionSettings? leaveDeduction;
+
+  /// Store-wide yearly days per leave type; days past it are unpaid.
+  final LeaveLimits leaveLimits;
 
   /// How employees check in/out for this store (button vs QR scan).
   final AttendanceMethod attendanceMethod;
@@ -295,6 +300,7 @@ class HrSettings {
       leaveDeduction: leave is Map
           ? LeaveDeductionSettings.fromMap(leave.cast<String, dynamic>())
           : null,
+      leaveLimits: parseLeaveLimits(hrMap['leaveLimits']),
       allowDisplayPreviewDeduction:
           hrMap['allowDisplayPreviewDeduction'] as bool? ?? true,
       deductionPeriodBasis: DeductionPeriodBasis.fromString(

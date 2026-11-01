@@ -9,7 +9,9 @@ import 'package:kottra_app/models/store.dart';
 import 'dart:typed_data';
 
 import 'package:kottra_app/services/attendance_photo_service.dart';
+import 'package:kottra_app/models/early_leave_request.dart';
 import 'package:kottra_app/services/attendance_service.dart';
+import 'package:kottra_app/services/early_leave_service.dart';
 import 'package:kottra_app/services/attendance_sync_service.dart';
 import 'package:kottra_app/services/employee_service.dart';
 import 'package:kottra_app/services/location_service.dart';
@@ -35,6 +37,19 @@ class FakeFirebaseAuth implements FirebaseAuth {
 
   @override
   User? get currentUser => user;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
+class FakeEarlyLeaveService implements EarlyLeaveService {
+  List<EarlyLeaveRequest> requests = const [];
+
+  @override
+  Stream<List<EarlyLeaveRequest>> streamEmployeeRequests(
+    String storeId,
+    String employeeId,
+  ) => Stream.value(requests);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => null;
@@ -130,6 +145,12 @@ class FakeAttendanceService implements AttendanceService {
     String employeeId, {
     int limit = 30,
   }) => Stream.value(history);
+
+  @override
+  Stream<List<AttendanceRecord>> streamLeaveRecords(
+    String storeId,
+    String employeeId,
+  ) => Stream.value(const []);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => null;
@@ -296,6 +317,7 @@ AttendanceViewModel buildViewModel({
     storeService: FakeStoreService(),
     settingsService: FakeSettingsService(settings: settings),
     employeeService: FakeEmployeeService(employee: employee),
+    earlyLeaveService: FakeEarlyLeaveService(),
     photoService: photoService ?? FakeAttendancePhotoService(),
     offlineQueue: queue ?? OfflineAttendanceQueue(store: InMemoryPendingStore()),
     connectivity: connectivity ?? FakeConnectivityProbe(online: online),

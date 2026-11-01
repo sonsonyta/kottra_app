@@ -7,12 +7,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:kottra_app/models/app_user.dart';
 import 'package:kottra_app/models/hr_employee.dart';
+import 'package:kottra_app/config/feature_flags.dart';
+import 'package:kottra_app/models/early_leave_request.dart';
 import 'package:kottra_app/models/late_excuse_request.dart';
 import 'package:kottra_app/models/leave_request.dart';
 import 'package:kottra_app/models/salary_advance.dart';
 import 'package:kottra_app/services/actor_name_service.dart';
 import 'package:kottra_app/services/attendance_service.dart';
 import 'package:kottra_app/services/employee_service.dart';
+import 'package:kottra_app/services/early_leave_service.dart';
 import 'package:kottra_app/services/late_excuse_service.dart';
 import 'package:kottra_app/services/leave_service.dart';
 import 'package:kottra_app/services/notification_service.dart';
@@ -36,6 +39,7 @@ class StoreManagementViewModel extends ChangeNotifier {
     AttendanceService? attendanceService,
     LeaveService? leaveService,
     LateExcuseService? lateExcuseService,
+    EarlyLeaveService? earlyLeaveService,
     SalaryAdvanceService? advanceService,
     UserService? userService,
     EmployeeService? employeeService,
@@ -46,6 +50,7 @@ class StoreManagementViewModel extends ChangeNotifier {
        _attendanceService = attendanceService ?? AttendanceService(),
        _leaveService = leaveService ?? LeaveService(),
        _lateExcuseService = lateExcuseService ?? LateExcuseService(),
+       _earlyLeaveService = earlyLeaveService ?? EarlyLeaveService(),
        _advanceService = advanceService ?? SalaryAdvanceService(),
        _userService = userService ?? UserService(),
        _employeeService = employeeService ?? EmployeeService(),
@@ -60,6 +65,7 @@ class StoreManagementViewModel extends ChangeNotifier {
     _subscribeAttendance();
     _subscribeLeaves();
     _subscribeLateExcuses();
+    if (FeatureFlags.enableEarlyLeave) _subscribeEarlyLeave();
     _subscribeAdvances();
     _subscribeLinkedEmployee();
   }
@@ -69,6 +75,7 @@ class StoreManagementViewModel extends ChangeNotifier {
   final AttendanceService _attendanceService;
   final LeaveService _leaveService;
   final LateExcuseService _lateExcuseService;
+  final EarlyLeaveService _earlyLeaveService;
   final SalaryAdvanceService _advanceService;
   final UserService _userService;
   final EmployeeService _employeeService;
@@ -566,6 +573,46 @@ class StoreManagementViewModel extends ChangeNotifier {
     );
   }
 
+  // ── Early-leave requests ─────────────────────────────────────────────────────
+
+  StreamSubscription<List<EarlyLeaveRequest>>? _earlySub;
+  List<EarlyLeaveRequest> _earlyLeave = const [];
+  bool _earlyLeaveLoading = true;
+
+  List<EarlyLeaveRequest> get earlyLeave => _earlyLeave;
+  bool get earlyLeaveLoading => _earlyLeaveLoading;
+  int get pendingEarlyLeaveCount =>
+      _earlyLeave.where((r) => r.status == EarlyLeaveStatus.pending).length;
+
+  void _subscribeEarlyLeave() {
+    _earlySub?.cancel();
+    _earlySub = _earlyLeaveService.streamStoreRequests(storeId).listen(
+      (requests) {
+        _earlyLeave = requests;
+        _earlyLeaveLoading = false;
+        notifyListeners();
+      },
+      onError: (Object e) {
+        debugPrint('Error streaming store early leave: $e');
+        _earlyLeaveLoading = false;
+        notifyListeners();
+      },
+    );
+  }
+
+  Future<void> actionEarlyLeave(
+    EarlyLeaveRequest request,
+    EarlyLeaveStatus status, {
+    String? reason,
+  }) async {
+    await _earlyLeaveService.setStatus(
+      request: request,
+      status: status,
+      actionedBy: _actorId,
+      actionReason: reason,
+    );
+  }
+
   // ── Salary advances ─────────────────────────────────────────────────────────
 
   StreamSubscription<List<SalaryAdvance>>? _advanceSub;
@@ -611,7 +658,10 @@ class StoreManagementViewModel extends ChangeNotifier {
 
   /// Pending requests of every kind, for the Requests nav badge.
   int get pendingRequestCount =>
-      pendingLeaveCount + pendingLateExcuseCount + pendingAdvanceCount;
+      pendingLeaveCount +
+      pendingLateExcuseCount +
+      pendingEarlyLeaveCount +
+      pendingAdvanceCount;
 
   // ── Approver names ───────────────────────────────────────────────────────────
 
@@ -647,6 +697,7 @@ class StoreManagementViewModel extends ChangeNotifier {
     _attendanceSub?.cancel();
     _leaveSub?.cancel();
     _lateSub?.cancel();
+    _earlySub?.cancel();
     _advanceSub?.cancel();
     _linkedEmployeeSub?.cancel();
     _selfAttendance?.dispose();

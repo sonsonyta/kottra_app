@@ -12,6 +12,10 @@ class FeatureFlags {
   /// employee asks HR to forgive a late arrival so it isn't deducted from pay.
   static const bool enableLateExcuse = true;
 
+  /// Toggle the Early Leave request feature: an employee asks in advance to
+  /// leave before the end of a shift; approved days aren't deducted.
+  static const bool enableEarlyLeave = true;
+
   /// Toggle this to enable or disable the Schedule (days off & holidays) screen.
   static const bool enableSchedule = true;
 

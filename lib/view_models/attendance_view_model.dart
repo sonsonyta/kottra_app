@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:kottra_app/models/attendance_record.dart';
+import 'package:kottra_app/models/early_leave_request.dart';
 import 'package:kottra_app/models/hr_employee.dart';
 import 'package:kottra_app/models/hr_settings.dart';
 import 'package:kottra_app/models/payroll_deductions.dart';
@@ -11,6 +12,7 @@ import 'package:kottra_app/models/pending_attendance_action.dart';
 import 'package:kottra_app/services/attendance_photo_service.dart';
 import 'package:kottra_app/services/attendance_service.dart';
 import 'package:kottra_app/services/attendance_sync_service.dart';
+import 'package:kottra_app/services/early_leave_service.dart';
 import 'package:kottra_app/services/employee_service.dart';
 import 'package:kottra_app/services/location_service.dart';
 import 'package:kottra_app/services/offline_attendance_queue.dart';
@@ -50,6 +52,7 @@ class AttendanceViewModel extends ChangeNotifier {
     StoreService? storeService,
     SettingsService? settingsService,
     EmployeeService? employeeService,
+    EarlyLeaveService? earlyLeaveService,
     AttendancePhotoService? photoService,
     OfflineAttendanceQueue? offlineQueue,
     AttendanceSyncService? syncService,
@@ -64,6 +67,7 @@ class AttendanceViewModel extends ChangeNotifier {
        _storeService = storeService ?? StoreService(),
        _settingsService = settingsService ?? SettingsService(),
        _employeeService = employeeService ?? EmployeeService(),
+       _earlyLeaveService = earlyLeaveService ?? EarlyLeaveService(),
        _photoService = photoService ?? AttendancePhotoService(),
        _queue = offlineQueue ?? OfflineAttendanceQueue() {
     _syncService = syncService ??
@@ -91,6 +95,7 @@ class AttendanceViewModel extends ChangeNotifier {
   final StoreService _storeService;
   final SettingsService _settingsService;
   final EmployeeService _employeeService;
+  final EarlyLeaveService _earlyLeaveService;
   final AttendancePhotoService _photoService;
   final OfflineAttendanceQueue _queue;
   late final AttendanceSyncService _syncService;
@@ -102,6 +107,8 @@ class AttendanceViewModel extends ChangeNotifier {
   String? _storeTimezone;
 
   StreamSubscription<List<AttendanceRecord>>? _historySub;
+  StreamSubscription<List<AttendanceRecord>>? _leaveRecordsSub;
+  StreamSubscription<List<EarlyLeaveRequest>>? _earlyLeaveSub;
   StreamSubscription<HrSettings>? _settingsSub;
   StreamSubscription<HREmployee?>? _employeeSub;
 
@@ -110,6 +117,10 @@ class AttendanceViewModel extends ChangeNotifier {
 
   AttendanceRecord? _todayRecord;
   List<AttendanceRecord> _history = [];
+  // Every Leave record, for leave past the yearly limit (null until loaded).
+  List<AttendanceRecord>? _leaveRecords;
+  // Store-local days with approved early leave (early minutes not charged).
+  Set<String> _earlyLeaveDays = const {};
 
   String? _optimisticAttendanceId;
   DateTime? _optimisticCheckInAt;
@@ -206,6 +217,25 @@ class AttendanceViewModel extends ChangeNotifier {
           _updateTodayRecord();
           notifyListeners();
         });
+
+    _leaveRecordsSub?.cancel();
+    _leaveRecordsSub = _attendanceService
+        .streamLeaveRecords(identity.storeId, identity.employeeId)
+        .listen((records) {
+          _leaveRecords = records;
+          if (!_disposed) notifyListeners();
+        }, onError: (Object e) => debugPrint('Error loading leave records: $e'));
+
+    _earlyLeaveSub?.cancel();
+    _earlyLeaveSub = _earlyLeaveService
+        .streamEmployeeRequests(identity.storeId, identity.employeeId)
+        .listen((requests) {
+          _earlyLeaveDays = requests
+              .where((r) => r.status == EarlyLeaveStatus.approved)
+              .map((r) => earlyLeaveDayKey(_inStoreZone(r.date)))
+              .toSet();
+          if (!_disposed) notifyListeners();
+        }, onError: (Object e) => debugPrint('Error loading early leave: $e'));
   }
 
   /// Streams the two slow-moving inputs to the deduction figure — the store's
@@ -251,6 +281,9 @@ class AttendanceViewModel extends ChangeNotifier {
       today: _now(),
       toStoreZone: _inStoreZone,
       dayMinutesOn: employee.overrideMinutesOn,
+      yearLeaveRecords: _leaveRecords,
+      employeeLeaveLimits: employee.leaveLimits,
+      earlyLeaveDays: _earlyLeaveDays,
     );
   }
 
@@ -796,6 +829,8 @@ class AttendanceViewModel extends ChangeNotifier {
     _optimisticTimer?.cancel();
     _checkOutLockTimer?.cancel();
     _historySub?.cancel();
+    _leaveRecordsSub?.cancel();
+    _earlyLeaveSub?.cancel();
     _settingsSub?.cancel();
     _employeeSub?.cancel();
     _queue.removeListener(_onQueueChanged);

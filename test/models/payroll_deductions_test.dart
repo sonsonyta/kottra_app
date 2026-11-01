@@ -589,6 +589,30 @@ void main() {
     });
   });
 
+  group('approved early leave', () {
+    test('early minutes on an approved day are not charged', () {
+      final late = LateDeductionSettings.fromMap({
+        'enabled': true,
+        'mode': 'perMinute',
+        'perMinuteUSD': 0.5,
+        'includeEarlyCheckOut': true,
+      });
+      DeductionBreakdown run(Set<String> days) => computePeriodDeductions(
+            records: [
+              _rec(day: 4, status: AttendanceStatus.present, earlyCheckOutMinutes: 10),
+              _rec(day: 5, status: AttendanceStatus.present, earlyCheckOutMinutes: 6),
+            ],
+            monthlyBasicSalary: 280,
+            currency: SalaryCurrency.usd,
+            settings: _settings(frequency: PayrollFrequency.monthly, late: late),
+            today: DateTime(2026, 8, 31),
+            earlyLeaveDays: days,
+          );
+      expect(run({}).late, 8);
+      expect(run({earlyLeaveDayKey(DateTime(2026, 8, 4))}).late, 3);
+    });
+  });
+
   group('leave deduction policy', () {
     final today = DateTime(2026, 8, 31);
     final records = [
@@ -622,6 +646,30 @@ void main() {
       final b = run(null);
       expect(b.unpaidDays, 2);
       expect(b.absence, 20);
+    });
+
+    test('leave past the yearly limit is charged as unpaid leave', () {
+      // Sick Leave is paid under this policy, but the limit is 1 day a year:
+      // days 5 and 6 → 1 over. Unpaid Leave (day 4) is charged as before.
+      final b = computePeriodDeductions(
+        records: records,
+        monthlyBasicSalary: 280,
+        currency: SalaryCurrency.usd,
+        settings: HrSettings(
+          payrollFrequency: PayrollFrequency.monthly,
+          lateDeduction: LateDeductionSettings.disabled,
+          absenceDeduction: AbsenceDeductionSettings.legacyDefault,
+          leaveDeduction: policy({LeaveType.unpaidLeave}),
+          leaveLimits: const {'Sick Leave': 1},
+          allowDisplayPreviewDeduction: true,
+          deductionPeriodBasis: DeductionPeriodBasis.payrollFrequency,
+          attendanceMethod: AttendanceMethod.button,
+          requirePhotoOnAttendance: false,
+        ),
+        today: today,
+      );
+      expect(b.unpaidDays, 3); // 1 absent + 1 unpaid + 1 over-limit sick
+      expect(b.absence, 30);
     });
 
     test('free leave days per month are not charged', () {

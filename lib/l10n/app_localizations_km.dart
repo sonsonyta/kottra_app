@@ -702,4 +702,79 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get nssfPension => 'ប.ស.ស សោធន';
+
+  @override
+  String get leaveSelectedDays => 'ចំនួនថ្ងៃដែលបានជ្រើស';
+
+  @override
+  String leaveDaysCount(int days) {
+    return '$days ថ្ងៃ';
+  }
+
+  @override
+  String get leaveDaysLeft => 'ថ្ងៃឈប់ដែលនៅសល់ក្នុងឆ្នាំនេះ';
+
+  @override
+  String leaveDaysLeftOf(int remaining, int limit) {
+    return '$remaining ក្នុងចំណោម $limit ថ្ងៃ';
+  }
+
+  @override
+  String get leaveNoLimit => 'គ្មានកំណត់';
+
+  @override
+  String leaveOverLimit(int days) {
+    return '$days ថ្ងៃ ក្នុងសំណើនេះ លើសកំណត់ប្រចាំឆ្នាំ ហើយនឹងត្រូវកាត់ពីប្រាក់ខែ។';
+  }
+
+  @override
+  String get earlyLeaveTitle => 'សុំចេញមុនម៉ោង';
+
+  @override
+  String get earlyLeaveSubtitle => 'ពិនិត្យសំណើសុំចេញមុនម៉ោង';
+
+  @override
+  String get earlyLeaveTab => 'ចេញមុន';
+
+  @override
+  String get requestEarlyLeave => 'ស្នើសុំចេញមុនម៉ោង';
+
+  @override
+  String get noEarlyLeaveYet => 'មិនទាន់មានសំណើសុំចេញមុនម៉ោងទេ។';
+
+  @override
+  String get earlyLeaveDay => 'ជ្រើសរើសថ្ងៃ';
+
+  @override
+  String get earlyLeaveTime => 'ជ្រើសរើសម៉ោងដែលអ្នកនឹងចេញ';
+
+  @override
+  String leaveAtTime(String time) {
+    return 'ចេញម៉ោង $time';
+  }
+
+  @override
+  String get earlyLeaveReasonHint => 'ហេតុអ្វីបានជាអ្នកត្រូវចេញមុនម៉ោង?';
+
+  @override
+  String get earlyLeaveSubmittedSuccess => 'បានបញ្ជូនសំណើសុំចេញមុនម៉ោង។';
+
+  @override
+  String get earlyLeaveDeductionNote =>
+      'ប្រសិនបើត្រូវបានអនុម័ត ការចេញមុនម៉ោងនៅថ្ងៃនោះនឹងមិនត្រូវកាត់ប្រាក់ទេ។';
+
+  @override
+  String get earlyLeaveLabel => 'សុំចេញមុនម៉ោង';
+
+  @override
+  String get approveEarlyLeaveTitle => 'អនុម័តសំណើសុំចេញមុនម៉ោង?';
+
+  @override
+  String get rejectEarlyLeaveTitle => 'បដិសេធសំណើសុំចេញមុនម៉ោង?';
+
+  @override
+  String get earlyLeaveApproved => 'បានអនុម័តសំណើសុំចេញមុនម៉ោង។';
+
+  @override
+  String get earlyLeaveRejected => 'បានបដិសេធសំណើសុំចេញមុនម៉ោង។';
 }

@@ -27,7 +27,7 @@ class _LeaveListScreenState extends State<LeaveListScreen> {
       storeId: widget.profileViewModel.storeId,
       employeeId: widget.profileViewModel.employeeId,
       employeeName: widget.profileViewModel.userName,
-    );
+    )..watchLeaveLimits();
   }
 
   @override

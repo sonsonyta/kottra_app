@@ -11,11 +11,14 @@ import 'package:kottra_app/screens/leave/leave_list_screen.dart';
 import 'package:kottra_app/screens/leave/request_leave_screen.dart';
 import 'package:kottra_app/screens/advance/advance_list_screen.dart';
 import 'package:kottra_app/screens/advance/request_advance_screen.dart';
+import 'package:kottra_app/screens/early_leave/early_leave_list_screen.dart';
+import 'package:kottra_app/screens/early_leave/request_early_leave_screen.dart';
 import 'package:kottra_app/screens/late_excuse/late_excuse_list_screen.dart';
 import 'package:kottra_app/screens/late_excuse/request_late_excuse_screen.dart';
 import 'package:kottra_app/screens/schedule/schedule_screen.dart';
 import 'package:kottra_app/view_models/leave_view_model.dart';
 import 'package:kottra_app/view_models/salary_advance_view_model.dart';
+import 'package:kottra_app/view_models/early_leave_view_model.dart';
 import 'package:kottra_app/view_models/late_excuse_view_model.dart';
 import 'package:kottra_app/view_models/profile_view_model.dart';
 
@@ -122,6 +125,24 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final viewModel = state.extra as LateExcuseViewModel;
         return RequestLateExcuseScreen(viewModel: viewModel);
+      },
+    ),
+    GoRoute(
+      path: '/early-leave',
+      redirect: (context, state) =>
+          state.extra is ProfileViewModel ? null : '/main',
+      builder: (context, state) {
+        final profileViewModel = state.extra as ProfileViewModel;
+        return EarlyLeaveListScreen(profileViewModel: profileViewModel);
+      },
+    ),
+    GoRoute(
+      path: '/early-leave/request',
+      redirect: (context, state) =>
+          state.extra is EarlyLeaveViewModel ? null : '/main',
+      builder: (context, state) {
+        final viewModel = state.extra as EarlyLeaveViewModel;
+        return RequestEarlyLeaveScreen(viewModel: viewModel);
       },
     ),
     GoRoute(

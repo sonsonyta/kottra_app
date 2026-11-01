@@ -127,6 +127,23 @@ class AttendanceService {
   /// across the whole store, ordered by check-in time then name. Used by the
   /// manager/owner attendance view. Records are matched on the `date` field,
   /// which is stored at the start of the store's calendar day.
+  /// All of the employee's Leave records (every year). Two equality filters
+  /// need no composite index. Used for the yearly leave-limit balance.
+  Stream<List<AttendanceRecord>> streamLeaveRecords(
+    String storeId,
+    String employeeId,
+  ) {
+    return _col(storeId)
+        .where('employeeId', isEqualTo: employeeId)
+        .where('status', isEqualTo: AttendanceStatus.leave.value)
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((doc) => AttendanceRecord.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
+  }
+
   Stream<List<AttendanceRecord>> streamStoreAttendanceByDate(
     String storeId,
     DateTime day,
