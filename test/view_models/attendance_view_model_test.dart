@@ -19,6 +19,8 @@ import 'package:kottra_app/services/offline_attendance_queue.dart';
 import 'package:kottra_app/services/settings_service.dart';
 import 'package:kottra_app/services/store_service.dart';
 import 'package:kottra_app/view_models/attendance_view_model.dart';
+import 'package:timezone/data/latest_all.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 
 class FakeUser implements User {
   FakeUser({required this.uid});
@@ -309,12 +311,14 @@ AttendanceViewModel buildViewModel({
   Duration checkOutLockDuration =
       AttendanceViewModel.defaultCheckOutLockDuration,
   ({String storeId, String employeeId})? identity,
+  Store? store,
+  DateTime Function()? clock,
 }) {
   return AttendanceViewModel(
     firebaseAuth: FakeFirebaseAuth(user: FakeUser(uid: uid)),
     attendanceService: attendanceService,
     locationService: locationService,
-    storeService: FakeStoreService(),
+    storeService: FakeStoreService(store: store),
     settingsService: FakeSettingsService(settings: settings),
     employeeService: FakeEmployeeService(employee: employee),
     earlyLeaveService: FakeEarlyLeaveService(),
@@ -323,6 +327,7 @@ AttendanceViewModel buildViewModel({
     connectivity: connectivity ?? FakeConnectivityProbe(online: online),
     checkOutLockDuration: checkOutLockDuration,
     identity: identity,
+    clock: clock,
   );
 }
 
@@ -957,6 +962,185 @@ void main() {
 
       expect(attendanceService.checkInCalls, 1);
 
+      viewModel.dispose();
+    });
+  });
+
+  group('AttendanceViewModel shift rules', () {
+    late tz.Location pp;
+    setUpAll(() {
+      tzdata.initializeTimeZones();
+      pp = tz.getLocation('Asia/Phnom_Penh');
+    });
+
+    DateTime local(int day, int hour, [int minute = 0]) =>
+        tz.TZDateTime(pp, 2026, 11, day, hour, minute);
+
+    HREmployee employeeWithHours(String start, String end) =>
+        HREmployee.fromMap('emp-1', {
+          ...buildEmployee().toMap(),
+          'startWorkingTime': start,
+          'endWorkingTime': end,
+          'lateTime': 10,
+        });
+
+    Store store({bool window = false, int early = 60}) => Store(
+          id: 'store-1',
+          timezone: 'Asia/Phnom_Penh',
+          checkInWindowEnabled: window,
+          checkInEarlyMinutes: early,
+        );
+
+    Future<AttendanceViewModel> build({
+      required DateTime now,
+      String start = '18:00',
+      String end = '04:00',
+      bool window = false,
+      List<AttendanceRecord> history = const [],
+      FakeAttendanceService? attendanceService,
+      OfflineAttendanceQueue? queue,
+      bool online = true,
+    }) async {
+      final viewModel = buildViewModel(
+        attendanceService: (attendanceService ?? FakeAttendanceService())
+          ..history = history,
+        locationService: FakeLocationService(),
+        employee: employeeWithHours(start, end),
+        store: store(window: window),
+        clock: () => now,
+        queue: queue,
+        online: online,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      return viewModel;
+    }
+
+    test('a 03:00 check-in on an 18:00-04:00 shift asks for a late note',
+        () async {
+      final viewModel = await build(now: local(3, 3));
+      expect(viewModel.isLateCheckIn, isTrue);
+      expect(viewModel.startWorkingTime, '18:00');
+      viewModel.dispose();
+    });
+
+    test('an on-time overnight check-in is not late', () async {
+      final viewModel = await build(now: local(2, 18, 5));
+      expect(viewModel.isLateCheckIn, isFalse);
+      viewModel.dispose();
+    });
+
+    AttendanceRecord openShift(DateTime checkIn) => AttendanceRecord(
+          id: 'open',
+          storeId: 'store-1',
+          employeeId: 'emp-1',
+          employeeName: 'A B',
+          date: Timestamp.fromDate(checkIn),
+          checkIn: checkIn,
+          status: AttendanceStatus.present,
+        );
+
+    test('leaving an overnight shift before midnight is early', () async {
+      final viewModel = await build(
+        now: local(2, 23),
+        history: [openShift(local(2, 17, 50))],
+      );
+      expect(viewModel.isCheckedIn, isTrue);
+      expect(viewModel.isEarlyCheckOut, isTrue);
+      viewModel.dispose();
+    });
+
+    test('leaving an overnight shift within grace of its end is not early',
+        () async {
+      final viewModel = await build(
+        now: local(3, 3, 55),
+        history: [openShift(local(2, 17, 50))],
+      );
+      expect(viewModel.isEarlyCheckOut, isFalse);
+      viewModel.dispose();
+    });
+
+    test('the check-in window is open whenever the store has not enabled it',
+        () async {
+      final viewModel = await build(now: local(2, 10));
+      expect(viewModel.checkInAvailability, CheckInAvailability.open);
+      expect(viewModel.checkInWindowTime, isNull);
+      viewModel.dispose();
+    });
+
+    test('refuses a check-in before the window opens, without queuing it',
+        () async {
+      final attendanceService = FakeAttendanceService();
+      final queue = OfflineAttendanceQueue(store: InMemoryPendingStore());
+      final viewModel = await build(
+        now: local(2, 16, 30),
+        window: true,
+        attendanceService: attendanceService,
+        queue: queue,
+        online: false,
+      );
+
+      expect(viewModel.checkInAvailability, CheckInAvailability.notYetOpen);
+      expect(viewModel.checkInWindowTime, local(2, 17));
+      await expectLater(
+        viewModel.checkIn(),
+        throwsA(isA<CheckInWindowClosedException>()
+            .having((e) => e.availability, 'availability',
+                CheckInAvailability.notYetOpen)
+            .having((e) => e.time, 'time', local(2, 17))),
+      );
+      expect(attendanceService.checkInCalls, 0);
+      expect(viewModel.hasPendingSync, isFalse);
+      expect(viewModel.isActionLoading, isFalse);
+      viewModel.dispose();
+    });
+
+    test('allows the overnight tail and refuses after the shift ended',
+        () async {
+      final tail = await build(now: local(3, 3), window: true);
+      expect(tail.checkInAvailability, CheckInAvailability.open);
+      tail.dispose();
+
+      final dayShift = await build(
+        now: local(3, 17, 30),
+        start: '08:00',
+        end: '17:00',
+        window: true,
+      );
+      expect(dayShift.checkInAvailability, CheckInAvailability.shiftEnded);
+      expect(dayShift.checkInWindowTime, local(3, 17));
+      dayShift.dispose();
+    });
+
+    AttendanceRecord absentToday({required bool auto}) => AttendanceRecord(
+          id: 'absent',
+          storeId: 'store-1',
+          employeeId: 'emp-1',
+          employeeName: 'A B',
+          date: Timestamp.fromDate(local(3, 0)),
+          status: AttendanceStatus.absent,
+          autoAbsent: auto,
+        );
+
+    test('an auto-absent does not block checking in', () async {
+      final viewModel = await build(
+        now: local(3, 9, 30),
+        start: '08:00',
+        end: '17:00',
+        history: [absentToday(auto: true)],
+      );
+      expect(viewModel.isAbsent, isFalse);
+      expect(viewModel.isCheckedIn, isFalse);
+      viewModel.dispose();
+    });
+
+    test("a manager's Absent still blocks checking in", () async {
+      final viewModel = await build(
+        now: local(3, 9, 30),
+        start: '08:00',
+        end: '17:00',
+        history: [absentToday(auto: false)],
+      );
+      expect(viewModel.isAbsent, isTrue);
       viewModel.dispose();
     });
   });

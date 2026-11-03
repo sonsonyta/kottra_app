@@ -57,6 +57,7 @@ class AttendanceRecord {
     this.checkOutNote,
     this.missedCheckOut = false,
     this.missedCheckOutExcused = false,
+    this.autoAbsent = false,
     this.leaveType,
     this.lateCheckInNote,
     this.earlyCheckOutNote,
@@ -104,6 +105,10 @@ class AttendanceRecord {
   /// True when HR waived this day's missed check-out. Excluded from the
   /// missed check-out deduction.
   final bool missedCheckOutExcused;
+
+  /// True for an Absent written by the auto-absent job. The employee can
+  /// still check in; the check-in replaces this record.
+  final bool autoAbsent;
 
   final LeaveType? leaveType;
   final String? lateCheckInNote;
@@ -165,6 +170,7 @@ class AttendanceRecord {
       checkOutNote: map['checkOutNote'] as String?,
       missedCheckOut: map['missedCheckOut'] as bool? ?? false,
       missedCheckOutExcused: map['missedCheckOutExcused'] as bool? ?? false,
+      autoAbsent: map['autoAbsent'] as bool? ?? false,
       leaveType: LeaveType.fromString(map['leaveType'] as String?),
       lateCheckInNote: map['lateCheckInNote'] as String?,
       earlyCheckOutNote: map['earlyCheckOutNote'] as String?,
@@ -197,6 +203,7 @@ class AttendanceRecord {
         if (checkOutNote != null) 'checkOutNote': checkOutNote,
         if (missedCheckOut) 'missedCheckOut': true,
         if (missedCheckOutExcused) 'missedCheckOutExcused': true,
+        if (autoAbsent) 'autoAbsent': true,
         if (leaveType != null) 'leaveType': leaveType!.value,
         if (lateCheckInNote != null) 'lateCheckInNote': lateCheckInNote,
         if (earlyCheckOutNote != null) 'earlyCheckOutNote': earlyCheckOutNote,

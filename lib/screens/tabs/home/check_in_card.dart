@@ -4,6 +4,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../../models/hr_employee.dart';
 import '../../../view_models/attendance_view_model.dart';
 import '../../scan/scan_screen.dart';
 import '../tab_colors.dart';
@@ -18,10 +19,27 @@ class CheckInCard extends StatelessWidget {
     if (error is LocationRequiredException) {
       return localizations.locationRequiredRemote;
     }
+    if (error is CheckInWindowClosedException) {
+      return _checkInWindowMessage(
+          error.availability, error.time, localizations)!;
+    }
     if (error is FirebaseFunctionsException) {
       return error.message ?? 'Check-in failed.';
     }
     return error.toString().replaceFirst('Exception: ', '');
+  }
+
+  /// Why check-in is unavailable under the store's check-in window, or null
+  /// while it is open.
+  String? _checkInWindowMessage(CheckInAvailability availability,
+      DateTime? time, AppLocalizations localizations) {
+    return switch (availability) {
+      CheckInAvailability.open => null,
+      CheckInAvailability.notYetOpen =>
+        localizations.checkInWindowOpensAt(fmtTime(time)),
+      CheckInAvailability.shiftEnded =>
+        localizations.checkInWindowShiftEnded(fmtTime(time)),
+    };
   }
 
   Future<String?> _promptForNote(BuildContext context, String action) async {
@@ -121,7 +139,7 @@ class CheckInCard extends StatelessWidget {
     if (!context.mounted) return;
 
     String? note;
-    if (attendanceViewModel.isLateCheckIn(attendanceViewModel.startWorkingTime, attendanceViewModel.lateTime)) {
+    if (attendanceViewModel.isLateCheckIn) {
       note = await _promptForNote(context, AppLocalizations.of(context)!.checkIn);
       if (note == null) return; // User cancelled
       if (!context.mounted) return;
@@ -165,7 +183,7 @@ class CheckInCard extends StatelessWidget {
     if (!context.mounted) return;
 
     String? note;
-    if (attendanceViewModel.isEarlyCheckOut(attendanceViewModel.startWorkingTime, attendanceViewModel.endWorkingTime)) {
+    if (attendanceViewModel.isEarlyCheckOut) {
       note = await _promptForNote(context, AppLocalizations.of(context)!.checkOut);
       if (note == null) return; // User cancelled
       if (!context.mounted) return;
@@ -228,6 +246,11 @@ class CheckInCard extends StatelessWidget {
         : isDayOff
             ? localizations.dayOff
             : localizations.absent;
+    // Outside the store's check-in window: disable check-in and say why.
+    final windowMessage = (isCheckedIn || isCheckedOut)
+        ? null
+        : _checkInWindowMessage(attendanceViewModel.checkInAvailability,
+            attendanceViewModel.checkInWindowTime, localizations);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -417,6 +440,7 @@ class CheckInCard extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: (attendanceViewModel.isActionLoading ||
                           isCheckedOut ||
+                          windowMessage != null ||
                           (isCheckedIn && attendanceViewModel.isCheckOutLocked))
                       ? null
                       : isCheckedIn
@@ -461,6 +485,15 @@ class CheckInCard extends StatelessWidget {
                     ),
                   ),
                 ),
+              ),
+            ),
+          if (!isBlocked && windowMessage != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(
+                windowMessage,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: c.textSecondary, fontSize: 13),
               ),
             ),
           if (isCheckedIn && attendanceViewModel.isCheckOutLocked)

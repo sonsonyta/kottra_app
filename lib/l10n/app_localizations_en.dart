@@ -142,6 +142,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String checkInWindowOpensAt(String time) {
+    return 'Check-in opens at $time.';
+  }
+
+  @override
+  String checkInWindowShiftEnded(String time) {
+    return 'Your shift ended at $time. Ask your manager to record your attendance.';
+  }
+
+  @override
   String get locationRequiredRemote =>
       'Turn on location to check in or out remotely.';
 

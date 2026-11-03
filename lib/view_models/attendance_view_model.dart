@@ -34,6 +34,18 @@ class LocationRequiredException implements Exception {
   const LocationRequiredException();
 }
 
+/// Thrown by [AttendanceViewModel.checkIn] when the store's check-in window
+/// is closed, so the employee isn't sent to the backend (or the offline
+/// queue) with a check-in it would reject. [time] is when the window opens
+/// ([CheckInAvailability.notYetOpen]) or when the shift ended
+/// ([CheckInAvailability.shiftEnded]), in the store's timezone.
+class CheckInWindowClosedException implements Exception {
+  const CheckInWindowClosedException(this.availability, this.time);
+
+  final CheckInAvailability availability;
+  final DateTime time;
+}
+
 class AttendanceViewModel extends ChangeNotifier {
   static const int maxHoursBeforeStaleCheckIn = 18;
   static const int minHoursBeforeNewCheckIn = 8;
@@ -59,8 +71,10 @@ class AttendanceViewModel extends ChangeNotifier {
     ConnectivityProbe? connectivity,
     Duration checkOutLockDuration = defaultCheckOutLockDuration,
     ({String storeId, String employeeId})? identity,
+    DateTime Function()? clock,
   }) : _checkOutLockDuration = checkOutLockDuration,
        _explicitIdentity = identity,
+       _clock = clock ?? DateTime.now,
        _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
        _attendanceService = attendanceService ?? AttendanceService(),
        _locationService = locationService ?? const LocationService(),
@@ -84,6 +98,7 @@ class AttendanceViewModel extends ChangeNotifier {
   }
 
   final Duration _checkOutLockDuration;
+  final DateTime Function() _clock;
 
   /// The employee to act as, when not an employee-token login — e.g. a manager
   /// whose store user account is linked to their own employee record. Null
@@ -105,6 +120,10 @@ class AttendanceViewModel extends ChangeNotifier {
   /// employee device's local timezone. Falls back to the device timezone
   /// until loaded or if the store hasn't been migrated to set it.
   String? _storeTimezone;
+
+  // The store's optional check-in window (see Store.checkInWindowEnabled).
+  bool _checkInWindowEnabled = false;
+  int _checkInEarlyMinutes = 60;
 
   StreamSubscription<List<AttendanceRecord>>? _historySub;
   StreamSubscription<List<AttendanceRecord>>? _leaveRecordsSub;
@@ -294,6 +313,8 @@ class AttendanceViewModel extends ChangeNotifier {
     try {
       final store = await _storeService.getStore(identity.storeId);
       _storeTimezone = store?.timezone;
+      _checkInWindowEnabled = store?.checkInWindowEnabled ?? false;
+      _checkInEarlyMinutes = store?.checkInEarlyMinutes ?? 60;
     } catch (e) {
       debugPrint('Error loading store timezone: $e');
     }
@@ -320,7 +341,7 @@ class AttendanceViewModel extends ChangeNotifier {
   }
 
   /// The current wall-clock time in the store's timezone.
-  tz.TZDateTime _now() => tz.TZDateTime.now(_storeLocation);
+  tz.TZDateTime _now() => tz.TZDateTime.from(_clock(), _storeLocation);
 
   /// Converts an absolute instant to the store's timezone.
   tz.TZDateTime _inStoreZone(DateTime instant) =>
@@ -428,18 +449,24 @@ class AttendanceViewModel extends ChangeNotifier {
   /// the QR scanner to check the scanned code targets the right store.
   String? get storeId => _identity?.storeId;
 
-  /// Today's shift start (`HH:mm`), used to flag a late check-in. Follows
-  /// any per-weekday hours (e.g. a Saturday half day).
-  String? get startWorkingTime => _employee?.workingHoursOn(_now()).start;
+  /// The shift a check-in right now would belong to — yesterday's when it
+  /// is still inside an overnight shift (e.g. 03:00 for 18:00-04:00).
+  /// Follows any per-weekday hours (e.g. a Saturday half day).
+  ShiftWindow? get currentShift => _employee?.shiftWindowAt(_now());
 
-  /// The current shift's end (`HH:mm`), used to flag an early check-out.
-  /// Resolved for the day the shift started, like the check-out function.
-  String? get endWorkingTime {
+  /// The shift the current check-in belongs to (or would, if not checked in
+  /// yet), like the check-out function.
+  ShiftWindow? get _checkedInShift {
     final startedAt = checkInTime;
-    return _employee
-        ?.workingHoursOn(startedAt != null ? _inStoreZone(startedAt) : _now())
-        .end;
+    return _employee?.shiftWindowAt(
+        startedAt != null ? _inStoreZone(startedAt) : _now());
   }
+
+  /// The current shift's start (`HH:mm`).
+  String? get startWorkingTime => currentShift?.start;
+
+  /// The current shift's end (`HH:mm`).
+  String? get endWorkingTime => _checkedInShift?.end;
 
   /// Grace minutes after [startWorkingTime] before a check-in counts as late.
   int? get lateTime => _employee?.lateTime;
@@ -471,7 +498,11 @@ class AttendanceViewModel extends ChangeNotifier {
   Future<Uint8List?> capturePhoto() => _photoService.capture();
 
   bool get isOnLeave => _todayRecord?.status == AttendanceStatus.leave;
-  bool get isAbsent => _todayRecord?.status == AttendanceStatus.absent;
+  /// Absent and unable to check in. An auto-absent doesn't count: checking in
+  /// late replaces it.
+  bool get isAbsent =>
+      _todayRecord?.status == AttendanceStatus.absent &&
+      !_todayRecord!.autoAbsent;
   bool get isDayOff => _todayRecord?.status == AttendanceStatus.dayOff;
   AttendanceRecord? get todayRecord => _todayRecord;
 
@@ -514,45 +545,42 @@ class AttendanceViewModel extends ChangeNotifier {
     }).toList();
   }
 
-  bool isLateCheckIn(String? startWorkingTime, int? lateTime) {
-    if (startWorkingTime == null || startWorkingTime.isEmpty) return false;
-    final parts = startWorkingTime.split(':');
-    if (parts.length != 2) return false;
-    final startHour = int.tryParse(parts[0]) ?? 0;
-    final startMin = int.tryParse(parts[1]) ?? 0;
-    final grace = lateTime ?? 0;
-
-    final now = _now();
-    final limitTime = tz.TZDateTime(_storeLocation, now.year, now.month, now.day, startHour, startMin)
-        .add(Duration(minutes: grace));
-
-    return now.isAfter(limitTime);
+  /// Whether checking in now would be recorded as Late — past the current
+  /// shift's start plus the grace period. Matches the check-in function, so
+  /// a 03:00 check-in for an 18:00-04:00 shift is late.
+  bool get isLateCheckIn {
+    final start = currentShift?.scheduledStart;
+    if (start == null) return false;
+    return _now().isAfter(start.add(Duration(minutes: lateTime ?? 0)));
   }
 
-  bool isEarlyCheckOut(String? startWorkingTime, String? endWorkingTime) {
-    if (endWorkingTime == null || endWorkingTime.isEmpty || startWorkingTime == null || startWorkingTime.isEmpty) return false;
+  /// Whether checking out now would be recorded as early — before the
+  /// checked-in shift's end (the next day for an overnight shift) minus the
+  /// grace period. Matches the check-out function.
+  bool get isEarlyCheckOut {
+    final end = _checkedInShift?.scheduledEnd;
+    if (end == null) return false;
+    return _now().isBefore(end.subtract(Duration(minutes: lateTime ?? 0)));
+  }
 
-    final startParts = startWorkingTime.split(':');
-    final endParts = endWorkingTime.split(':');
+  /// Whether the store's check-in window lets the employee check in now.
+  /// Always open when the store hasn't enabled the window.
+  CheckInAvailability get checkInAvailability {
+    if (!_checkInWindowEnabled) return CheckInAvailability.open;
+    return currentShift?.checkInAvailability(_now(), _checkInEarlyMinutes) ??
+        CheckInAvailability.open;
+  }
 
-    if (startParts.length != 2 || endParts.length != 2) return false;
-
-    final startHour = int.tryParse(startParts[0]) ?? 0;
-    final endHour = int.tryParse(endParts[0]) ?? 0;
-    final endMin = int.tryParse(endParts[1]) ?? 0;
-
-    final now = _now();
-    tz.TZDateTime endTime = tz.TZDateTime(_storeLocation, now.year, now.month, now.day, endHour, endMin);
-
-    // Cross-day schedule detection
-    if (endHour < startHour) {
-      if (now.hour >= startHour) {
-        // If checking out before midnight (e.g., 23:00), the shift ends tomorrow.
-        endTime = endTime.add(const Duration(days: 1));
-      }
-    }
-
-    return now.isBefore(endTime);
+  /// When the check-in window opens (if not yet open) or when the shift ended
+  /// (if past it); null while the window is open.
+  DateTime? get checkInWindowTime {
+    final shift = currentShift;
+    return switch (checkInAvailability) {
+      CheckInAvailability.open => null,
+      CheckInAvailability.notYetOpen =>
+        shift?.checkInOpensAt(_checkInEarlyMinutes),
+      CheckInAvailability.shiftEnded => shift?.scheduledEnd,
+    };
   }
 
   Future<CheckInResult?> checkIn({
@@ -567,12 +595,20 @@ class AttendanceViewModel extends ChangeNotifier {
     final identity = _identity;
     if (identity == null) return null;
 
+    // Refuse outside the store's check-in window here rather than letting the
+    // backend reject it — or worse, queuing it offline to fail on sync.
+    final availability = checkInAvailability;
+    final windowTime = checkInWindowTime;
+    if (availability != CheckInAvailability.open && windowTime != null) {
+      throw CheckInWindowClosedException(availability, windowTime);
+    }
+
     _isActionLoading = true;
     notifyListeners();
     try {
       // Capture the real tap time up front so an offline replay records when
       // the employee actually checked in, not when the queue drains.
-      final eventAt = DateTime.now();
+      final eventAt = _clock();
       // Reserve the queue id now so a captured photo is keyed to the same
       // action whether it's sent immediately or replayed later from the queue.
       final localId = _newLocalId();

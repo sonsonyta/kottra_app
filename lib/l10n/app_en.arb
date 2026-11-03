@@ -50,6 +50,22 @@
       }
     }
   },
+  "checkInWindowOpensAt": "Check-in opens at {time}.",
+  "@checkInWindowOpensAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "checkInWindowShiftEnded": "Your shift ended at {time}. Ask your manager to record your attendance.",
+  "@checkInWindowShiftEnded": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "locationRequiredRemote": "Turn on location to check in or out remotely.",
   "checkInFailed": "Check-in failed. Please try again.",
   "alreadyCheckedOut": "You're already checked out today.",

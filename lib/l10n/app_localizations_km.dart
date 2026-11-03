@@ -141,6 +141,16 @@ class AppLocalizationsKm extends AppLocalizations {
   }
 
   @override
+  String checkInWindowOpensAt(String time) {
+    return 'អាចកត់វត្តមានចូលបានចាប់ពីម៉ោង $time។';
+  }
+
+  @override
+  String checkInWindowShiftEnded(String time) {
+    return 'វេនការងាររបស់អ្នកបានបញ្ចប់នៅម៉ោង $time។ សូមស្នើអ្នកគ្រប់គ្រងកត់ត្រាវត្តមានរបស់អ្នក។';
+  }
+
+  @override
   String get locationRequiredRemote => 'សូមបើកទីតាំង ដើម្បីកត់វត្តមានពីចម្ងាយ។';
 
   @override

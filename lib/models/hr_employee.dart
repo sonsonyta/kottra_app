@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:kottra_app/models/leave_limits.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 enum EmployeeStatus {
   active('Active'),
@@ -69,6 +70,62 @@ class DailyWorkingHours {
   }
 
   Map<String, dynamic> toMap() => {'start': start, 'end': end};
+}
+
+/// Whether an employee may check in now under the store's check-in window.
+enum CheckInAvailability {
+  open,
+
+  /// Earlier than the window's opening before the scheduled start.
+  notYetOpen,
+
+  /// At or after the scheduled end of the shift.
+  shiftEnded,
+}
+
+/// The scheduled shift an attendance event belongs to.
+///
+/// Mirrors ShiftWindow in the POS repo (functions/src/HR/shiftWindow.ts) —
+/// keep them in sync.
+class ShiftWindow {
+  const ShiftWindow({
+    required this.shiftDay,
+    this.start,
+    this.end,
+    this.scheduledStart,
+    this.scheduledEnd,
+  });
+
+  /// Local midnight of the day the shift starts on. An overnight shift's
+  /// check-in after midnight still belongs to this (the previous) day.
+  final tz.TZDateTime shiftDay;
+  final String? start;
+  final String? end;
+  final tz.TZDateTime? scheduledStart;
+
+  /// On the following day when the shift crosses midnight (end <= start).
+  final tz.TZDateTime? scheduledEnd;
+
+  /// When check-in opens: [earlyMinutes] before the scheduled start.
+  tz.TZDateTime? checkInOpensAt(int earlyMinutes) =>
+      scheduledStart?.subtract(Duration(minutes: earlyMinutes));
+
+  /// Whether a check-in at [at] falls inside the window that opens
+  /// [earlyMinutes] before the scheduled start and closes at the scheduled
+  /// end. Late arrivals inside it are allowed. Shifts without a start time
+  /// have no window.
+  ///
+  /// Mirrors checkInWindowError in functions/src/HR/shiftWindow.ts.
+  CheckInAvailability checkInAvailability(DateTime at, int earlyMinutes) {
+    final opensAt = checkInOpensAt(earlyMinutes);
+    if (opensAt == null) return CheckInAvailability.open;
+    if (at.isBefore(opensAt)) return CheckInAvailability.notYetOpen;
+    final end = scheduledEnd;
+    if (end != null && !at.isBefore(end)) {
+      return CheckInAvailability.shiftEnded;
+    }
+    return CheckInAvailability.open;
+  }
 }
 
 class HREmployee {
@@ -278,6 +335,44 @@ class HREmployee {
     final end = _toMinutes(hours?.end);
     if (start == null || end == null) return null;
     return end > start ? end - start : end + 24 * 60 - start;
+  }
+
+  /// The shift that [at] belongs to. Normally the shift on [at]'s own day,
+  /// but an instant before the end of yesterday's overnight shift (e.g.
+  /// 03:00 for an 18:00-04:00 shift) belongs to yesterday's shift.
+  ///
+  /// Mirrors resolveShiftWindow in the POS repo
+  /// (functions/src/HR/shiftWindow.ts) — keep them in sync.
+  ShiftWindow shiftWindowAt(tz.TZDateTime at) {
+    final today = tz.TZDateTime(at.location, at.year, at.month, at.day);
+    final yesterday =
+        tz.TZDateTime(at.location, at.year, at.month, at.day - 1);
+    final previous = _shiftOn(yesterday);
+    final previousEnd = previous.scheduledEnd;
+    if (previous.scheduledStart != null &&
+        previousEnd != null &&
+        previousEnd.isAfter(today) &&
+        at.isBefore(previousEnd)) {
+      return previous;
+    }
+    return _shiftOn(today);
+  }
+
+  ShiftWindow _shiftOn(tz.TZDateTime day) {
+    final hours = workingHoursOn(day);
+    final start = _toMinutes(hours.start);
+    final end = _toMinutes(hours.end);
+    final crossesMidnight = start != null && end != null && end <= start;
+    tz.TZDateTime at(int minutes, {int addDays = 0}) => tz.TZDateTime(
+        day.location, day.year, day.month, day.day + addDays, 0, minutes);
+    return ShiftWindow(
+      shiftDay: day,
+      start: hours.start,
+      end: hours.end,
+      scheduledStart: start == null ? null : at(start),
+      scheduledEnd:
+          end == null ? null : at(end, addDays: crossesMidnight ? 1 : 0),
+    );
   }
 
   static int? _toMinutes(String? time) {

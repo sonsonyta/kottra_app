@@ -356,6 +356,18 @@ abstract class AppLocalizations {
   /// **'Checked in — {status}'**
   String checkInSuccess(String status);
 
+  /// No description provided for @checkInWindowOpensAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in opens at {time}.'**
+  String checkInWindowOpensAt(String time);
+
+  /// No description provided for @checkInWindowShiftEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Your shift ended at {time}. Ask your manager to record your attendance.'**
+  String checkInWindowShiftEnded(String time);
+
   /// No description provided for @locationRequiredRemote.
   ///
   /// In en, this message translates to:
