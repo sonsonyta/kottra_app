@@ -27,7 +27,7 @@ class _AdvanceListScreenState extends State<AdvanceListScreen> {
     _advanceViewModel = SalaryAdvanceViewModel(
       storeId: widget.profileViewModel.storeId,
       employeeId: widget.profileViewModel.employeeId,
-      employeeName: widget.profileViewModel.userName,
+      employeeName: () => widget.profileViewModel.userName,
       currency: widget.profileViewModel.currency,
     );
   }
