@@ -64,6 +64,11 @@ dependencies:
   image_picker: ^1.1.2
   path_provider: ^2.1.4
   url_launcher: ^6.3.2
+  package_info_plus: ^9.0.1
+  # Pinned: must use the same Firebase iOS SDK (12.17.0) as firebase_core
+  # 4.13.0 and the other FlutterFire plugins, or iOS package resolution
+  # fails. Upgrade it together with them.
+  firebase_remote_config: 6.5.6
 dev_dependencies:
   flutter_test:
     sdk: flutter

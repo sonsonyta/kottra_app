@@ -255,5 +255,13 @@
   "rejectEarlyLeaveTitle": "បដិសេធសំណើសុំចេញមុនម៉ោង?",
   "earlyLeaveApproved": "បានអនុម័តសំណើសុំចេញមុនម៉ោង។",
   "earlyLeaveRejected": "បានបដិសេធសំណើសុំចេញមុនម៉ោង។",
-  "chooseLeaveType": "សូមជ្រើសរើសប្រភេទច្បាប់"
+  "chooseLeaveType": "សូមជ្រើសរើសប្រភេទច្បាប់",
+  "updateAvailableTitle": "មានកំណែថ្មី",
+  "updateAvailableMessage": "Kottra កំណែ {version} អាចប្រើបានហើយ។ សូមធ្វើបច្ចុប្បន្នភាព ដើម្បីទទួលបានការកែលម្អ និងមុខងារថ្មីៗ។",
+  "updateRequiredTitle": "ត្រូវធ្វើបច្ចុប្បន្នភាព",
+  "updateRequiredMessage": "កំណែ Kottra នេះលែងគាំទ្រហើយ។ សូមធ្វើបច្ចុប្បន្នភាពទៅកំណែ {version} ដើម្បីបន្តប្រើកម្មវិធី។",
+  "updateWhatsNew": "អ្វីដែលថ្មី",
+  "updateCurrentVersion": "កំណែបច្ចុប្បន្ន៖ {version}",
+  "updateLater": "ពេលក្រោយ",
+  "updateNow": "ធ្វើបច្ចុប្បន្នភាព"
 }

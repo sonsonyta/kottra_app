@@ -371,5 +371,34 @@
   "rejectEarlyLeaveTitle": "Reject early leave?",
   "earlyLeaveApproved": "Early leave approved.",
   "earlyLeaveRejected": "Early leave rejected.",
-  "chooseLeaveType": "Choose a leave type"
+  "chooseLeaveType": "Choose a leave type",
+  "updateAvailableTitle": "Update available",
+  "updateAvailableMessage": "Version {version} of Kottra is available. Update to get the latest fixes and features.",
+  "@updateAvailableMessage": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateRequiredTitle": "Update required",
+  "updateRequiredMessage": "This version of Kottra is no longer supported. Please update to version {version} to keep using the app.",
+  "@updateRequiredMessage": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateWhatsNew": "What's new",
+  "updateCurrentVersion": "Installed version: {version}",
+  "@updateCurrentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateLater": "Later",
+  "updateNow": "Update"
 }

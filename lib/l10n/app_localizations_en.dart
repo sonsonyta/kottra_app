@@ -806,4 +806,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chooseLeaveType => 'Choose a leave type';
+
+  @override
+  String get updateAvailableTitle => 'Update available';
+
+  @override
+  String updateAvailableMessage(String version) {
+    return 'Version $version of Kottra is available. Update to get the latest fixes and features.';
+  }
+
+  @override
+  String get updateRequiredTitle => 'Update required';
+
+  @override
+  String updateRequiredMessage(String version) {
+    return 'This version of Kottra is no longer supported. Please update to version $version to keep using the app.';
+  }
+
+  @override
+  String get updateWhatsNew => 'What\'s new';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return 'Installed version: $version';
+  }
+
+  @override
+  String get updateLater => 'Later';
+
+  @override
+  String get updateNow => 'Update';
 }

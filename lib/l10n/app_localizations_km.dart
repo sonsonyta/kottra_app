@@ -798,4 +798,34 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get chooseLeaveType => 'សូមជ្រើសរើសប្រភេទច្បាប់';
+
+  @override
+  String get updateAvailableTitle => 'មានកំណែថ្មី';
+
+  @override
+  String updateAvailableMessage(String version) {
+    return 'Kottra កំណែ $version អាចប្រើបានហើយ។ សូមធ្វើបច្ចុប្បន្នភាព ដើម្បីទទួលបានការកែលម្អ និងមុខងារថ្មីៗ។';
+  }
+
+  @override
+  String get updateRequiredTitle => 'ត្រូវធ្វើបច្ចុប្បន្នភាព';
+
+  @override
+  String updateRequiredMessage(String version) {
+    return 'កំណែ Kottra នេះលែងគាំទ្រហើយ។ សូមធ្វើបច្ចុប្បន្នភាពទៅកំណែ $version ដើម្បីបន្តប្រើកម្មវិធី។';
+  }
+
+  @override
+  String get updateWhatsNew => 'អ្វីដែលថ្មី';
+
+  @override
+  String updateCurrentVersion(String version) {
+    return 'កំណែបច្ចុប្បន្ន៖ $version';
+  }
+
+  @override
+  String get updateLater => 'ពេលក្រោយ';
+
+  @override
+  String get updateNow => 'ធ្វើបច្ចុប្បន្នភាព';
 }

@@ -8,6 +8,7 @@ import 'package:kottra_app/screens/tabs/payroll_tab.dart';
 import 'package:kottra_app/config/feature_flags.dart';
 import 'package:kottra_app/screens/tabs/profile/profile_tab.dart';
 import 'package:kottra_app/screens/tabs/tab_colors.dart';
+import 'package:kottra_app/screens/update/update_dialog.dart';
 import 'package:kottra_app/view_models/attendance_view_model.dart';
 import 'package:kottra_app/view_models/main_view_model.dart';
 import 'package:kottra_app/view_models/profile_view_model.dart';
@@ -21,7 +22,7 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   late final MainViewModel _viewModel;
   late final AttendanceViewModel _attendanceViewModel;
   late final ProfileViewModel _profileViewModel;
@@ -35,7 +36,20 @@ class _MainScreenState extends State<MainScreen> {
     _attendanceViewModel = AttendanceViewModel();
     _profileViewModel = ProfileViewModel();
     _startClock();
+    WidgetsBinding.instance.addObserver(this);
+    // Remind about a new app release once the first frame is up.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) checkForAppUpdate(context);
+    });
+  }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Back from the background (e.g. after the store page): check again, so
+    // a required update keeps blocking and a new release is noticed.
+    if (state == AppLifecycleState.resumed && mounted) {
+      checkForAppUpdate(context);
+    }
   }
 
   void _startClock() {
@@ -46,6 +60,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _clockTimer?.cancel();
     _viewModel.dispose();
     _attendanceViewModel.dispose();
@@ -57,7 +72,11 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final c = appColors(context);
     return ListenableBuilder(
-      listenable: Listenable.merge([_viewModel, _attendanceViewModel, _profileViewModel]),
+      listenable: Listenable.merge([
+        _viewModel,
+        _attendanceViewModel,
+        _profileViewModel,
+      ]),
       builder: (context, _) {
         return Scaffold(
           backgroundColor: c.background,
