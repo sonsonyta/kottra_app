@@ -189,6 +189,15 @@
   "netPay": "Net Pay",
   "basicSalary": "Basic salary",
   "overtime": "Overtime",
+  "holidayWorkPay": "Public holiday work",
+  "holidayDaysWorkedNote": "{count} day(s)",
+  "@holidayDaysWorkedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "bonuses": "Bonuses",
   "allowances": "Allowances",
   "tax": "Tax",

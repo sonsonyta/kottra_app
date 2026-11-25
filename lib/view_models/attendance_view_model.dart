@@ -9,6 +9,7 @@ import 'package:kottra_app/models/hr_employee.dart';
 import 'package:kottra_app/models/hr_settings.dart';
 import 'package:kottra_app/models/payroll_deductions.dart';
 import 'package:kottra_app/models/pending_attendance_action.dart';
+import 'package:kottra_app/services/holiday_service.dart';
 import 'package:kottra_app/services/attendance_photo_service.dart';
 import 'package:kottra_app/services/attendance_service.dart';
 import 'package:kottra_app/services/attendance_sync_service.dart';
@@ -65,6 +66,7 @@ class AttendanceViewModel extends ChangeNotifier {
     SettingsService? settingsService,
     EmployeeService? employeeService,
     EarlyLeaveService? earlyLeaveService,
+    HolidayService? holidayService,
     AttendancePhotoService? photoService,
     OfflineAttendanceQueue? offlineQueue,
     AttendanceSyncService? syncService,
@@ -82,9 +84,11 @@ class AttendanceViewModel extends ChangeNotifier {
        _settingsService = settingsService ?? SettingsService(),
        _employeeService = employeeService ?? EmployeeService(),
        _earlyLeaveService = earlyLeaveService ?? EarlyLeaveService(),
+       _holidayService = holidayService,
        _photoService = photoService ?? AttendancePhotoService(),
        _queue = offlineQueue ?? OfflineAttendanceQueue() {
-    _syncService = syncService ??
+    _syncService =
+        syncService ??
         AttendanceSyncService(
           queue: _queue,
           attendanceService: _attendanceService,
@@ -111,6 +115,8 @@ class AttendanceViewModel extends ChangeNotifier {
   final SettingsService _settingsService;
   final EmployeeService _employeeService;
   final EarlyLeaveService _earlyLeaveService;
+  // Created on first use, so tests that don't pass one never touch Firebase.
+  HolidayService? _holidayService;
   final AttendancePhotoService _photoService;
   final OfflineAttendanceQueue _queue;
   late final AttendanceSyncService _syncService;
@@ -140,6 +146,8 @@ class AttendanceViewModel extends ChangeNotifier {
   List<AttendanceRecord>? _leaveRecords;
   // Store-local days with approved early leave (early minutes not charged).
   Set<String> _earlyLeaveDays = const {};
+  // Public holidays this month (earlyLeaveDayKey format): no late deduction.
+  Set<String> _holidayDays = const {};
 
   String? _optimisticAttendanceId;
   DateTime? _optimisticCheckInAt;
@@ -203,7 +211,8 @@ class AttendanceViewModel extends ChangeNotifier {
     if (identity == null) return null;
     PendingAttendanceAction? latest;
     for (final a in _queue.actions) {
-      if (a.storeId == identity.storeId && a.employeeId == identity.employeeId) {
+      if (a.storeId == identity.storeId &&
+          a.employeeId == identity.employeeId) {
         latest = a;
       }
     }
@@ -240,10 +249,13 @@ class AttendanceViewModel extends ChangeNotifier {
     _leaveRecordsSub?.cancel();
     _leaveRecordsSub = _attendanceService
         .streamLeaveRecords(identity.storeId, identity.employeeId)
-        .listen((records) {
-          _leaveRecords = records;
-          if (!_disposed) notifyListeners();
-        }, onError: (Object e) => debugPrint('Error loading leave records: $e'));
+        .listen(
+          (records) {
+            _leaveRecords = records;
+            if (!_disposed) notifyListeners();
+          },
+          onError: (Object e) => debugPrint('Error loading leave records: $e'),
+        );
 
     _earlyLeaveSub?.cancel();
     _earlyLeaveSub = _earlyLeaveService
@@ -255,6 +267,23 @@ class AttendanceViewModel extends ChangeNotifier {
               .toSet();
           if (!_disposed) notifyListeners();
         }, onError: (Object e) => debugPrint('Error loading early leave: $e'));
+
+    _loadHolidays(identity.storeId);
+  }
+
+  Future<void> _loadHolidays(String storeId) async {
+    try {
+      final holidays = await (_holidayService ??= HolidayService()).fetchMonth(
+        storeId,
+        _now(),
+      );
+      _holidayDays = holidays
+          .map((h) => earlyLeaveDayKey(_inStoreZone(h.date)))
+          .toSet();
+      if (!_disposed) notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading holidays: $e');
+    }
   }
 
   /// Streams the two slow-moving inputs to the deduction figure — the store's
@@ -266,12 +295,12 @@ class AttendanceViewModel extends ChangeNotifier {
     if (identity == null) return;
 
     _settingsSub?.cancel();
-    _settingsSub = _settingsService
-        .streamHrSettings(identity.storeId)
-        .listen((settings) {
-          _hrSettings = settings;
-          if (!_disposed) notifyListeners();
-        }, onError: (Object e) => debugPrint('Error loading HR settings: $e'));
+    _settingsSub = _settingsService.streamHrSettings(identity.storeId).listen((
+      settings,
+    ) {
+      _hrSettings = settings;
+      if (!_disposed) notifyListeners();
+    }, onError: (Object e) => debugPrint('Error loading HR settings: $e'));
 
     _employeeSub?.cancel();
     _employeeSub = _employeeService
@@ -303,6 +332,7 @@ class AttendanceViewModel extends ChangeNotifier {
       yearLeaveRecords: _leaveRecords,
       employeeLeaveLimits: employee.leaveLimits,
       earlyLeaveDays: _earlyLeaveDays,
+      holidayDays: _holidayDays,
     );
   }
 
@@ -459,7 +489,8 @@ class AttendanceViewModel extends ChangeNotifier {
   ShiftWindow? get _checkedInShift {
     final startedAt = checkInTime;
     return _employee?.shiftWindowAt(
-        startedAt != null ? _inStoreZone(startedAt) : _now());
+      startedAt != null ? _inStoreZone(startedAt) : _now(),
+    );
   }
 
   /// The current shift's start (`HH:mm`).
@@ -498,6 +529,7 @@ class AttendanceViewModel extends ChangeNotifier {
   Future<Uint8List?> capturePhoto() => _photoService.capture();
 
   bool get isOnLeave => _todayRecord?.status == AttendanceStatus.leave;
+
   /// Absent and unable to check in. An auto-absent doesn't count: checking in
   /// late replaces it.
   bool get isAbsent =>
@@ -541,7 +573,9 @@ class AttendanceViewModel extends ChangeNotifier {
   List<AttendanceRecord> getRecordsForDay(DateTime day) {
     return _history.where((r) {
       final rDate = r.date.toDate();
-      return rDate.year == day.year && rDate.month == day.month && rDate.day == day.day;
+      return rDate.year == day.year &&
+          rDate.month == day.month &&
+          rDate.day == day.day;
     }).toList();
   }
 
@@ -577,8 +611,9 @@ class AttendanceViewModel extends ChangeNotifier {
     final shift = currentShift;
     return switch (checkInAvailability) {
       CheckInAvailability.open => null,
-      CheckInAvailability.notYetOpen =>
-        shift?.checkInOpensAt(_checkInEarlyMinutes),
+      CheckInAvailability.notYetOpen => shift?.checkInOpensAt(
+        _checkInEarlyMinutes,
+      ),
       CheckInAvailability.shiftEnded => shift?.scheduledEnd,
     };
   }
@@ -813,7 +848,9 @@ class AttendanceViewModel extends ChangeNotifier {
               await _photoService.deletePending(photoPath);
               rethrow;
             }
-            debugPrint('Check-out call failed transiently, queuing offline: $e');
+            debugPrint(
+              'Check-out call failed transiently, queuing offline: $e',
+            );
           }
         }
       }

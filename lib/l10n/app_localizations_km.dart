@@ -456,6 +456,14 @@ class AppLocalizationsKm extends AppLocalizations {
   String get overtime => 'ម៉ោងបន្ថែម';
 
   @override
+  String get holidayWorkPay => 'ធ្វើការថ្ងៃបុណ្យ';
+
+  @override
+  String holidayDaysWorkedNote(int count) {
+    return '$count ថ្ងៃ';
+  }
+
+  @override
   String get bonuses => 'ប្រាក់រង្វាន់';
 
   @override

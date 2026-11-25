@@ -458,6 +458,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get overtime => 'Overtime';
 
   @override
+  String get holidayWorkPay => 'Public holiday work';
+
+  @override
+  String holidayDaysWorkedNote(int count) {
+    return '$count day(s)';
+  }
+
+  @override
   String get bonuses => 'Bonuses';
 
   @override

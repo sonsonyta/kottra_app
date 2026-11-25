@@ -154,6 +154,8 @@
   "netPay": "ប្រាក់សុទ្ធ",
   "basicSalary": "ប្រាក់ខែមូលដ្ឋាន",
   "overtime": "ម៉ោងបន្ថែម",
+  "holidayWorkPay": "ធ្វើការថ្ងៃបុណ្យ",
+  "holidayDaysWorkedNote": "{count} ថ្ងៃ",
   "bonuses": "ប្រាក់រង្វាន់",
   "allowances": "ប្រាក់ឧបត្ថម្ភ",
   "tax": "ពន្ធ",

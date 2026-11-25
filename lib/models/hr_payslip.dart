@@ -23,6 +23,8 @@ class HRPayslip {
     required this.overtimePay,
     required this.bonuses,
     required this.allowances,
+    this.holidayPay = 0,
+    this.holidayDaysWorked = 0,
     this.allowanceNote,
     this.bonusNote,
     required this.tax,
@@ -50,6 +52,11 @@ class HRPayslip {
   final double overtimePay;
   final double bonuses;
   final double allowances;
+
+  /// Extra pay for public holidays worked (POS HR Settings → holiday work
+  /// pay); 0 on payslips from before the policy or when it is off.
+  final double holidayPay;
+  final int holidayDaysWorked;
 
   /// Optional notes explaining a manual allowance/bonus adjustment, set by the
   /// owner in the POS Adjust Payslip dialog.
@@ -83,7 +90,7 @@ class HRPayslip {
   final DateTime? paidDate;
 
   double get grossEarnings =>
-      basicSalary + overtimePay + bonuses + allowances;
+      basicSalary + overtimePay + bonuses + allowances + holidayPay;
 
   double get totalDeductions =>
       tax +
@@ -117,6 +124,8 @@ class HRPayslip {
       overtimePay: toDouble(map['overtimePay']),
       bonuses: toDouble(map['bonuses']),
       allowances: toDouble(map['allowances']),
+      holidayPay: toDouble(map['holidayPay']),
+      holidayDaysWorked: (map['holidayDaysWorked'] as num?)?.toInt() ?? 0,
       allowanceNote: (map['allowanceNote'] as String?)?.trim(),
       bonusNote: (map['bonusNote'] as String?)?.trim(),
       tax: toDouble(map['tax']),
@@ -135,29 +144,31 @@ class HRPayslip {
   }
 
   Map<String, dynamic> toMap() => {
-        'payrollRunId': payrollRunId,
-        'employeeId': employeeId,
-        'employeeName': employeeName,
-        'position': position,
-        'basicSalary': basicSalary,
-        'overtimePay': overtimePay,
-        'bonuses': bonuses,
-        'allowances': allowances,
-        if (allowanceNote != null && allowanceNote!.isNotEmpty)
-          'allowanceNote': allowanceNote,
-        if (bonusNote != null && bonusNote!.isNotEmpty) 'bonusNote': bonusNote,
-        'tax': tax,
-        'leaveDeduction': leaveDeduction,
-        'otherDeductions': otherDeductions,
-        'missedCheckOutDeduction': missedCheckOutDeduction,
-        'advanceDeduction': advanceDeduction,
-        'nssfContribution': nssfContribution,
-        'customDeduction': customDeduction,
-        if (customDeductionNote != null && customDeductionNote!.isNotEmpty)
-          'customDeductionNote': customDeductionNote,
-        'netSalary': netSalary,
-        'currency': currency.value,
-        'status': status.value,
-        if (paidDate != null) 'paidDate': Timestamp.fromDate(paidDate!),
-      };
+    'payrollRunId': payrollRunId,
+    'employeeId': employeeId,
+    'employeeName': employeeName,
+    'position': position,
+    'basicSalary': basicSalary,
+    'overtimePay': overtimePay,
+    'bonuses': bonuses,
+    'allowances': allowances,
+    if (holidayPay > 0) 'holidayPay': holidayPay,
+    if (holidayDaysWorked > 0) 'holidayDaysWorked': holidayDaysWorked,
+    if (allowanceNote != null && allowanceNote!.isNotEmpty)
+      'allowanceNote': allowanceNote,
+    if (bonusNote != null && bonusNote!.isNotEmpty) 'bonusNote': bonusNote,
+    'tax': tax,
+    'leaveDeduction': leaveDeduction,
+    'otherDeductions': otherDeductions,
+    'missedCheckOutDeduction': missedCheckOutDeduction,
+    'advanceDeduction': advanceDeduction,
+    'nssfContribution': nssfContribution,
+    'customDeduction': customDeduction,
+    if (customDeductionNote != null && customDeductionNote!.isNotEmpty)
+      'customDeductionNote': customDeductionNote,
+    'netSalary': netSalary,
+    'currency': currency.value,
+    'status': status.value,
+    if (paidDate != null) 'paidDate': Timestamp.fromDate(paidDate!),
+  };
 }

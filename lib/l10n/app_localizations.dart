@@ -938,6 +938,18 @@ abstract class AppLocalizations {
   /// **'Overtime'**
   String get overtime;
 
+  /// No description provided for @holidayWorkPay.
+  ///
+  /// In en, this message translates to:
+  /// **'Public holiday work'**
+  String get holidayWorkPay;
+
+  /// No description provided for @holidayDaysWorkedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} day(s)'**
+  String holidayDaysWorkedNote(int count);
+
   /// No description provided for @bonuses.
   ///
   /// In en, this message translates to:

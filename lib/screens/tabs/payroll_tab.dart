@@ -118,8 +118,10 @@ class _LatestPayslipCard extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(999),
@@ -149,8 +151,8 @@ class _LatestPayslipCard extends StatelessWidget {
             isPaid && payslip.paidDate != null
                 ? l.paidOnDate(fmtDateFull(payslip.paidDate!))
                 : isPreview
-                    ? l.previewFinalizedNote
-                    : l.awaitingPayment,
+                ? l.previewFinalizedNote
+                : l.awaitingPayment,
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 12,
@@ -190,6 +192,12 @@ class _LatestPayslipCard extends StatelessWidget {
             rows: [
               _BreakdownRow(label: l.basicSalary, value: payslip.basicSalary),
               _BreakdownRow(label: l.overtime, value: payslip.overtimePay),
+              if (payslip.holidayPay > 0)
+                _BreakdownRow(
+                  label: l.holidayWorkPay,
+                  value: payslip.holidayPay,
+                  note: l.holidayDaysWorkedNote(payslip.holidayDaysWorked),
+                ),
               _BreakdownRow(
                 label: l.bonuses,
                 value: payslip.bonuses,
@@ -298,50 +306,52 @@ class _BreakdownGroup extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        ...rows.map((r) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 3),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          r.label,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
+        ...rows.map(
+          (r) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        r.label,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
                         ),
-                        if (r.note != null && r.note!.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2, right: 8),
-                            child: Text(
-                              r.note!,
-                              style: const TextStyle(
-                                color: Colors.white54,
-                                fontSize: 10.5,
-                                fontStyle: FontStyle.italic,
-                                height: 1.3,
-                              ),
+                      ),
+                      if (r.note != null && r.note!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2, right: 8),
+                          child: Text(
+                            r.note!,
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 10.5,
+                              fontStyle: FontStyle.italic,
+                              height: 1.3,
                             ),
                           ),
-                      ],
-                    ),
+                        ),
+                    ],
                   ),
-                  Text(
-                    fmtMoney(r.value, currency),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
+                ),
+                Text(
+                  fmtMoney(r.value, currency),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
-                ],
-              ),
-            )),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -471,8 +481,7 @@ class _PayslipListItem extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: isPaid ? c.successLight : c.warningLight,
                   borderRadius: BorderRadius.circular(999),
@@ -517,11 +526,7 @@ class _EmptyPayslipState extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             alignment: Alignment.center,
-            child: Icon(
-              Icons.receipt_long_rounded,
-              color: c.primary,
-              size: 28,
-            ),
+            child: Icon(Icons.receipt_long_rounded, color: c.primary, size: 28),
           ),
           const SizedBox(height: 14),
           Text(

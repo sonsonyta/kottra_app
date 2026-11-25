@@ -613,6 +613,30 @@ void main() {
     });
   });
 
+  group('public holidays', () {
+    test('late and early minutes on a holiday are not charged', () {
+      final late = LateDeductionSettings.fromMap({
+        'enabled': true,
+        'mode': 'perMinute',
+        'perMinuteUSD': 0.5,
+        'includeEarlyCheckOut': true,
+      });
+      DeductionBreakdown run(Set<String> holidays) => computePeriodDeductions(
+            records: [
+              _rec(day: 4, status: AttendanceStatus.present, earlyCheckOutMinutes: 10),
+              _rec(day: 5, status: AttendanceStatus.present, earlyCheckOutMinutes: 6),
+            ],
+            monthlyBasicSalary: 280,
+            currency: SalaryCurrency.usd,
+            settings: _settings(frequency: PayrollFrequency.monthly, late: late),
+            today: DateTime(2026, 8, 31),
+            holidayDays: holidays,
+          );
+      expect(run({}).late, 8);
+      expect(run({earlyLeaveDayKey(DateTime(2026, 8, 4))}).late, 3);
+    });
+  });
+
   group('leave deduction policy', () {
     final today = DateTime(2026, 8, 31);
     final records = [

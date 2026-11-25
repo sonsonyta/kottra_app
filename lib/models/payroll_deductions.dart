@@ -149,11 +149,14 @@ List<AttendanceRecord> dropDuplicatePlaceholders(
   return records.where((r) {
     if (r.checkIn != null) return true;
     final d = toStoreZone(r.date.toDate());
-    return seen.add('${r.employeeId}|${r.status}|${d.year}-${d.month}-${d.day}');
+    return seen.add(
+      '${r.employeeId}|${r.status}|${d.year}-${d.month}-${d.day}',
+    );
   }).toList();
 }
 
-/// Key of a store-local day in [computePeriodDeductions]' `earlyLeaveDays`.
+/// Key of a store-local day in [computePeriodDeductions]' `earlyLeaveDays`
+/// and `holidayDays`.
 String earlyLeaveDayKey(DateTime localDay) =>
     '${localDay.year}-${localDay.month}-${localDay.day}';
 
@@ -204,6 +207,7 @@ DeductionBreakdown computePeriodDeductions({
   List<AttendanceRecord>? yearLeaveRecords,
   LeaveLimits employeeLeaveLimits = const {},
   Set<String> earlyLeaveDays = const {},
+  Set<String> holidayDays = const {},
 }) {
   final zone = toStoreZone ?? (d) => d;
   // 'endOfMonth' basis accumulates the whole month regardless of payroll
@@ -211,8 +215,8 @@ DeductionBreakdown computePeriodDeductions({
   // divisor, full free-day allowance) that will be deducted at month end.
   final effectiveFrequency =
       settings.deductionPeriodBasis == DeductionPeriodBasis.endOfMonth
-          ? PayrollFrequency.monthly
-          : settings.payrollFrequency;
+      ? PayrollFrequency.monthly
+      : settings.payrollFrequency;
   final period = PayPeriod.forDate(effectiveFrequency, today);
   final periodBasic = monthlyBasicSalary * period.factor;
 
@@ -261,11 +265,20 @@ DeductionBreakdown computePeriodDeductions({
     // early check-out minutes join it when the store enables that. Matches
     // the POS generator's per-day chargeable minutes.
     // Early minutes aren't charged on a day with approved early leave.
-    final minutes = (r.lateExcused ? 0 : r.lateMinutes) +
-        (settings.lateDeduction.includeEarlyCheckOut &&
-                !earlyLeaveDays.contains(earlyLeaveDayKey(zone(r.date.toDate())))
-            ? r.earlyCheckOutMinutes
-            : 0);
+    // Late / early check-out on a public holiday ([holidayDays], keyed like
+    // earlyLeaveDays) is never charged, matching the POS generator.
+    final onHoliday = holidayDays.contains(
+      earlyLeaveDayKey(zone(r.date.toDate())),
+    );
+    final minutes = onHoliday
+        ? 0
+        : (r.lateExcused ? 0 : r.lateMinutes) +
+              (settings.lateDeduction.includeEarlyCheckOut &&
+                      !earlyLeaveDays.contains(
+                        earlyLeaveDayKey(zone(r.date.toDate())),
+                      )
+                  ? r.earlyCheckOutMinutes
+                  : 0);
     if (minutes > 0) {
       totalLateMinutes += minutes;
       lateDays++;
@@ -288,8 +301,8 @@ DeductionBreakdown computePeriodDeductions({
     alreadyUnpaid: leavePolicy == null
         ? {LeaveType.unpaidLeave.value}
         : leavePolicy.enabled
-            ? leavePolicy.unpaidLeaveTypes.map((t) => t.value).toSet()
-            : const {},
+        ? leavePolicy.unpaidLeaveTypes.map((t) => t.value).toSet()
+        : const {},
     toStoreZone: zone,
   );
   if (leavePolicy?.enabled ?? false) {
@@ -307,22 +320,24 @@ DeductionBreakdown computePeriodDeductions({
     lateEntries: lateEntries,
     settings: settings.lateDeduction,
   );
-  final absence = _round2(_computeAbsence(
-        currency: currency,
-        periodBasic: periodBasic,
-        standardWorkDays: period.standardWorkDays,
-        periodFactor: period.factor,
-        unpaidDays: absentDays,
-        settings: settings.absenceDeduction,
-      ) +
-      _computeUnpaidLeave(
-        currency: currency,
-        periodBasic: periodBasic,
-        standardWorkDays: period.standardWorkDays,
-        periodFactor: period.factor,
-        unpaidLeaveDays: unpaidLeaveDays,
-        settings: leavePolicy,
-      ));
+  final absence = _round2(
+    _computeAbsence(
+          currency: currency,
+          periodBasic: periodBasic,
+          standardWorkDays: period.standardWorkDays,
+          periodFactor: period.factor,
+          unpaidDays: absentDays,
+          settings: settings.absenceDeduction,
+        ) +
+        _computeUnpaidLeave(
+          currency: currency,
+          periodBasic: periodBasic,
+          standardWorkDays: period.standardWorkDays,
+          periodFactor: period.factor,
+          unpaidLeaveDays: unpaidLeaveDays,
+          settings: leavePolicy,
+        ),
+  );
 
   final missedCheckOut = _computeMissedCheckOut(
     currency: currency,
@@ -360,20 +375,22 @@ double _computeLate({
   switch (settings.mode) {
     case LateDeductionMode.perMinute:
       final rate =
-          ((isUsd ? settings.perMinuteUsd : settings.perMinuteKhr) ?? 0).toDouble();
+          ((isUsd ? settings.perMinuteUsd : settings.perMinuteKhr) ?? 0)
+              .toDouble();
       amount = totalLateMinutes * rate;
       break;
     case LateDeductionMode.perDay:
-      final rate =
-          ((isUsd ? settings.perDayUsd : settings.perDayKhr) ?? 0).toDouble();
+      final rate = ((isUsd ? settings.perDayUsd : settings.perDayKhr) ?? 0)
+          .toDouble();
       amount = lateDays * rate;
       break;
     case LateDeductionMode.proportional:
       // A weekday with its own hours (e.g. Saturday 08:00–12:00) is sized by
       // that day's length rather than the store's standard workday.
       final workdayMinutes = settings.workdayMinutes ?? 480;
-      final dailyRate =
-          standardWorkDays > 0 ? periodBasic / standardWorkDays : 0.0;
+      final dailyRate = standardWorkDays > 0
+          ? periodBasic / standardWorkDays
+          : 0.0;
       amount = 0;
       for (final entry in lateEntries) {
         final dayMinutes = entry.dayMinutes ?? workdayMinutes;
@@ -402,12 +419,13 @@ double _computeAbsence({
   double amount;
   if (settings.mode == AbsenceDeductionMode.fixed) {
     final isUsd = currency == SalaryCurrency.usd;
-    final rate =
-        ((isUsd ? settings.perDayUsd : settings.perDayKhr) ?? 0).toDouble();
+    final rate = ((isUsd ? settings.perDayUsd : settings.perDayKhr) ?? 0)
+        .toDouble();
     amount = chargeableDays * rate;
   } else {
-    final dailyRate =
-        standardWorkDays > 0 ? periodBasic / standardWorkDays : 0.0;
+    final dailyRate = standardWorkDays > 0
+        ? periodBasic / standardWorkDays
+        : 0.0;
     amount = chargeableDays * dailyRate;
   }
   return _round2(amount);
@@ -431,12 +449,13 @@ double _computeUnpaidLeave({
   double amount;
   if (settings.mode == AbsenceDeductionMode.fixed) {
     final isUsd = currency == SalaryCurrency.usd;
-    final rate =
-        ((isUsd ? settings.perDayUsd : settings.perDayKhr) ?? 0).toDouble();
+    final rate = ((isUsd ? settings.perDayUsd : settings.perDayKhr) ?? 0)
+        .toDouble();
     amount = chargeableDays * rate;
   } else {
-    final dailyRate =
-        standardWorkDays > 0 ? periodBasic / standardWorkDays : 0.0;
+    final dailyRate = standardWorkDays > 0
+        ? periodBasic / standardWorkDays
+        : 0.0;
     amount = chargeableDays * dailyRate;
   }
   return _round2(amount);
@@ -455,7 +474,7 @@ double _computeMissedCheckOut({
   if (chargeable <= 0) return 0;
 
   final isUsd = currency == SalaryCurrency.usd;
-  final rate =
-      ((isUsd ? settings.perMissUsd : settings.perMissKhr) ?? 0).toDouble();
+  final rate = ((isUsd ? settings.perMissUsd : settings.perMissKhr) ?? 0)
+      .toDouble();
   return _round2(chargeable * rate);
 }
